@@ -1,5 +1,6 @@
 import { Plus, MoreVertical, Trash2, Edit2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { createEmptyTab } from '../utils/templates'
 import ConfirmDialog from './ConfirmDialog'
 
@@ -17,6 +18,7 @@ const getEmojiForTab = (title) => {
 
 const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate }) => {
     const [menuTabId, setMenuTabId] = useState(null)
+    const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
     const [deleteConfirm, setDeleteConfirm] = useState(null)
     const menuRef = useRef(null)
 
@@ -29,6 +31,17 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    // Update menu position on scroll/resize
+    useEffect(() => {
+        const updatePos = () => setMenuTabId(null)
+        window.addEventListener('resize', updatePos)
+        window.addEventListener('scroll', updatePos, true)
+        return () => {
+            window.removeEventListener('resize', updatePos)
+            window.removeEventListener('scroll', updatePos, true)
+        }
     }, [])
 
     const handleAddSection = () => {
@@ -57,6 +70,20 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
         }
     }
 
+    const toggleMenu = (e, tabId) => {
+        e.stopPropagation()
+        if (menuTabId === tabId) {
+            setMenuTabId(null)
+        } else {
+            const rect = e.currentTarget.getBoundingClientRect()
+            setMenuPos({
+                top: rect.bottom + 8,
+                left: rect.left
+            })
+            setMenuTabId(tabId)
+        }
+    }
+
     return (
         <>
             <div className="px-6 no-print">
@@ -79,42 +106,11 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                                 {/* Menu button - only show for active tab */}
                                 {isActive && (
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setMenuTabId(menuTabId === tab.id ? null : tab.id)
-                                        }}
-                                        className="p-1.5 -ml-1 rounded-full hover:bg-white/10 text-white/40 hover:text-white/70 transition-colors"
+                                        onClick={(e) => toggleMenu(e, tab.id)}
+                                        className={`p-1.5 -ml-1 rounded-full hover:bg-white/10 transition-colors ${menuTabId === tab.id ? 'text-white bg-white/10' : 'text-white/40 hover:text-white/70'}`}
                                     >
                                         <MoreVertical size={14} />
                                     </button>
-                                )}
-
-                                {/* Dropdown Menu */}
-                                {menuTabId === tab.id && (
-                                    <div
-                                        ref={menuRef}
-                                        className="absolute top-full left-0 mt-2 glass-panel rounded-xl py-1 min-w-[130px] z-50 animate-fade-in shadow-xl"
-                                    >
-                                        <button
-                                            onClick={() => handleRename(tab)}
-                                            className="w-full px-4 py-2.5 text-left text-base text-white/80 hover:bg-white/10 flex items-center gap-3"
-                                        >
-                                            <Edit2 size={14} />
-                                            Rename
-                                        </button>
-                                        {tabs.length > 1 && (
-                                            <button
-                                                onClick={() => {
-                                                    setDeleteConfirm(tab.id)
-                                                    setMenuTabId(null)
-                                                }}
-                                                className="w-full px-4 py-2.5 text-left text-base text-red-400 hover:bg-red-500/10 flex items-center gap-3"
-                                            >
-                                                <Trash2 size={14} />
-                                                Delete
-                                            </button>
-                                        )}
-                                    </div>
                                 )}
                             </div>
                         )
@@ -134,6 +130,40 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     Double-click to rename • Click ⋮ for options
                 </p>
             </div>
+
+            {/* Portal Menu */}
+            {menuTabId && createPortal(
+                <div
+                    ref={menuRef}
+                    style={{
+                        position: 'fixed',
+                        top: Math.min(menuPos.top, window.innerHeight - 100), // Prevent going off bottom
+                        left: Math.min(menuPos.left, window.innerWidth - 140), // Prevent going off right
+                    }}
+                    className="glass-panel rounded-xl py-1 min-w-[130px] z-50 animate-fade-in shadow-xl"
+                >
+                    <button
+                        onClick={() => handleRename(tabs.find(t => t.id === menuTabId))}
+                        className="w-full px-4 py-2.5 text-left text-base text-white/80 hover:bg-white/10 flex items-center gap-3"
+                    >
+                        <Edit2 size={14} />
+                        Rename
+                    </button>
+                    {tabs.length > 1 && (
+                        <button
+                            onClick={() => {
+                                setDeleteConfirm(menuTabId)
+                                setMenuTabId(null)
+                            }}
+                            className="w-full px-4 py-2.5 text-left text-base text-red-400 hover:bg-red-500/10 flex items-center gap-3"
+                        >
+                            <Trash2 size={14} />
+                            Delete
+                        </button>
+                    )}
+                </div>,
+                document.body
+            )}
 
             <ConfirmDialog
                 isOpen={deleteConfirm !== null}

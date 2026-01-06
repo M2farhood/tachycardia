@@ -9,6 +9,7 @@ import StatsCards from './components/StatsCards'
 import FloatingTimer from './components/FloatingTimer'
 import NotesSection from './components/NotesSection'
 import TemplateModal from './components/TemplateModal'
+import CountdownWidget from './components/CountdownWidget'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -119,6 +120,18 @@ function App() {
       totalCompleted += tab.topics.filter(t => t.completed).length
     })
     return totalCompleted > 0 ? Math.min(Math.floor(totalCompleted / 3) + 1, 30) : 0
+  }, [data?.tabs])
+
+  // Calculate global stats
+  const globalStats = useMemo(() => {
+    if (!data?.tabs) return { completed: 0, total: 0 }
+    let completed = 0
+    let total = 0
+    data.tabs.forEach(tab => {
+      completed += tab.topics.filter(t => t.completed).length
+      total += tab.topics.length
+    })
+    return { completed, total }
   }, [data?.tabs])
 
   // Handler functions
@@ -265,6 +278,14 @@ function App() {
         onTabUpdate={updateTab}
       />
 
+      {/* Countdown Widget */}
+      <div className="px-6 mt-4 no-print empty:mt-0">
+        <CountdownWidget
+          isEnabled={data.settings.countdownVisible}
+          targetDate={data.settings.examDate}
+        />
+      </div>
+
       {/* Hero Section */}
       <HeroSection
         title={currentTab.title}
@@ -272,6 +293,8 @@ function App() {
         subtitle={`Module ${data.tabs.indexOf(currentTab) + 1} of ${data.tabs.length}`}
         completedCount={completedCount}
         totalCount={totalCount}
+        globalCompletedCount={globalStats.completed}
+        globalTotalCount={globalStats.total}
       />
 
       {/* Topic List */}

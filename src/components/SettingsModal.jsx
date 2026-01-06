@@ -182,6 +182,57 @@ const SettingsModal = ({
                             </div>
                         </div>
 
+                        {/* Exam Countdown */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <Clock size={14} className="text-white/40" />
+                                <span className="text-sm font-medium text-white/50 uppercase tracking-wider">Exam Countdown</span>
+                            </div>
+                            <div className="space-y-2">
+                                <button
+                                    onClick={() => onSettingsChange({
+                                        countdownVisible: !settings?.countdownVisible
+                                    })}
+                                    className={`w-full py-2.5 px-3 rounded-xl text-left text-base font-medium transition-all liquid-press flex items-center justify-between ${settings?.countdownVisible
+                                        ? 'bg-blue-500/20 text-blue-200 border border-blue-500/30'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                        }`}
+                                >
+                                    <span>Show Countdown</span>
+                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.countdownVisible ? 'bg-blue-500' : 'bg-white/10'
+                                        }`}>
+                                        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings?.countdownVisible ? 'translate-x-4' : 'translate-x-0'
+                                            }`} />
+                                    </div>
+                                </button>
+
+                                {settings?.countdownVisible && (
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="date"
+                                            value={settings?.examDate?.split('T')[0] || ''}
+                                            onChange={(e) => {
+                                                const date = e.target.value
+                                                const time = settings?.examDate?.split('T')[1] || '09:00'
+                                                onSettingsChange({ examDate: `${date}T${time}` })
+                                            }}
+                                            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 min-w-0"
+                                        />
+                                        <input
+                                            type="time"
+                                            value={settings?.examDate?.split('T')[1] || ''}
+                                            onChange={(e) => {
+                                                const time = e.target.value
+                                                const date = settings?.examDate?.split('T')[0] || new Date().toISOString().split('T')[0]
+                                                onSettingsChange({ examDate: `${date}T${time}` })
+                                            }}
+                                            className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Performance Button */}
                         <button
                             onClick={() => setShowPerformance(true)}

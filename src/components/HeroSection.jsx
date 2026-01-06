@@ -1,13 +1,24 @@
+import { useState } from 'react'
+import { Globe, BookOpen } from 'lucide-react'
+
 const HeroSection = ({
     title,
     emoji,
     subtitle,
     completedCount,
     totalCount,
+    globalCompletedCount,
+    globalTotalCount,
     onTitleEdit,
     onSubtitleEdit
 }) => {
-    const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+    const [showGlobal, setShowGlobal] = useState(false)
+
+    // Determine which stats to show
+    const activeCompleted = showGlobal ? globalCompletedCount : completedCount
+    const activeTotal = showGlobal ? globalTotalCount : totalCount
+
+    const percentage = activeTotal > 0 ? Math.round((activeCompleted / activeTotal) * 100) : 0
     const circumference = 2 * Math.PI * 45 // radius = 45
     const offset = circumference - (circumference * percentage) / 100
 
@@ -25,8 +36,16 @@ const HeroSection = ({
             </div>
 
             {/* Right side - Progress Ring */}
-            <div className="relative flex-shrink-0 ml-4">
-                <svg width="100" height="100" className="progress-ring">
+            <div
+                className="relative flex-shrink-0 ml-4 cursor-pointer group"
+                onClick={() => setShowGlobal(!showGlobal)}
+                title={showGlobal ? "Showing Total Progress" : "Showing Section Progress"}
+            >
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-white/30 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                    {showGlobal ? 'Total' : 'Section'}
+                </div>
+
+                <svg width="100" height="100" className="progress-ring transform transition-transform group-hover:scale-105">
                     {/* Background ring */}
                     <circle
                         cx="50"
@@ -43,14 +62,23 @@ const HeroSection = ({
                         r="45"
                         fill="none"
                         strokeWidth="6"
-                        className="progress-ring-fill"
+                        className={`transition-all duration-700 ease-out ${showGlobal ? 'stroke-blue-400' : 'progress-ring-fill'}`}
                         strokeDasharray={circumference}
                         strokeDashoffset={offset}
+                        strokeLinecap="round"
                     />
                 </svg>
+
                 {/* Percentage text */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-white">{percentage}%</span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-2xl font-bold text-white tabular-nums">
+                        {percentage}%
+                    </span>
+                    {showGlobal && (
+                        <div className="absolute bottom-6">
+                            <Globe size={10} className="text-blue-400" />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
