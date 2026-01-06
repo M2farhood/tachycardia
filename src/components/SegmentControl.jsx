@@ -97,7 +97,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                                     >
                                         <button
                                             onClick={() => handleRename(tab)}
-                                            className="w-full px-4 py-2.5 text-left text-sm text-white/80 hover:bg-white/10 flex items-center gap-3"
+                                            className="w-full px-4 py-2.5 text-left text-base text-white/80 hover:bg-white/10 flex items-center gap-3"
                                         >
                                             <Edit2 size={14} />
                                             Rename
@@ -108,7 +108,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                                                     setDeleteConfirm(tab.id)
                                                     setMenuTabId(null)
                                                 }}
-                                                className="w-full px-4 py-2.5 text-left text-sm text-red-400 hover:bg-red-500/10 flex items-center gap-3"
+                                                className="w-full px-4 py-2.5 text-left text-base text-red-400 hover:bg-red-500/10 flex items-center gap-3"
                                             >
                                                 <Trash2 size={14} />
                                                 Delete
@@ -130,7 +130,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     </button>
                 </div>
 
-                <p className="text-[10px] text-white/20 mt-2 text-center">
+                <p className="text-xs text-white/20 mt-2 text-center">
                     Double-click to rename • Click ⋮ for options
                 </p>
             </div>

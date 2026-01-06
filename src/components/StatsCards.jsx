@@ -16,11 +16,11 @@ const StatsCards = ({
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
                     <Flame size={20} className="text-orange-400" />
                 </div>
-                <p className="text-xs font-medium uppercase tracking-wider text-white/40 mb-1">
+                <p className="text-sm font-medium uppercase tracking-wider text-white/40 mb-1">
                     Streak
                 </p>
-                <p className="text-2xl font-bold text-white">
-                    {studyStreak} <span className="text-lg font-medium text-white/50">Days</span>
+                <p className="text-3xl font-bold text-white">
+                    {studyStreak} <span className="text-xl font-medium text-white/50">Days</span>
                 </p>
             </div>
 
@@ -29,10 +29,10 @@ const StatsCards = ({
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
                     <Clock size={20} className="text-blue-400" />
                 </div>
-                <p className="text-xs font-medium uppercase tracking-wider text-white/40 mb-1">
+                <p className="text-sm font-medium uppercase tracking-wider text-white/40 mb-1">
                     Today
                 </p>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-3xl font-bold text-white">
                     {timeDisplay}
                 </p>
             </div>

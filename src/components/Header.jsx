@@ -30,10 +30,10 @@ const Header = ({
                 <div className="flex items-start justify-between">
                     {/* Left side - Greeting */}
                     <div>
-                        <p className="text-xs font-medium uppercase tracking-widest text-white/40 mb-1">
+                        <p className="text-sm font-medium uppercase tracking-widest text-white/40 mb-1">
                             Dashboard
                         </p>
-                        <h1 className="text-2xl font-bold tracking-tight text-white">
+                        <h1 className="text-3xl font-bold tracking-tight text-white">
                             {getGreeting()}, {userName}
                         </h1>
                     </div>
@@ -50,7 +50,7 @@ const Header = ({
 
                         {/* User Avatar with glow */}
                         <div className="w-12 h-12 rounded-full glow-avatar overflow-hidden bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center">
-                            <span className="text-lg font-bold text-white">
+                            <span className="text-xl font-bold text-white">
                                 {userName.charAt(0).toUpperCase()}
                             </span>
                         </div>

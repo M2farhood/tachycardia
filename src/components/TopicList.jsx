@@ -14,6 +14,7 @@ const TopicList = ({
 }) => {
     const [newTopicName, setNewTopicName] = useState('')
     const [editingId, setEditingId] = useState(null)
+    const [expandedId, setExpandedId] = useState(null)
     const [editValue, setEditValue] = useState('')
     const [draggedIndex, setDraggedIndex] = useState(null)
     const [dragOverIndex, setDragOverIndex] = useState(null)
@@ -39,6 +40,11 @@ const TopicList = ({
     const startEdit = (topic) => {
         setEditingId(topic.id)
         setEditValue(topic.name)
+        setExpandedId(null)
+    }
+
+    const toggleExpand = (id) => {
+        setExpandedId(expandedId === id ? null : id)
     }
 
     const saveEdit = () => {
@@ -102,6 +108,7 @@ const TopicList = ({
                         const isActive = isActiveTimer(topic.id)
                         const isDragging = draggedIndex === index
                         const isDragOver = dragOverIndex === index && draggedIndex !== index
+                        const isExpanded = expandedId === topic.id
 
                         return (
                             <div
@@ -140,20 +147,22 @@ const TopicList = ({
                                                 if (e.key === 'Enter') saveEdit()
                                                 if (e.key === 'Escape') setEditingId(null)
                                             }}
-                                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                                            className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white text-lg focus:outline-none focus:border-blue-500"
                                             autoFocus
                                         />
                                     ) : (
                                         <p
-                                            onClick={() => startEdit(topic)}
-                                            className={`topic-name text-white font-medium truncate cursor-text ${topic.completed ? 'line-through text-white/40' : ''
-                                                }`}
+                                            onClick={() => toggleExpand(topic.id)}
+                                            onDoubleClick={() => startEdit(topic)}
+                                            title="Click to expand, double-click to edit"
+                                            className={`topic-name text-white font-medium text-lg cursor-pointer transition-all ${isExpanded ? 'whitespace-normal break-words text-xl py-2' : 'truncate'
+                                                } ${topic.completed ? 'line-through text-white/40' : ''}`}
                                         >
                                             {topic.name}
                                         </p>
                                     )}
                                     {topic.category && (
-                                        <p className="text-xs text-white/40 mt-0.5">{topic.category}</p>
+                                        <p className="text-sm text-white/40 mt-0.5">{topic.category}</p>
                                     )}
                                 </div>
 
@@ -163,14 +172,14 @@ const TopicList = ({
                                         <button
                                             onClick={() => onTimerStart(tab.id, topic.id)}
                                             className={`p-2 rounded-full transition-all ${isActive
-                                                    ? 'bg-blue-500 glow-blue animate-pulse-glow'
-                                                    : 'hover:bg-white/10 opacity-0 group-hover:opacity-100'
+                                                ? 'bg-blue-500 glow-blue animate-pulse-glow'
+                                                : 'hover:bg-white/10 opacity-0 group-hover:opacity-100'
                                                 }`}
                                         >
                                             <Play size={14} className="text-white" />
                                         </button>
                                     )}
-                                    <span className="text-xs text-white/30 tabular-nums w-12 text-right">
+                                    <span className="text-sm text-white/30 tabular-nums w-12 text-right">
                                         {topic.timeEstimate || defaultDuration}m
                                     </span>
                                 </div>
@@ -180,7 +189,7 @@ const TopicList = ({
                                     onClick={() => onTopicDelete(tab.id, topic.id)}
                                     className="p-2 rounded-full hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all"
                                 >
-                                    <Trash2 size={14} className="text-red-400/60" />
+                                    <Trash2 size={16} className="text-red-400/60" />
                                 </button>
                             </div>
                         )
@@ -196,7 +205,7 @@ const TopicList = ({
                             onChange={(e) => setNewTopicName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
                             placeholder="Add a topic..."
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 text-sm"
+                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 text-base"
                         />
                         <button
                             onClick={handleAddTopic}

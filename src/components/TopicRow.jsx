@@ -19,6 +19,7 @@ const TopicRow = ({
     const [editName, setEditName] = useState(topic.name)
     const [editCategory, setEditCategory] = useState(topic.category)
     const [showDeleteBtn, setShowDeleteBtn] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const nameInputRef = useRef(null)
     const categoryInputRef = useRef(null)
@@ -110,7 +111,7 @@ const TopicRow = ({
                         : 'bg-slate-100 text-slate-400'
                     }
         `}>
-                    <span className="text-xs font-mono font-bold">
+                    <span className="text-sm font-mono font-bold">
                         {isActiveTimer ? formatTime(timerTime) : `${defaultDuration}:00`}
                     </span>
 
@@ -161,12 +162,15 @@ const TopicRow = ({
                         onChange={(e) => setEditName(e.target.value)}
                         onBlur={saveName}
                         onKeyDown={(e) => handleKeyDown(e, saveName)}
-                        className="w-full px-2 py-1 font-bold bg-white border border-indigo-400 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        className="w-full px-2 py-1 font-bold bg-white border border-indigo-400 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200 text-lg"
                     />
                 ) : (
                     <span
-                        onClick={() => setIsEditingName(true)}
-                        className="inline-editable font-bold cursor-text"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        onDoubleClick={() => setIsEditingName(true)}
+                        title="Click to expand, double-click to edit"
+                        className={`inline-editable font-bold cursor-pointer transition-all block ${isExpanded ? 'whitespace-normal break-words text-xl' : 'truncate max-w-[200px] md:max-w-xs'
+                            } text-lg`}
                     >
                         {topic.name}
                     </span>
@@ -189,12 +193,12 @@ const TopicRow = ({
                             onChange={(e) => setEditCategory(e.target.value)}
                             onBlur={saveCategory}
                             onKeyDown={(e) => handleKeyDown(e, saveCategory)}
-                            className="w-full px-2 py-1 text-xs font-semibold uppercase bg-white border border-indigo-400 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                            className="w-full px-2 py-1 text-sm font-semibold uppercase bg-white border border-indigo-400 rounded focus:outline-none focus:ring-2 focus:ring-indigo-200"
                         />
                     ) : (
                         <span
                             onClick={() => setIsEditingCategory(true)}
-                            className="inline-editable text-xs font-semibold uppercase tracking-wide cursor-text"
+                            className="inline-editable text-sm font-semibold uppercase tracking-wide cursor-text"
                         >
                             {topic.category}
                         </span>

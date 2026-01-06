@@ -69,7 +69,7 @@ const SettingsModal = ({
                 <div className="glass-panel rounded-3xl shadow-2xl max-w-sm w-full animate-slide-up max-h-[85vh] overflow-y-auto">
                     {/* Header */}
                     <div className="flex items-center justify-between p-5 border-b border-white/5 sticky top-0 glass-panel rounded-t-3xl">
-                        <h2 className="text-lg font-bold text-white">Settings</h2>
+                        <h2 className="text-xl font-bold text-white">Settings</h2>
                         <button
                             onClick={onClose}
                             className="p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -84,7 +84,7 @@ const SettingsModal = ({
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <User size={14} className="text-white/40" />
-                                <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Your Name</span>
+                                <span className="text-sm font-medium text-white/50 uppercase tracking-wider">Your Name</span>
                             </div>
                             {editingName ? (
                                 <div className="flex gap-2">
@@ -97,12 +97,12 @@ const SettingsModal = ({
                                             if (e.key === 'Escape') setEditingName(false)
                                         }}
                                         placeholder="Enter your name"
-                                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500"
+                                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
                                         autoFocus
                                     />
                                     <button
                                         onClick={handleNameSave}
-                                        className="px-4 py-2 bg-blue-500 text-white text-sm font-medium rounded-xl"
+                                        className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-xl"
                                     >
                                         Save
                                     </button>
@@ -113,7 +113,7 @@ const SettingsModal = ({
                                         setNameValue(settings?.userName || '')
                                         setEditingName(true)
                                     }}
-                                    className="w-full px-3 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-left text-white/80 text-sm transition-colors"
+                                    className="w-full px-3 py-2.5 bg-white/5 hover:bg-white/10 rounded-xl text-left text-white/80 text-base transition-colors"
                                 >
                                     {userName}
                                 </button>
@@ -128,14 +128,14 @@ const SettingsModal = ({
                                 ) : (
                                     <Sun size={14} className="text-white/40" />
                                 )}
-                                <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Theme</span>
+                                <span className="text-sm font-medium text-white/50 uppercase tracking-wider">Theme</span>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'dark' })}
-                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'dark'
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                    className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'dark'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
                                     <Moon size={14} />
@@ -143,9 +143,9 @@ const SettingsModal = ({
                                 </button>
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'light' })}
-                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'light'
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                    className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'light'
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
                                     <Sun size={14} />
@@ -158,23 +158,23 @@ const SettingsModal = ({
                         <div>
                             <div className="flex items-center gap-2 mb-2">
                                 <Clock size={14} className="text-white/40" />
-                                <span className="text-xs font-medium text-white/50 uppercase tracking-wider">Session Timer</span>
+                                <span className="text-sm font-medium text-white/50 uppercase tracking-wider">Session Timer</span>
                             </div>
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 25 })}
-                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all liquid-press ${timerDuration === 25
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                    className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 25
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
                                     25 min
                                 </button>
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 50 })}
-                                    className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition-all liquid-press ${timerDuration === 50
-                                            ? 'bg-blue-500 text-white'
-                                            : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                    className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 50
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
                                     50 min
@@ -185,7 +185,7 @@ const SettingsModal = ({
                         {/* Performance Button */}
                         <button
                             onClick={() => setShowPerformance(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-white/90 text-sm font-medium rounded-xl transition-colors liquid-press border border-blue-500/20"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-blue-500/20"
                         >
                             <BarChart2 size={16} />
                             View All Performance
@@ -194,7 +194,7 @@ const SettingsModal = ({
                         {/* Print Button */}
                         <button
                             onClick={() => setShowPrintModal(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 text-white/80 text-sm font-medium rounded-xl transition-colors liquid-press border border-white/5"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white/5 hover:bg-white/10 text-white/80 text-base font-medium rounded-xl transition-colors liquid-press border border-white/5"
                         >
                             <Printer size={16} />
                             Print / Save as PDF
@@ -203,7 +203,7 @@ const SettingsModal = ({
                         {/* Data row: Storage + Export/Import */}
                         <div className="flex items-center gap-3 py-2">
                             <div className="flex-1">
-                                <div className="flex items-center justify-between text-[10px] text-white/30 mb-1">
+                                <div className="flex items-center justify-between text-xs text-white/30 mb-1">
                                     <span>Storage</span>
                                     <span>{storage.usedFormatted}</span>
                                 </div>
@@ -228,14 +228,14 @@ const SettingsModal = ({
                                     <div className="absolute right-0 bottom-full mb-2 glass-panel rounded-xl py-1 min-w-[100px] z-10 animate-fade-in shadow-xl">
                                         <button
                                             onClick={handleExport}
-                                            className="w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 flex items-center gap-2"
+                                            className="w-full px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
                                         >
                                             <Download size={12} />
                                             Export
                                         </button>
                                         <button
                                             onClick={handleImportClick}
-                                            className="w-full px-3 py-2 text-left text-xs text-white/70 hover:bg-white/10 flex items-center gap-2"
+                                            className="w-full px-3 py-2 text-left text-sm text-white/70 hover:bg-white/10 flex items-center gap-2"
                                         >
                                             <Upload size={12} />
                                             Import
@@ -261,7 +261,7 @@ const SettingsModal = ({
 
                         <button
                             onClick={() => setShowClearConfirm(true)}
-                            className="w-full text-[10px] text-red-400/50 hover:text-red-400 py-1 transition-colors"
+                            className="w-full text-xs text-red-400/50 hover:text-red-400 py-1 transition-colors"
                         >
                             Clear All Data
                         </button>
@@ -269,7 +269,7 @@ const SettingsModal = ({
 
                     {/* Footer credit */}
                     <div className="px-5 pb-4 pt-1 border-t border-white/5">
-                        <p className="text-[10px] text-white/20 text-center">
+                        <p className="text-xs text-white/20 text-center">
                             Made with ❤️ in MUCOM & by Mohammed Farhood
                         </p>
                     </div>

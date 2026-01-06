@@ -2,54 +2,56 @@ import { useState } from 'react'
 import { X, Printer, Check } from 'lucide-react'
 
 const PrintModal = ({ isOpen, onClose, tabs }) => {
-    const [selectedTabs, setSelectedTabs] = useState(new Set(tabs.map(t => t.id)))
-    const [printAll, setPrintAll] = useState(true)
+  const [selectedTabs, setSelectedTabs] = useState(new Set(tabs.map(t => t.id)))
+  const [printAll, setPrintAll] = useState(true)
 
-    if (!isOpen) return null
+  if (!isOpen) return null
 
-    const toggleTab = (tabId) => {
-        const newSet = new Set(selectedTabs)
-        if (newSet.has(tabId)) {
-            newSet.delete(tabId)
-        } else {
-            newSet.add(tabId)
-        }
-        setSelectedTabs(newSet)
-        setPrintAll(newSet.size === tabs.length)
+  const toggleTab = (tabId) => {
+    const newSet = new Set(selectedTabs)
+    if (newSet.has(tabId)) {
+      newSet.delete(tabId)
+    } else {
+      newSet.add(tabId)
     }
+    setSelectedTabs(newSet)
+    setPrintAll(newSet.size === tabs.length)
+  }
 
-    const toggleAll = () => {
-        if (printAll) {
-            setSelectedTabs(new Set())
-            setPrintAll(false)
-        } else {
-            setSelectedTabs(new Set(tabs.map(t => t.id)))
-            setPrintAll(true)
-        }
+  const toggleAll = () => {
+    if (printAll) {
+      setSelectedTabs(new Set())
+      setPrintAll(false)
+    } else {
+      setSelectedTabs(new Set(tabs.map(t => t.id)))
+      setPrintAll(true)
     }
+  }
 
-    const handlePrint = () => {
-        // Create print content
-        const selectedTabsData = tabs.filter(t => selectedTabs.has(t.id))
+  const handlePrint = () => {
+    // Create print content
+    const selectedTabsData = tabs.filter(t => selectedTabs.has(t.id))
 
-        // Create a new window for printing
-        const printWindow = window.open('', '_blank')
-        if (!printWindow) return
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
 
-        const printContent = `
+    const printContent = `
       <!DOCTYPE html>
       <html>
       <head>
         <title>Study Tracker</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
           body { 
             font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
-            padding: 40px;
+            padding: 20px;
             max-width: 800px;
             margin: 0 auto;
             color: #1e293b;
             line-height: 1.5;
+            background: #fff;
           }
           .header {
             text-align: center;
@@ -58,13 +60,13 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             border-bottom: 2px solid #e2e8f0;
           }
           .header h1 {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
             color: #0f172a;
             margin-bottom: 4px;
           }
           .header p {
-            font-size: 12px;
+            font-size: 14px;
             color: #64748b;
           }
           .section {
@@ -80,12 +82,12 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             border-bottom: 1px solid #e2e8f0;
           }
           .section-title {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
             color: #1e293b;
           }
           .section-progress {
-            font-size: 12px;
+            font-size: 14px;
             color: #64748b;
             background: #f1f5f9;
             padding: 4px 12px;
@@ -97,18 +99,18 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
           .topic {
             display: flex;
             align-items: flex-start;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #f1f5f9;
           }
           .topic:last-child {
             border-bottom: none;
           }
           .checkbox {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border: 2px solid #cbd5e1;
             border-radius: 4px;
-            margin-right: 12px;
+            margin-right: 14px;
             flex-shrink: 0;
             display: flex;
             align-items: center;
@@ -122,14 +124,14 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
           .checkbox.checked::after {
             content: '✓';
             color: white;
-            font-size: 12px;
+            font-size: 14px;
             font-weight: bold;
           }
           .topic-content {
             flex: 1;
           }
           .topic-name {
-            font-size: 14px;
+            font-size: 16px;
             font-weight: 500;
             color: #1e293b;
           }
@@ -138,9 +140,9 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             color: #94a3b8;
           }
           .topic-category {
-            font-size: 11px;
+            font-size: 13px;
             color: #64748b;
-            margin-top: 2px;
+            margin-top: 4px;
           }
           .notes-section {
             margin-top: 16px;
@@ -150,7 +152,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             border: 1px solid #e2e8f0;
           }
           .notes-title {
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 600;
             color: #64748b;
             text-transform: uppercase;
@@ -158,7 +160,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             margin-bottom: 8px;
           }
           .notes-content {
-            font-size: 13px;
+            font-size: 14px;
             color: #475569;
             white-space: pre-wrap;
           }
@@ -167,27 +169,60 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             padding-top: 20px;
             border-top: 1px solid #e2e8f0;
             text-align: center;
-            font-size: 10px;
+            font-size: 12px;
             color: #94a3b8;
           }
+          
+          /* Print Button Styles */
+          .print-actions {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 20px 0;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 30px;
+            text-align: center;
+            z-index: 100;
+          }
+          .btn-print {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
+            transition: background 0.2s;
+          }
+          .btn-print:hover {
+            background: #2563eb;
+          }
+
           @media print {
-            body { padding: 20px; }
+            body { padding: 0; }
             .section { page-break-inside: avoid; }
+            .print-actions { display: none !important; }
           }
         </style>
       </head>
       <body>
+        <div class="print-actions">
+          <button class="btn-print" onclick="window.print()">🖨️ Print / Save as PDF</button>
+        </div>
+
         <div class="header">
           <h1>📚 Study Tracker</h1>
           <p>${new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
         </div>
         
         ${selectedTabsData.map(tab => {
-            const completed = tab.topics.filter(t => t.completed).length
-            const total = tab.topics.length
-            const percent = total > 0 ? Math.round((completed / total) * 100) : 0
+      const completed = tab.topics.filter(t => t.completed).length
+      const total = tab.topics.length
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0
 
-            return `
+      return `
             <div class="section">
               <div class="section-header">
                 <span class="section-title">${tab.emoji || '📖'} ${tab.title}</span>
@@ -212,7 +247,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
               ` : ''}
             </div>
           `
-        }).join('')}
+    }).join('')}
         
         <div class="footer">
           Made with ❤️ in MUCOM & by Mohammed Farhood
@@ -221,94 +256,96 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
       </html>
     `
 
-        printWindow.document.write(printContent)
-        printWindow.document.close()
+    printWindow.document.write(printContent)
+    printWindow.document.close()
 
-        // Wait for content to load then print
-        printWindow.onload = () => {
-            printWindow.print()
-            printWindow.onafterprint = () => printWindow.close()
-        }
-
-        onClose()
+    // Auto-print attempt, but keep window open
+    printWindow.onload = () => {
+      // Small delay to ensure styles render on mobile
+      setTimeout(() => {
+        printWindow.print()
+      }, 500)
     }
 
-    return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-            <div className="glass-panel rounded-3xl shadow-2xl max-w-sm w-full animate-slide-up">
-                {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-white/5">
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Printer size={18} />
-                        Print
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
-                    >
-                        <X size={18} className="text-white/50" />
-                    </button>
-                </div>
+    onClose()
+  }
 
-                {/* Content */}
-                <div className="p-5">
-                    <p className="text-sm text-white/50 mb-4">Select sections to print:</p>
-
-                    {/* Select All */}
-                    <button
-                        onClick={toggleAll}
-                        className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl mb-3 transition-colors"
-                    >
-                        <span className="text-white font-medium">All Sections</span>
-                        <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-blue-500' : 'border border-white/30'
-                            }`}>
-                            {printAll && <Check size={14} className="text-white" />}
-                        </div>
-                    </button>
-
-                    {/* Individual sections */}
-                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                        {tabs.map(tab => {
-                            const isSelected = selectedTabs.has(tab.id)
-                            const completed = tab.topics.filter(t => t.completed).length
-                            const total = tab.topics.length
-
-                            return (
-                                <button
-                                    key={tab.id}
-                                    onClick={() => toggleTab(tab.id)}
-                                    className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 rounded-lg transition-colors"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <span>{tab.emoji || '📖'}</span>
-                                        <div className="text-left">
-                                            <span className="text-white/90 text-sm">{tab.title}</span>
-                                            <span className="text-white/40 text-xs ml-2">{completed}/{total}</span>
-                                        </div>
-                                    </div>
-                                    <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500' : 'border border-white/30'
-                                        }`}>
-                                        {isSelected && <Check size={14} className="text-white" />}
-                                    </div>
-                                </button>
-                            )
-                        })}
-                    </div>
-                </div>
-
-                {/* Actions */}
-                <div className="p-5 pt-0">
-                    <button
-                        onClick={handlePrint}
-                        disabled={selectedTabs.size === 0}
-                        className="w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/30 text-white font-medium rounded-xl transition-colors liquid-press"
-                    >
-                        Print {selectedTabs.size > 0 ? `(${selectedTabs.size} section${selectedTabs.size > 1 ? 's' : ''})` : ''}
-                    </button>
-                </div>
-            </div>
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 modal-backdrop animate-fade-in">
+      <div className="glass-panel rounded-3xl shadow-2xl max-w-sm w-full animate-slide-up">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-white/5">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Printer size={18} />
+            Print
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <X size={18} className="text-white/50" />
+          </button>
         </div>
-    )
+
+        {/* Content */}
+        <div className="p-5">
+          <p className="text-sm text-white/50 mb-4">Select sections to print:</p>
+
+          {/* Select All */}
+          <button
+            onClick={toggleAll}
+            className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl mb-3 transition-colors"
+          >
+            <span className="text-white font-medium">All Sections</span>
+            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-blue-500' : 'border border-white/30'
+              }`}>
+              {printAll && <Check size={14} className="text-white" />}
+            </div>
+          </button>
+
+          {/* Individual sections */}
+          <div className="space-y-1 max-h-48 overflow-y-auto">
+            {tabs.map(tab => {
+              const isSelected = selectedTabs.has(tab.id)
+              const completed = tab.topics.filter(t => t.completed).length
+              const total = tab.topics.length
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => toggleTab(tab.id)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 rounded-lg transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <span>{tab.emoji || '📖'}</span>
+                    <div className="text-left">
+                      <span className="text-white/90 text-sm">{tab.title}</span>
+                      <span className="text-white/40 text-xs ml-2">{completed}/{total}</span>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500' : 'border border-white/30'
+                    }`}>
+                    {isSelected && <Check size={14} className="text-white" />}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="p-5 pt-0">
+          <button
+            onClick={handlePrint}
+            disabled={selectedTabs.size === 0}
+            className="w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/30 text-white font-medium rounded-xl transition-colors liquid-press"
+          >
+            Print {selectedTabs.size > 0 ? `(${selectedTabs.size} section${selectedTabs.size > 1 ? 's' : ''})` : ''}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default PrintModal

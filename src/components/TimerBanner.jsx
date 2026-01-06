@@ -27,13 +27,13 @@ const TimerBanner = ({
                     </div>
 
                     <div className="min-w-0">
-                        <p className="text-[10px] uppercase tracking-widest text-slate-500 font-medium">
+                        <p className="text-xs uppercase tracking-widest text-slate-500 font-medium">
                             {isRunning ? 'Currently Studying' : 'Timer Paused'}
                         </p>
-                        <p className="font-semibold text-slate-800 truncate">
+                        <p className="font-semibold text-slate-800 truncate text-lg">
                             {currentTopicName}
                         </p>
-                        <p className="text-xs text-slate-500 truncate">
+                        <p className="text-sm text-slate-500 truncate">
                             {currentTabTitle}
                         </p>
                     </div>
@@ -41,7 +41,7 @@ const TimerBanner = ({
 
                 <div className="flex items-center gap-3">
                     <span className={`
-            text-2xl md:text-3xl font-mono font-bold tabular-nums
+            text-3xl md:text-4xl font-mono font-bold tabular-nums
             ${isRunning ? 'text-amber-700' : 'text-slate-600'}
           `}>
                         {formattedTime}

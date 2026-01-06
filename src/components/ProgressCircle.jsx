@@ -32,16 +32,16 @@ const ProgressCircle = ({ completed, total, size = 64 }) => {
                         strokeLinecap="round"
                     />
                 </svg>
-                <span className="absolute text-sm font-black text-slate-700">
+                <span className="absolute text-base font-black text-slate-700">
                     {percentage}%
                 </span>
             </div>
 
             <div>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">
                     Progress
                 </p>
-                <p className="text-sm font-semibold text-slate-600">
+                <p className="text-base font-semibold text-slate-600">
                     {completed} / {total} completed
                 </p>
             </div>
