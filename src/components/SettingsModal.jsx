@@ -162,6 +162,15 @@ const SettingsModal = ({
                             </div>
                             <div className="flex gap-2">
                                 <button
+                                    onClick={() => onSettingsChange({ timerDuration: 15 })}
+                                    className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 15
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-white/5 text-white/50 hover:bg-white/10'
+                                        }`}
+                                >
+                                    15 min
+                                </button>
+                                <button
                                     onClick={() => onSettingsChange({ timerDuration: 25 })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 25
                                         ? 'bg-blue-500 text-white'
