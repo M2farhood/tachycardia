@@ -1,6 +1,7 @@
 /**
  * Plan Parser - Extracts study tasks from AI-generated study plans
  * Supports multiple formats from ChatGPT, Claude, etc.
+ * Supports hierarchical lists and automatic weight distribution
  */
 
 // Get current year for relative date parsing
@@ -99,42 +100,67 @@ function formatDate(date) {
 
 /**
  * Main parser function - extracts tasks from pasted study plan
+ * Supports hierarchical lists and automatic weight distribution
  */
 export function parsePlan(text) {
     if (!text || typeof text !== 'string') return []
 
     const tasks = []
     const lines = text.split('\n')
-    const seen = new Set() // Avoid duplicates
 
-    // Pattern 1: 📅 Jan 14: Topic Name - 2h [20%]
+    // State machine variables
+    let currentCategory = null
+    let currentCategoryWeight = 0
+    let currentCategoryTasks = []
+
+    // Helper to finalize a category and distribute weights
+    const finalizeCategory = () => {
+        if (currentCategoryTasks.length > 0) {
+            // Check if we need to distribute weight
+            const tasksWithoutWeight = currentCategoryTasks.filter(t => !t.weight)
+
+            if (currentCategoryWeight > 0 && tasksWithoutWeight.length > 0) {
+                // Distribute remaining weight evenly
+                const distributedWeight = parseFloat((currentCategoryWeight / currentCategoryTasks.length).toFixed(1))
+
+                currentCategoryTasks.forEach(t => {
+                    if (!t.weight) {
+                        t.weight = distributedWeight
+                    }
+                })
+            }
+
+            tasks.push(...currentCategoryTasks)
+            currentCategoryTasks = []
+        }
+    }
+
+    // Regex Patterns
+
+    // 1. Header/Category Pattern: specific emphasis, weight.
+    const headerPattern = /^[-•*]?\s*(?:\*\*)?(.+?)(?:\*\*)?\s*(?:[-–:]\s*(\d+\.?\d*)\s*h(?:ours?)?)?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
+
+    // 2. Task Pattern: Standard task with optional details - accepts simple bullets
+    const anyBulletPattern = /^(\s*)[-•*+]\s+(.+?)(?:\s*[-–]\s*(\d+\.?\d*)\s*h(?:ours?)?)?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
+
+    // 3. Fallback date patterns for direct tasks
     const emojiPattern = /📅\s*([A-Za-z]+\s+\d{1,2}):\s*(.+?)(?:\s*[-–]\s*(\d+\.?\d*)\s*h)?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
-
-    // Pattern 2: Day 1 (Jan 14): Topic - 2 hours (20%)
     const dayPattern = /Day\s*\d+\s*\(([^)]+)\):\s*(.+?)(?:\s*[-–]\s*(.+?))?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
 
-    // Pattern 3: - Study Chapter 5 (2h) [20%]
-    const bulletPattern = /^[\-•*]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?(?:\s*\((?:deadline|due):\s*([^)]+)\))?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
-
-    // Pattern 4: 1. Topic Name | Due: Jan 15 | 2h | 20%
-    const numberedPattern = /^\d+\.\s*(.+?)(?:\s*\|\s*(?:Due|Deadline):\s*([A-Za-z]+\s+\d{1,2}))?(?:\s*\|\s*(\d+\.?\d*)\s*h)?(?:\s*\|\s*Weight:?\s*(\d+)%?)?$/i
-
-    // Pattern 5: **Jan 14** - Topic Name (2 hours) - 20%
-    const boldDatePattern = /\*\*([A-Za-z]+\s+\d{1,2})\*\*\s*[-–:]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?(?:\s*[-–]\s*(\d+)%)?$/i
-
-    // Pattern 6: Topic Name [Jan 14] - 2h - 20%
-    const bracketPattern = /^(.+?)\s*\[([A-Za-z]+\s+\d{1,2})\](?:\s*[-–]\s*(\d+\.?\d*)\s*h)?(?:\s*[-–]\s*(\d+)%)?$/i
-
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trimEnd() // Keep indentation
         const trimmed = line.trim()
         if (!trimmed) continue
 
-        let task = null
+        // Try specific patterns first (Dates/Days - these are usually tasks)
+        // If matched, they are tasks immediately (unless we are inside a category, then maybe add to it?)
+        // Let's assume date patterns are tasks.
 
-        // Try each pattern
-        let match = trimmed.match(emojiPattern)
+        let specificTask = null
+        let match = trimmed.match(emojiPattern) || trimmed.match(dayPattern)
+
         if (match) {
-            task = {
+            specificTask = {
                 name: match[2].trim(),
                 date: parseDate(match[1]),
                 duration: match[3] ? parseFloat(match[3]) : null,
@@ -142,92 +168,97 @@ export function parsePlan(text) {
             }
         }
 
-        if (!task) {
-            match = trimmed.match(dayPattern)
-            if (match) {
-                task = {
-                    name: match[2].replace(/\s*[-–]\s*\d+\.?\d*\s*h.*$/i, '').replace(/\s*(?:\[|\()Weight:?\s*\d+%?(?:\]|\)).*$/i, '').trim(),
-                    date: parseDate(match[1]),
-                    duration: parseDuration(match[3]),
-                    weight: match[4] ? parseFloat(match[4]) : null
-                }
-            }
+        if (specificTask) {
+            // Add directly
+            tasks.push({
+                id: `import-${Date.now()}-${tasks.length}`,
+                name: specificTask.name,
+                category: currentCategory || null, // Inherit if exists
+                date: specificTask.date,
+                dateFormatted: formatDate(specificTask.date),
+                duration: specificTask.duration,
+                durationFormatted: specificTask.duration ? `${specificTask.duration}h` : null,
+                weight: specificTask.weight,
+                selected: true
+            })
+            continue
         }
 
-        if (!task) {
-            match = trimmed.match(bulletPattern)
-            if (match && match[1].length > 3) { // Avoid matching short strings
-                task = {
-                    name: match[1].trim(),
-                    date: match[3] ? parseDate(match[3]) : null,
-                    duration: match[2] ? parseFloat(match[2]) : null,
-                    weight: match[4] ? parseFloat(match[4]) : null
+        // List Logic
+        const bulletMatch = line.match(anyBulletPattern)
+
+        if (bulletMatch) {
+            const indent = bulletMatch[1].length
+            const content = bulletMatch[2].trim()
+            const duration = bulletMatch[3] ? parseFloat(bulletMatch[3]) : null
+            const weight = bulletMatch[4] ? parseFloat(bulletMatch[4]) : null
+
+            // Heuristic: Is this a Header or a Task?
+            let isHeader = false
+
+            // Rule 1: Next line is indented relative to this
+            if (i + 1 < lines.length) {
+                const nextLine = lines[i + 1]
+                const nextBullet = nextLine.match(anyBulletPattern)
+                if (nextBullet && nextBullet[1].length > indent) {
+                    isHeader = true
                 }
             }
-        }
 
-        if (!task) {
-            match = trimmed.match(numberedPattern)
-            if (match) {
-                task = {
-                    name: match[1].trim(),
-                    date: match[2] ? parseDate(match[2]) : null,
-                    duration: match[3] ? parseFloat(match[3]) : null,
-                    weight: match[4] ? parseFloat(match[4]) : null
-                }
+            // Rule 2: High weight (>5%), no duration, looks like a title
+            if (!isHeader && weight && weight > 5 && !duration && content.length < 50) {
+                isHeader = true
             }
-        }
 
-        if (!task) {
-            match = trimmed.match(boldDatePattern)
-            if (match) {
-                task = {
-                    name: match[2].trim(),
-                    date: parseDate(match[1]),
-                    duration: match[3] ? parseFloat(match[3]) : null,
-                    weight: match[4] ? parseFloat(match[4]) : null
+            if (isHeader) {
+                // New Category found! 
+                finalizeCategory() // Flush previous
+                currentCategory = content.replace(/\s*[-–]\s*\d+.*$/, '') // Clean trailing info
+                currentCategoryWeight = weight || 0
+                // Don't add this as a task, it's a container
+                continue
+            } else {
+                // It's a task/sub-task
+                const task = {
+                    name: content,
+                    date: parseDate(content),
+                    duration: duration,
+                    weight: weight
                 }
-            }
-        }
 
-        if (!task) {
-            match = trimmed.match(bracketPattern)
-            if (match) {
-                task = {
-                    name: match[1].trim(),
-                    date: parseDate(match[2]),
-                    duration: match[3] ? parseFloat(match[3]) : null,
-                    weight: match[4] ? parseFloat(match[4]) : null
+                // If we are inside a category, add to queue for processing
+                if (currentCategory) {
+                    currentCategoryTasks.push({
+                        id: `import-${Date.now()}-${tasks.length + currentCategoryTasks.length}`,
+                        name: task.name,
+                        category: currentCategory,
+                        date: task.date,
+                        dateFormatted: formatDate(task.date),
+                        duration: task.duration,
+                        durationFormatted: task.duration ? `${task.duration}h` : null,
+                        weight: task.weight,
+                        selected: true
+                    })
+                    continue
                 }
-            }
-        }
 
-        // Add task if found and not duplicate
-        if (task && task.name && task.name.length > 2) {
-            const key = `${task.name}-${task.date?.getTime() || ''}`
-            if (!seen.has(key)) {
-                seen.add(key)
+                // If no category, add as loose task
                 tasks.push({
                     id: `import-${Date.now()}-${tasks.length}`,
                     name: task.name,
+                    category: null,
                     date: task.date,
                     dateFormatted: formatDate(task.date),
                     duration: task.duration,
                     durationFormatted: task.duration ? `${task.duration}h` : null,
-                    selected: true // Default to selected for import
+                    weight: task.weight,
+                    selected: true
                 })
             }
         }
     }
 
-    // Sort by date if available
-    tasks.sort((a, b) => {
-        if (!a.date && !b.date) return 0
-        if (!a.date) return 1
-        if (!b.date) return -1
-        return a.date.getTime() - b.date.getTime()
-    })
-
+    finalizeCategory() // Flush last batch
     return tasks
 }
 
@@ -241,6 +272,7 @@ export function tasksToTopics(tasks) {
             id: `topic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: t.name,
             completed: false,
+            category: t.category || '',
             weight: t.weight || null,
             notes: t.duration ? `Estimated: ${t.durationFormatted}` : ''
         }))
