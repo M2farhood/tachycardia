@@ -111,7 +111,7 @@ async function callGemini(userMessage, studyData) {
     const fullPrompt = SYSTEM_PROMPT + context
 
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
         {
             method: 'POST',
             headers: {
@@ -145,9 +145,9 @@ async function callGemini(userMessage, studyData) {
         const error = await response.json().catch(() => ({}))
         const status = response.status
 
-        if (status === 429) {
-            const err = new Error('Rate limit exceeded')
-            err.status = 429
+        if (status === 429 || status === 404) {
+            const err = new Error(status === 429 ? 'Rate limit exceeded' : 'Model not found')
+            err.status = status
             throw err
         }
 
