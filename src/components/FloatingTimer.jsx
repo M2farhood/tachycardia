@@ -13,15 +13,13 @@ const FloatingTimer = ({
 }) => {
     if (!isActive) {
         return (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 no-print">
+            <div className="fixed bottom-6 left-6 z-40 no-print">
                 <button
                     onClick={onStart}
-                    className="floating-bar px-8 py-4 rounded-full liquid-press flex items-center gap-3 animate-fade-in"
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg hover:scale-110 transition-transform glow-blue"
+                    title="Start Study Session"
                 >
-                    <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center glow-blue">
-                        <Play size={18} className="text-white ml-0.5" />
-                    </div>
-                    <span className="text-white font-medium">Start Study Session</span>
+                    <Play size={20} className="text-white ml-0.5" />
                 </button>
             </div>
         )
@@ -77,8 +75,8 @@ const FloatingTimer = ({
                         <button
                             onClick={onPauseResume}
                             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all liquid-press ${isRunning
-                                    ? 'bg-white/20 hover:bg-white/30'
-                                    : 'bg-blue-500 glow-blue hover:bg-blue-600'
+                                ? 'bg-white/20 hover:bg-white/30'
+                                : 'bg-blue-500 glow-blue hover:bg-blue-600'
                                 }`}
                         >
                             {isRunning ? (
