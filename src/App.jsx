@@ -10,6 +10,7 @@ import FloatingTimer from './components/FloatingTimer'
 import NotesSection from './components/NotesSection'
 import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
+import TachycardiaTab from './components/TachycardiaTab'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -34,6 +35,7 @@ function App() {
   const [activeTabId, setActiveTabId] = useState(null)
   const [todayMinutes, setTodayMinutes] = useState(0)
   const [totalMinutes, setTotalMinutes] = useState(0)
+  const [showTachycardia, setShowTachycardia] = useState(false)
 
   // Load study time from localStorage
   useEffect(() => {
@@ -225,6 +227,13 @@ function App() {
     }
   }, [deleteTab, activeTabId, data?.tabs])
 
+  // Handle importing tasks from Plan Importer
+  const handleImportTasks = useCallback((tabId, topics) => {
+    topics.forEach(topic => {
+      addTopic(tabId, topic)
+    })
+  }, [addTopic])
+
   // Show template modal for first-time users
   if (isFirstVisit || !data) {
     return (
@@ -266,61 +275,75 @@ function App() {
         onImport={handleImport}
         onClearAll={handleClearAll}
         onSettingsChange={updateSettings}
+        onImportTasks={handleImportTasks}
       />
 
       {/* Segment Control */}
       <SegmentControl
         tabs={data.tabs}
         activeTabId={currentTab.id}
-        onTabChange={setActiveTabId}
+        onTabChange={(id) => { setActiveTabId(id); setShowTachycardia(false); }}
         onTabAdd={addTab}
         onTabDelete={handleTabDelete}
         onTabUpdate={updateTab}
+        onTachycardiaClick={() => setShowTachycardia(!showTachycardia)}
+        showTachycardia={showTachycardia}
       />
 
-      {/* Countdown Widget */}
-      <div className="px-6 mt-4 no-print empty:mt-0">
-        <CountdownWidget
-          isEnabled={data.settings.countdownVisible}
-          targetDate={data.settings.examDate}
+      {/* Tachycardia AI Tab or Regular Content */}
+      {showTachycardia ? (
+        <TachycardiaTab
+          studyData={data}
+          onBack={() => setShowTachycardia(false)}
+          addTopic={addTopic}
         />
-      </div>
+      ) : (
+        <>
+          {/* Countdown Widget */}
+          <div className="px-6 mt-4 no-print empty:mt-0">
+            <CountdownWidget
+              isEnabled={data.settings.countdownVisible}
+              targetDate={data.settings.examDate}
+            />
+          </div>
 
-      {/* Hero Section */}
-      <HeroSection
-        title={currentTab.title}
-        emoji={currentTab.emoji}
-        subtitle={`Module ${data.tabs.indexOf(currentTab) + 1} of ${data.tabs.length}`}
-        completedCount={completedCount}
-        totalCount={totalCount}
-        globalCompletedCount={globalStats.completed}
-        globalTotalCount={globalStats.total}
-      />
+          {/* Hero Section */}
+          <HeroSection
+            title={currentTab.title}
+            emoji={currentTab.emoji}
+            subtitle={`Module ${data.tabs.indexOf(currentTab) + 1} of ${data.tabs.length}`}
+            completedCount={completedCount}
+            totalCount={totalCount}
+            globalCompletedCount={globalStats.completed}
+            globalTotalCount={globalStats.total}
+          />
 
-      {/* Topic List */}
-      <TopicList
-        tab={currentTab}
-        timerSession={data.timerSession}
-        defaultDuration={data.settings.timerDuration}
-        onTopicUpdate={updateTopic}
-        onTopicAdd={addTopic}
-        onTopicDelete={deleteTopic}
-        onTimerStart={handleTimerStart}
-        onReorderTopics={reorderTopics}
-      />
+          {/* Topic List */}
+          <TopicList
+            tab={currentTab}
+            timerSession={data.timerSession}
+            defaultDuration={data.settings.timerDuration}
+            onTopicUpdate={updateTopic}
+            onTopicAdd={addTopic}
+            onTopicDelete={deleteTopic}
+            onTimerStart={handleTimerStart}
+            onReorderTopics={reorderTopics}
+          />
 
-      {/* Stats Cards */}
-      <StatsCards
-        studyStreak={streak}
-        todayMinutes={todayMinutes}
-        totalMinutes={totalMinutes}
-      />
+          {/* Stats Cards */}
+          <StatsCards
+            studyStreak={streak}
+            todayMinutes={todayMinutes}
+            totalMinutes={totalMinutes}
+          />
 
-      {/* Notes Section */}
-      <NotesSection
-        notes={currentTab.notes || ''}
-        onChange={handleNotesChange}
-      />
+          {/* Notes Section */}
+          <NotesSection
+            notes={currentTab.notes || ''}
+            onChange={handleNotesChange}
+          />
+        </>
+      )}
 
       {/* Floating Timer */}
       <FloatingTimer

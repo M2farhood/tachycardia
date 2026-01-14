@@ -1,15 +1,24 @@
 # 📚 Study Tracker
 
-A universal, customizable study progress tracker with Pomodoro timer support. Built as a Progressive Web App (PWA) that works on any device - desktop, Android, or iOS.
+A universal, customizable study progress tracker with Pomodoro timer support and AI study companion. Built as a Progressive Web App (PWA) that works on any device - desktop, Android, or iOS.
 
 ## ✨ Features
 
 ### Core Functionality
 - **📋 Customizable Topics** - Create, edit, and organize your study topics
 - **📁 Multiple Sections** - Organize topics into tabs/sections by subject
-- **⏱️ Pomodoro Timer** - Built-in 25/50 minute focus timer
+- **⏱️ Pomodoro Timer** - Built-in 15/25/50 minute focus timer
 - **✅ Progress Tracking** - Visual progress circle for each section
 - **📝 Quick Notes** - Per-section notes for key concepts
+- **🔄 Drag & Drop** - Reorder topics by dragging
+
+### 💓 Tachycardia AI (NEW!)
+Your intelligent study companion powered by Gemini/Mistral AI:
+- **Smart Suggestions** - Get personalized study recommendations
+- **Task Management** - Ask AI to add tasks directly to your to-do list
+- **Study Planning** - Generate study schedules based on your progress
+- **Motivation** - Get encouragement when you need it
+- **Progress Analysis** - Understand how you're doing
 
 ### Editing Capabilities
 - **Inline Editing** - Click on any topic, category, or tab name to edit
@@ -48,13 +57,29 @@ npm install
 npm run dev
 ```
 
+### Environment Variables (for AI features)
+
+Create a `.env` file in the root directory:
+
+```env
+VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_MISTRAL_API_KEY=your_mistral_api_key_here  # Optional fallback
+```
+
+Get your API key from:
+- **Gemini**: [Google AI Studio](https://aistudio.google.com/)
+- **Mistral**: [Mistral AI](https://console.mistral.ai/)
+
+> Note: AI features work with either key. Gemini is primary, Mistral is fallback.
+
 ### Deploy to Vercel
 
 1. Push your code to GitHub
 2. Go to [vercel.com](https://vercel.com)
 3. Import your GitHub repository
 4. Framework preset: **Vite**
-5. Click Deploy!
+5. Add environment variables in Vercel dashboard
+6. Click Deploy!
 
 Your app will be live at `https://your-project.vercel.app`
 
@@ -81,6 +106,15 @@ Your app will be live at `https://your-project.vercel.app`
 1. Choose a template or start from scratch
 2. Customize section names and topics
 3. Start studying!
+
+### Using Tachycardia AI 💓
+1. Click the pink **Tachycardia** button in the tab bar
+2. Ask questions like:
+   - "What should I study next?"
+   - "Add a task called 'Review Chapter 5' to my first section"
+   - "Help me plan my week"
+   - "Motivate me!"
+3. AI can directly add tasks to your to-do list!
 
 ### Editing Content
 - **Double-click** tab names to rename sections
@@ -113,6 +147,7 @@ Your app will be live at `https://your-project.vercel.app`
 - **Tailwind CSS** - Styling
 - **Lucide React** - Icons
 - **vite-plugin-pwa** - PWA support
+- **Gemini/Mistral AI** - AI chat features
 
 ## 📁 Project Structure
 
@@ -122,7 +157,11 @@ study-tracker/
 │   └── icons/           # PWA icons
 ├── src/
 │   ├── components/      # React components
+│   │   └── TachycardiaTab.jsx  # AI chat interface
 │   ├── hooks/           # Custom React hooks
+│   │   └── useAIChat.js        # AI chat hook
+│   ├── services/        # External services
+│   │   └── aiService.js        # Gemini/Mistral integration
 │   ├── utils/           # Utility functions
 │   ├── App.jsx
 │   └── index.css

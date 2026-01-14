@@ -1,8 +1,9 @@
-import { Plus, MoreVertical, Trash2, Edit2 } from 'lucide-react'
+import { Plus, MoreVertical, Trash2, Edit2, Heart } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createEmptyTab } from '../utils/templates'
 import ConfirmDialog from './ConfirmDialog'
+
 
 // Icon/emoji mapping for tabs
 const getEmojiForTab = (title) => {
@@ -16,7 +17,7 @@ const getEmojiForTab = (title) => {
     return '📚'
 }
 
-const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate }) => {
+const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate, onTachycardiaClick, showTachycardia }) => {
     const [menuTabId, setMenuTabId] = useState(null)
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
     const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -123,6 +124,24 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                         title="Add Section"
                     >
                         <Plus size={16} />
+                    </button>
+
+                    {/* Tachycardia AI Button */}
+                    <button
+                        onClick={onTachycardiaClick}
+                        className={`relative flex-shrink-0 ml-2 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
+                                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                                : 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30 border border-pink-500/30'
+                            }`}
+                        title="Tachycardia AI"
+                    >
+                        <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 opacity-0 hover:opacity-20 blur-lg transition-opacity" />
+                        <Heart
+                            size={16}
+                            className={`${showTachycardia ? 'text-white' : 'text-pink-400'} ${!showTachycardia ? 'animate-pulse' : ''}`}
+                            fill={showTachycardia ? 'currentColor' : 'none'}
+                        />
+                        <span className="text-sm font-medium hidden sm:inline">Tachycardia</span>
                     </button>
                 </div>
 

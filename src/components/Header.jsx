@@ -9,7 +9,8 @@ const Header = ({
     totalMinutes = 0,
     onImport,
     onClearAll,
-    onSettingsChange
+    onSettingsChange,
+    onImportTasks
 }) => {
     const [showSettings, setShowSettings] = useState(false)
 
@@ -68,6 +69,7 @@ const Header = ({
                 onImport={onImport}
                 onClearAll={onClearAll}
                 onSettingsChange={onSettingsChange}
+                onImportTasks={onImportTasks}
             />
         </>
     )

@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react'
-import { X, Upload, Download, Trash2, Clock, Printer, User, MoreHorizontal, BarChart2, Sun, Moon } from 'lucide-react'
+import { X, Upload, Download, Trash2, Clock, Printer, User, MoreHorizontal, BarChart2, Sun, Moon, FileText } from 'lucide-react'
 import { exportData, importData, getStorageUsage } from '../utils/exportImport'
 import ConfirmDialog from './ConfirmDialog'
 import PrintModal from './PrintModal'
 import PerformanceModal from './PerformanceModal'
+import PlanImporterModal from './PlanImporterModal'
 
 const SettingsModal = ({
     isOpen,
@@ -14,7 +15,8 @@ const SettingsModal = ({
     totalMinutes = 0,
     onImport,
     onClearAll,
-    onSettingsChange
+    onSettingsChange,
+    onImportTasks
 }) => {
     const [importError, setImportError] = useState(null)
     const [showClearConfirm, setShowClearConfirm] = useState(false)
@@ -23,6 +25,7 @@ const SettingsModal = ({
     const [editingName, setEditingName] = useState(false)
     const [nameValue, setNameValue] = useState(settings?.userName || '')
     const [showDataMenu, setShowDataMenu] = useState(false)
+    const [showPlanImporter, setShowPlanImporter] = useState(false)
     const fileInputRef = useRef(null)
     const storage = getStorageUsage()
 
@@ -260,6 +263,15 @@ const SettingsModal = ({
                             Print / Save as PDF
                         </button>
 
+                        {/* Import Study Plan Button */}
+                        <button
+                            onClick={() => setShowPlanImporter(true)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-emerald-500/20"
+                        >
+                            <FileText size={16} />
+                            📥 Import Study Plan
+                        </button>
+
                         {/* Data row: Storage + Export/Import */}
                         <div className="flex items-center gap-3 py-2">
                             <div className="flex-1">
@@ -359,6 +371,13 @@ const SettingsModal = ({
                 tabs={data?.tabs || []}
                 todayMinutes={todayMinutes}
                 totalMinutes={totalMinutes}
+            />
+
+            <PlanImporterModal
+                isOpen={showPlanImporter}
+                onClose={() => setShowPlanImporter(false)}
+                tabs={data?.tabs || []}
+                onImportTasks={onImportTasks}
             />
         </>
     )
