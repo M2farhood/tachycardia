@@ -161,9 +161,16 @@ const TopicList = ({
                                             {topic.name}
                                         </p>
                                     )}
-                                    {topic.category && (
-                                        <p className="text-sm text-white/40 mt-0.5">{topic.category}</p>
-                                    )}
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                        {topic.weight > 0 && (
+                                            <span className="text-xs font-medium text-purple-300 bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/20">
+                                                {topic.weight}%
+                                            </span>
+                                        )}
+                                        {topic.category && (
+                                            <span className="text-sm text-white/40">{topic.category}</span>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Time / Timer Button */}

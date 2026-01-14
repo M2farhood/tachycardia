@@ -107,23 +107,23 @@ export function parsePlan(text) {
     const lines = text.split('\n')
     const seen = new Set() // Avoid duplicates
 
-    // Pattern 1: 📅 Jan 14: Topic Name - 2h
-    const emojiPattern = /📅\s*([A-Za-z]+\s+\d{1,2}):\s*(.+?)(?:\s*[-–]\s*(\d+\.?\d*)\s*h)?$/i
+    // Pattern 1: 📅 Jan 14: Topic Name - 2h [20%]
+    const emojiPattern = /📅\s*([A-Za-z]+\s+\d{1,2}):\s*(.+?)(?:\s*[-–]\s*(\d+\.?\d*)\s*h)?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
 
-    // Pattern 2: Day 1 (Jan 14): Topic - 2 hours
-    const dayPattern = /Day\s*\d+\s*\(([^)]+)\):\s*(.+?)(?:\s*[-–]\s*(.+?))?$/i
+    // Pattern 2: Day 1 (Jan 14): Topic - 2 hours (20%)
+    const dayPattern = /Day\s*\d+\s*\(([^)]+)\):\s*(.+?)(?:\s*[-–]\s*(.+?))?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
 
-    // Pattern 3: - Study Chapter 5 (2h) or • Topic (deadline: Jan 15)
-    const bulletPattern = /^[\-•*]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?(?:\s*\((?:deadline|due):\s*([^)]+)\))?$/i
+    // Pattern 3: - Study Chapter 5 (2h) [20%]
+    const bulletPattern = /^[\-•*]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?(?:\s*\((?:deadline|due):\s*([^)]+)\))?(?:\s*(?:\[|\()Weight:?\s*(\d+)%?(?:\]|\)))?$/i
 
-    // Pattern 4: 1. Topic Name | Due: Jan 15 | 2h
-    const numberedPattern = /^\d+\.\s*(.+?)(?:\s*\|\s*(?:Due|Deadline):\s*([A-Za-z]+\s+\d{1,2}))?(?:\s*\|\s*(\d+\.?\d*)\s*h)?$/i
+    // Pattern 4: 1. Topic Name | Due: Jan 15 | 2h | 20%
+    const numberedPattern = /^\d+\.\s*(.+?)(?:\s*\|\s*(?:Due|Deadline):\s*([A-Za-z]+\s+\d{1,2}))?(?:\s*\|\s*(\d+\.?\d*)\s*h)?(?:\s*\|\s*Weight:?\s*(\d+)%?)?$/i
 
-    // Pattern 5: **Jan 14** - Topic Name (2 hours)
-    const boldDatePattern = /\*\*([A-Za-z]+\s+\d{1,2})\*\*\s*[-–:]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?$/i
+    // Pattern 5: **Jan 14** - Topic Name (2 hours) - 20%
+    const boldDatePattern = /\*\*([A-Za-z]+\s+\d{1,2})\*\*\s*[-–:]\s*(.+?)(?:\s*\((\d+\.?\d*)\s*h(?:ours?)?\))?(?:\s*[-–]\s*(\d+)%)?$/i
 
-    // Pattern 6: Topic Name [Jan 14] - 2h
-    const bracketPattern = /^(.+?)\s*\[([A-Za-z]+\s+\d{1,2})\](?:\s*[-–]\s*(\d+\.?\d*)\s*h)?$/i
+    // Pattern 6: Topic Name [Jan 14] - 2h - 20%
+    const bracketPattern = /^(.+?)\s*\[([A-Za-z]+\s+\d{1,2})\](?:\s*[-–]\s*(\d+\.?\d*)\s*h)?(?:\s*[-–]\s*(\d+)%)?$/i
 
     for (const line of lines) {
         const trimmed = line.trim()
@@ -137,7 +137,8 @@ export function parsePlan(text) {
             task = {
                 name: match[2].trim(),
                 date: parseDate(match[1]),
-                duration: match[3] ? parseFloat(match[3]) : null
+                duration: match[3] ? parseFloat(match[3]) : null,
+                weight: match[4] ? parseFloat(match[4]) : null
             }
         }
 
@@ -145,9 +146,10 @@ export function parsePlan(text) {
             match = trimmed.match(dayPattern)
             if (match) {
                 task = {
-                    name: match[2].replace(/\s*[-–]\s*\d+\.?\d*\s*h.*$/i, '').trim(),
+                    name: match[2].replace(/\s*[-–]\s*\d+\.?\d*\s*h.*$/i, '').replace(/\s*(?:\[|\()Weight:?\s*\d+%?(?:\]|\)).*$/i, '').trim(),
                     date: parseDate(match[1]),
-                    duration: parseDuration(match[3])
+                    duration: parseDuration(match[3]),
+                    weight: match[4] ? parseFloat(match[4]) : null
                 }
             }
         }
@@ -158,7 +160,8 @@ export function parsePlan(text) {
                 task = {
                     name: match[1].trim(),
                     date: match[3] ? parseDate(match[3]) : null,
-                    duration: match[2] ? parseFloat(match[2]) : null
+                    duration: match[2] ? parseFloat(match[2]) : null,
+                    weight: match[4] ? parseFloat(match[4]) : null
                 }
             }
         }
@@ -169,7 +172,8 @@ export function parsePlan(text) {
                 task = {
                     name: match[1].trim(),
                     date: match[2] ? parseDate(match[2]) : null,
-                    duration: match[3] ? parseFloat(match[3]) : null
+                    duration: match[3] ? parseFloat(match[3]) : null,
+                    weight: match[4] ? parseFloat(match[4]) : null
                 }
             }
         }
@@ -180,7 +184,8 @@ export function parsePlan(text) {
                 task = {
                     name: match[2].trim(),
                     date: parseDate(match[1]),
-                    duration: match[3] ? parseFloat(match[3]) : null
+                    duration: match[3] ? parseFloat(match[3]) : null,
+                    weight: match[4] ? parseFloat(match[4]) : null
                 }
             }
         }
@@ -191,7 +196,8 @@ export function parsePlan(text) {
                 task = {
                     name: match[1].trim(),
                     date: parseDate(match[2]),
-                    duration: match[3] ? parseFloat(match[3]) : null
+                    duration: match[3] ? parseFloat(match[3]) : null,
+                    weight: match[4] ? parseFloat(match[4]) : null
                 }
             }
         }
@@ -235,6 +241,7 @@ export function tasksToTopics(tasks) {
             id: `topic-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             name: t.name,
             completed: false,
+            weight: t.weight || null,
             notes: t.duration ? `Estimated: ${t.durationFormatted}` : ''
         }))
 }

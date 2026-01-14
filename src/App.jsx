@@ -261,8 +261,25 @@ function App() {
     )
   }
 
-  const completedCount = currentTab.topics.filter(t => t.completed).length
-  const totalCount = currentTab.topics.length
+  // Calculate progress (Weighted vs Standard)
+  let completedCount = 0
+  let totalCount = 0
+
+  if (currentTab) {
+    const hasWeights = currentTab.topics.some(t => t.weight > 0)
+
+    if (hasWeights) {
+      // Weighted Mode: Calculate based on weights (assuming total is 100%)
+      totalCount = 100
+      completedCount = currentTab.topics.reduce((acc, t) => {
+        return acc + (t.completed ? (t.weight || 0) : 0)
+      }, 0)
+    } else {
+      // Standard Mode: Count of completed topics
+      completedCount = currentTab.topics.filter(t => t.completed).length
+      totalCount = currentTab.topics.length
+    }
+  }
 
   return (
     <div className="min-h-screen pb-safe">

@@ -122,11 +122,37 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
                                 </div>
                             )}
 
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5">
-                                <p className="text-xs text-white/60 mb-2">💡 Pro tip:</p>
+                            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5 space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs text-white/60">💡 <b>Generate Plan with AI</b></p>
+                                    <button
+                                        onClick={() => {
+                                            const prompt = `Create a detailed study plan for [SUBJECT].
+IMPORTANT: If I have provided a blueprint/syllabus below, strictly follow its weighting structure.
+Blueprint: [PASTE BLUEPRINT HERE IF AVAILABLE]
+
+Format specific requirements:
+- Use emojis for dates (📅)
+- Include topic name
+- Include estimated duration
+- (Optional) Include Weight/Value % if known: (Weight: 20%)
+
+Example format:
+📅 Jan 15: Ortho Lecture 1 - 2h (Weight: 5%)
+- Review Anatomy (1h) [Weight: 2%]
+
+Please generate the plan now.`
+                                            navigator.clipboard.writeText(prompt)
+                                            // Brief visual feedback could go here
+                                        }}
+                                        className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-cyan-300 transition-colors"
+                                    >
+                                        Copy Prompt
+                                    </button>
+                                </div>
                                 <p className="text-xs text-white/40">
-                                    Use ChatGPT or Claude to generate a study plan, then paste it here.
-                                    We'll automatically extract dates, topics, and durations!
+                                    Copy this prompt to ChatGPT/Claude to get the perfect format.
+                                    <b> Paste your exam blueprint/syllabus</b> into the prompt so the AI assigns the correct weights!
                                 </p>
                             </div>
                         </div>
@@ -164,13 +190,13 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
                                         key={task.id}
                                         onClick={() => handleToggleTask(task.id)}
                                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${task.selected
-                                                ? 'bg-cyan-500/10 border border-cyan-500/30'
-                                                : 'bg-white/5 border border-white/5 opacity-50'
+                                            ? 'bg-cyan-500/10 border border-cyan-500/30'
+                                            : 'bg-white/5 border border-white/5 opacity-50'
                                             }`}
                                     >
                                         <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center ${task.selected
-                                                ? 'bg-cyan-500 text-white'
-                                                : 'bg-white/10'
+                                            ? 'bg-cyan-500 text-white'
+                                            : 'bg-white/10'
                                             }`}>
                                             {task.selected && <Check size={14} />}
                                         </div>
@@ -182,6 +208,11 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
                                                 )}
                                                 {task.durationFormatted && (
                                                     <span className="text-xs text-white/40">{task.durationFormatted}</span>
+                                                )}
+                                                {task.weight && (
+                                                    <span className="text-xs text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                                                        Weight: {task.weight}%
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
