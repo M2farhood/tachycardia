@@ -260,34 +260,38 @@ async function callMistral(userMessage, studyData) {
 
 /**
  * Main AI function with cascading fallback
- * Order: Primary Gemini → Backup Gemini → Mistral
+ * Order: Mistral (reliable) → Primary Gemini → Backup Gemini
  */
 export async function askTachycardia(userMessage, studyData) {
-    // Try Primary Gemini first
-    try {
-        return await callGemini(userMessage, studyData)
-    } catch (error) {
-        console.warn('Primary Gemini failed:', error.message)
-
-        // Try Backup Gemini key
-        if (GEMINI_API_KEY_BACKUP) {
-            try {
-                return await callGeminiWithKey(userMessage, studyData, GEMINI_API_KEY_BACKUP)
-            } catch (backupError) {
-                console.warn('Backup Gemini failed:', backupError.message)
-            }
-        }
-
-        // Final fallback: Mistral
+    // Try Mistral first (most reliable)
+    if (MISTRAL_API_KEY) {
         try {
             return await callMistral(userMessage, studyData)
-        } catch (mistralError) {
-            console.error('All AI providers failed:', mistralError.message)
-
-            // Return a friendly fallback message
-            return "💓 I'm having a little trouble connecting right now. Give me a moment and try again! In the meantime, remember: progress is progress, no matter how small. Keep going!"
+        } catch (error) {
+            console.warn('Mistral failed:', error.message)
         }
     }
+
+    // Try Primary Gemini
+    if (GEMINI_API_KEY) {
+        try {
+            return await callGemini(userMessage, studyData)
+        } catch (error) {
+            console.warn('Primary Gemini failed:', error.message)
+        }
+    }
+
+    // Try Backup Gemini key
+    if (GEMINI_API_KEY_BACKUP) {
+        try {
+            return await callGeminiWithKey(userMessage, studyData, GEMINI_API_KEY_BACKUP)
+        } catch (backupError) {
+            console.warn('Backup Gemini failed:', backupError.message)
+        }
+    }
+
+    // All failed
+    return "💓 I'm having a little trouble connecting right now. Give me a moment and try again! In the meantime, remember: progress is progress, no matter how small. Keep going!"
 }
 
 /**
