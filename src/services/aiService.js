@@ -4,6 +4,7 @@
  */
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+const GEMINI_API_KEY_BACKUP = import.meta.env.VITE_GEMINI_API_KEY_BACKUP
 const MISTRAL_API_KEY = import.meta.env.VITE_MISTRAL_API_KEY
 
 // Tachycardia's personality prompt
@@ -164,6 +165,58 @@ async function callGemini(userMessage, studyData) {
 }
 
 /**
+ * Call Gemini API with a specific key (for backup)
+ */
+async function callGeminiWithKey(userMessage, studyData, apiKey) {
+    const context = buildContext(studyData)
+    const fullPrompt = SYSTEM_PROMPT + context
+
+    const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                contents: [{
+                    role: 'user',
+                    parts: [{ text: userMessage }]
+                }],
+                systemInstruction: {
+                    parts: [{ text: fullPrompt }]
+                },
+                generationConfig: {
+                    temperature: 0.7,
+                    topK: 40,
+                    topP: 0.95,
+                    maxOutputTokens: 500,
+                },
+                safetySettings: [
+                    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
+                    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' }
+                ]
+            })
+        }
+    )
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error?.message || `Gemini API error: ${response.status}`)
+    }
+
+    const data = await response.json()
+
+    if (!data.candidates?.[0]?.content?.parts?.[0]?.text) {
+        throw new Error('Invalid response from Gemini')
+    }
+
+    return data.candidates[0].content.parts[0].text
+}
+
+/**
  * Call Mistral API (fallback)
  */
 async function callMistral(userMessage, studyData) {
@@ -206,20 +259,30 @@ async function callMistral(userMessage, studyData) {
 }
 
 /**
- * Main AI function with fallback
+ * Main AI function with cascading fallback
+ * Order: Primary Gemini → Backup Gemini → Mistral
  */
 export async function askTachycardia(userMessage, studyData) {
-    // Try Gemini first
+    // Try Primary Gemini first
     try {
         return await callGemini(userMessage, studyData)
     } catch (error) {
-        console.warn('Gemini failed, trying Mistral:', error.message)
+        console.warn('Primary Gemini failed:', error.message)
 
-        // If rate limited or other error, try Mistral
+        // Try Backup Gemini key
+        if (GEMINI_API_KEY_BACKUP) {
+            try {
+                return await callGeminiWithKey(userMessage, studyData, GEMINI_API_KEY_BACKUP)
+            } catch (backupError) {
+                console.warn('Backup Gemini failed:', backupError.message)
+            }
+        }
+
+        // Final fallback: Mistral
         try {
             return await callMistral(userMessage, studyData)
         } catch (mistralError) {
-            console.error('Mistral also failed:', mistralError.message)
+            console.error('All AI providers failed:', mistralError.message)
 
             // Return a friendly fallback message
             return "💓 I'm having a little trouble connecting right now. Give me a moment and try again! In the meantime, remember: progress is progress, no matter how small. Keep going!"
