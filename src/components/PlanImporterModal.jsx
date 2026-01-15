@@ -1,19 +1,45 @@
 import { useState } from 'react'
-import { X, FileText, Check, AlertCircle, Download } from 'lucide-react'
+import { X, FileText, Check, AlertCircle, Download, Loader2, Sparkles } from 'lucide-react'
 import { parsePlan, tasksToTopics } from '../utils/planParser'
+import { parsePlanWithAI, isAIAvailable } from '../services/aiService'
 
 const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
     const [planText, setPlanText] = useState('')
     const [parsedTasks, setParsedTasks] = useState([])
     const [selectedTabId, setSelectedTabId] = useState(tabs?.[0]?.id || '')
     const [isParsed, setIsParsed] = useState(false)
+    const [isParsing, setIsParsing] = useState(false)
     const [error, setError] = useState('')
+    const [parsingMethod, setParsingMethod] = useState('') // 'ai' or 'regex'
 
     if (!isOpen) return null
 
-    const handleParse = () => {
+    const handleParse = async () => {
         setError('')
-        const tasks = parsePlan(planText)
+        setIsParsing(true)
+        setParsingMethod('')
+
+        let tasks = []
+
+        // Try AI parsing first (more flexible and accurate)
+        if (isAIAvailable()) {
+            try {
+                tasks = await parsePlanWithAI(planText)
+                setParsingMethod('ai')
+            } catch (aiError) {
+                console.warn('AI parsing failed, falling back to regex:', aiError.message)
+            }
+        }
+
+        // Fallback to regex parsing if AI failed or unavailable
+        if (tasks.length === 0) {
+            tasks = parsePlan(planText)
+            if (tasks.length > 0) {
+                setParsingMethod('regex')
+            }
+        }
+
+        setIsParsing(false)
 
         if (tasks.length === 0) {
             setError('No tasks found. Try a different format or check the example below.')
@@ -58,6 +84,7 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
         setIsParsed(false)
         setParsedTasks([])
         setError('')
+        setParsingMethod('')
     }
 
     const selectedCount = parsedTasks.filter(t => t.selected).length
@@ -80,8 +107,21 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">Import Study Plan</h2>
-                            <p className="text-xs text-white/50">
-                                {isParsed ? `${parsedTasks.length} tasks found` : 'Paste your AI-generated plan'}
+                            <p className="text-xs text-white/50 flex items-center gap-1.5">
+                                {isParsing ? (
+                                    <><Loader2 size={12} className="animate-spin" /> Analyzing with AI...</>
+                                ) : isParsed ? (
+                                    <>
+                                        {parsedTasks.length} tasks found
+                                        {parsingMethod === 'ai' && (
+                                            <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px]">
+                                                <Sparkles size={10} /> AI
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    'Paste your AI-generated plan'
+                                )}
                             </p>
                         </div>
                     </div>
@@ -242,11 +282,14 @@ Please generate the plan now.`
                             </button>
                             <button
                                 onClick={handleParse}
-                                disabled={!planText.trim()}
+                                disabled={!planText.trim() || isParsing}
                                 className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                <FileText size={18} />
-                                Parse Plan
+                                {isParsing ? (
+                                    <><Loader2 size={18} className="animate-spin" /> Parsing...</>
+                                ) : (
+                                    <><Sparkles size={18} /> Parse with AI</>
+                                )}
                             </button>
                         </>
                     ) : (
