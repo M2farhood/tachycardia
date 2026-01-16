@@ -135,6 +135,68 @@ export const useLocalStorage = (initialValue) => {
         }))
     }, [])
 
+    // Add a subtask to a topic
+    const addSubtask = useCallback((tabId, topicId, newSubtask) => {
+        setData(prev => ({
+            ...prev,
+            tabs: prev.tabs.map(tab =>
+                tab.id === tabId
+                    ? {
+                        ...tab,
+                        topics: tab.topics.map(topic =>
+                            topic.id === topicId
+                                ? { ...topic, subtasks: [...(topic.subtasks || []), newSubtask] }
+                                : topic
+                        )
+                    }
+                    : tab
+            )
+        }))
+    }, [])
+
+    // Update a subtask in a topic
+    const updateSubtask = useCallback((tabId, topicId, subtaskId, updates) => {
+        setData(prev => ({
+            ...prev,
+            tabs: prev.tabs.map(tab =>
+                tab.id === tabId
+                    ? {
+                        ...tab,
+                        topics: tab.topics.map(topic =>
+                            topic.id === topicId
+                                ? {
+                                    ...topic,
+                                    subtasks: (topic.subtasks || []).map(subtask =>
+                                        subtask.id === subtaskId ? { ...subtask, ...updates } : subtask
+                                    )
+                                }
+                                : topic
+                        )
+                    }
+                    : tab
+            )
+        }))
+    }, [])
+
+    // Delete a subtask from a topic
+    const deleteSubtask = useCallback((tabId, topicId, subtaskId) => {
+        setData(prev => ({
+            ...prev,
+            tabs: prev.tabs.map(tab =>
+                tab.id === tabId
+                    ? {
+                        ...tab,
+                        topics: tab.topics.map(topic =>
+                            topic.id === topicId
+                                ? { ...topic, subtasks: (topic.subtasks || []).filter(s => s.id !== subtaskId) }
+                                : topic
+                        )
+                    }
+                    : tab
+            )
+        }))
+    }, [])
+
     // Clear all data
     const clearAllData = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY)
@@ -150,6 +212,9 @@ export const useLocalStorage = (initialValue) => {
         updateTopic,
         addTopic,
         deleteTopic,
+        addSubtask,
+        updateSubtask,
+        deleteSubtask,
         addTab,
         deleteTab,
         reorderTopics,

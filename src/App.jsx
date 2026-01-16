@@ -24,6 +24,9 @@ function App() {
     updateTopic,
     addTopic,
     deleteTopic,
+    addSubtask,
+    updateSubtask,
+    deleteSubtask,
     addTab,
     deleteTab,
     reorderTopics,
@@ -345,6 +348,9 @@ function App() {
             onTopicDelete={deleteTopic}
             onTimerStart={handleTimerStart}
             onReorderTopics={reorderTopics}
+            onSubtaskAdd={addSubtask}
+            onSubtaskUpdate={updateSubtask}
+            onSubtaskDelete={deleteSubtask}
           />
 
           {/* Stats Cards */}
