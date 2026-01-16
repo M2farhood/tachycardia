@@ -169,8 +169,7 @@ const TopicList = ({
                                     {/* Expand/Collapse Chevron */}
                                     <button
                                         onClick={(e) => toggleSubtasksExpand(topic.id, e)}
-                                        className={`p-1 rounded transition-all ${hasSubtasks ? 'hover:bg-white/10 text-white/60' : 'text-white/20 cursor-default'}`}
-                                        disabled={!hasSubtasks}
+                                        className="p-1 rounded transition-all hover:bg-white/10 text-white/60"
                                     >
                                         {isSubtasksExpanded ? (
                                             <ChevronDown size={16} />
@@ -221,8 +220,8 @@ const TopicList = ({
                                         <div className="flex items-center gap-2 mt-0.5">
                                             {subtaskProgress && (
                                                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${subtaskProgress.completed === subtaskProgress.total
-                                                        ? 'text-green-300 bg-green-500/20 border-green-500/20'
-                                                        : 'text-blue-300 bg-blue-500/20 border-blue-500/20'
+                                                    ? 'text-green-300 bg-green-500/20 border-green-500/20'
+                                                    : 'text-blue-300 bg-blue-500/20 border-blue-500/20'
                                                     }`}>
                                                     {subtaskProgress.completed}/{subtaskProgress.total}
                                                 </span>
@@ -277,15 +276,15 @@ const TopicList = ({
                                                 <button
                                                     onClick={() => handleToggleSubtask(topic.id, subtask.id, subtask.completed)}
                                                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${subtask.completed
-                                                            ? 'bg-green-500 border-green-500'
-                                                            : 'border-white/30 hover:border-white/50'
+                                                        ? 'bg-green-500 border-green-500'
+                                                        : 'border-white/30 hover:border-white/50'
                                                         }`}
                                                 >
                                                     {subtask.completed && <Check size={12} className="text-white" />}
                                                 </button>
                                                 <span className={`flex-1 text-sm ${subtask.completed
-                                                        ? 'text-white/40 line-through'
-                                                        : 'text-white/80'
+                                                    ? 'text-white/40 line-through'
+                                                    : 'text-white/80'
                                                     }`}>
                                                     {subtask.name}
                                                 </span>
