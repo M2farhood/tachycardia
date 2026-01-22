@@ -271,8 +271,8 @@ const TopicList = ({
                                                         startWeightEdit(topic)
                                                     }}
                                                     className={`text-xs font-medium px-1.5 py-0.5 rounded border transition-all flex items-center gap-1 ${topic.weight > 0
-                                                            ? 'text-purple-300 bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/30'
-                                                            : 'text-white/30 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white/50 opacity-0 group-hover:opacity-100'
+                                                        ? 'text-purple-300 bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/30'
+                                                        : 'text-white/40 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white/60'
                                                         }`}
                                                     title="Set weight percentage"
                                                 >
