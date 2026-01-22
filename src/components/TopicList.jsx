@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown } from 'lucide-react'
+import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent } from 'lucide-react'
 import { generateId } from '../utils/templates'
 
 const TopicList = ({
@@ -23,6 +23,8 @@ const TopicList = ({
     const [draggedIndex, setDraggedIndex] = useState(null)
     const [dragOverIndex, setDragOverIndex] = useState(null)
     const [newSubtaskName, setNewSubtaskName] = useState({})
+    const [editingWeightId, setEditingWeightId] = useState(null)
+    const [weightValue, setWeightValue] = useState('')
     const dragNode = useRef(null)
 
     const handleAddTopic = () => {
@@ -86,6 +88,19 @@ const TopicList = ({
 
     const handleDeleteSubtask = (topicId, subtaskId) => {
         onSubtaskDelete(tab.id, topicId, subtaskId)
+    }
+
+    // Weight editing handlers
+    const startWeightEdit = (topic) => {
+        setEditingWeightId(topic.id)
+        setWeightValue(topic.weight?.toString() || '')
+    }
+
+    const saveWeight = (topicId) => {
+        const weight = parseFloat(weightValue) || 0
+        onTopicUpdate(tab.id, topicId, { weight: weight > 0 ? weight : null })
+        setEditingWeightId(null)
+        setWeightValue('')
     }
 
     // Drag and drop handlers
@@ -226,10 +241,49 @@ const TopicList = ({
                                                     {subtaskProgress.completed}/{subtaskProgress.total}
                                                 </span>
                                             )}
-                                            {topic.weight > 0 && (
-                                                <span className="text-xs font-medium text-purple-300 bg-purple-500/20 px-1.5 py-0.5 rounded border border-purple-500/20">
-                                                    {topic.weight}%
-                                                </span>
+                                            {/* Weight Badge/Button */}
+                                            {editingWeightId === topic.id ? (
+                                                <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="number"
+                                                        value={weightValue}
+                                                        onChange={(e) => setWeightValue(e.target.value)}
+                                                        onBlur={() => saveWeight(topic.id)}
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') saveWeight(topic.id)
+                                                            if (e.key === 'Escape') {
+                                                                setEditingWeightId(null)
+                                                                setWeightValue('')
+                                                            }
+                                                        }}
+                                                        placeholder="0"
+                                                        min="0"
+                                                        max="100"
+                                                        className="w-14 px-1.5 py-0.5 text-xs bg-purple-500/20 border border-purple-500/50 rounded text-purple-200 focus:outline-none focus:border-purple-400"
+                                                        autoFocus
+                                                    />
+                                                    <span className="text-xs text-purple-300">%</span>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        startWeightEdit(topic)
+                                                    }}
+                                                    className={`text-xs font-medium px-1.5 py-0.5 rounded border transition-all flex items-center gap-1 ${topic.weight > 0
+                                                            ? 'text-purple-300 bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/30'
+                                                            : 'text-white/30 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white/50 opacity-0 group-hover:opacity-100'
+                                                        }`}
+                                                    title="Set weight percentage"
+                                                >
+                                                    {topic.weight > 0 ? (
+                                                        <>{topic.weight}%</>
+                                                    ) : (
+                                                        <>
+                                                            <Percent size={10} />
+                                                        </>
+                                                    )}
+                                                </button>
                                             )}
                                             {topic.category && (
                                                 <span className="text-sm text-white/40">{topic.category}</span>
