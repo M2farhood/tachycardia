@@ -130,8 +130,8 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     <button
                         onClick={onTachycardiaClick}
                         className={`relative flex-shrink-0 ml-2 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
-                                ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
-                                : 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30 border border-pink-500/30'
+                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                            : 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30 border border-pink-500/30'
                             }`}
                         title="Tachycardia AI"
                     >
@@ -145,9 +145,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     </button>
                 </div>
 
-                <p className="text-xs text-white/20 mt-2 text-center">
-                    Double-click to rename • Click ⋮ for options
-                </p>
+
             </div>
 
             {/* Portal Menu */}

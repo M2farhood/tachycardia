@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useTimer } from './hooks/useTimer'
+import { useAuth } from './hooks/useAuth'
 import Header from './components/Header'
 import SegmentControl from './components/SegmentControl'
 import HeroSection from './components/HeroSection'
@@ -34,6 +35,17 @@ function App() {
     updateTimerSession,
     clearAllData
   } = useLocalStorage(null)
+
+  // Auth hook - handles Google sign-in and cloud sync
+  const {
+    user,
+    isLoading: isAuthLoading,
+    isSyncing,
+    syncStatus,
+    signIn,
+    signOut,
+    isFirebaseConfigured
+  } = useAuth(data, updateData)
 
   const [activeTabId, setActiveTabId] = useState(null)
   const [todayMinutes, setTodayMinutes] = useState(0)
@@ -296,6 +308,14 @@ function App() {
         onClearAll={handleClearAll}
         onSettingsChange={updateSettings}
         onImportTasks={handleImportTasks}
+        // Auth props
+        user={user}
+        isAuthLoading={isAuthLoading}
+        isSyncing={isSyncing}
+        syncStatus={syncStatus}
+        onSignIn={signIn}
+        onSignOut={signOut}
+        isFirebaseConfigured={isFirebaseConfigured}
       />
 
       {/* Segment Control */}

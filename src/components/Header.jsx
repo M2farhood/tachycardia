@@ -10,7 +10,15 @@ const Header = ({
     onImport,
     onClearAll,
     onSettingsChange,
-    onImportTasks
+    onImportTasks,
+    // Auth props
+    user = null,
+    isAuthLoading = false,
+    isSyncing = false,
+    syncStatus = 'idle',
+    onSignIn = () => { },
+    onSignOut = () => { },
+    isFirebaseConfigured = false
 }) => {
     const [showSettings, setShowSettings] = useState(false)
 
@@ -70,6 +78,14 @@ const Header = ({
                 onClearAll={onClearAll}
                 onSettingsChange={onSettingsChange}
                 onImportTasks={onImportTasks}
+                // Auth props
+                user={user}
+                isAuthLoading={isAuthLoading}
+                isSyncing={isSyncing}
+                syncStatus={syncStatus}
+                onSignIn={onSignIn}
+                onSignOut={onSignOut}
+                isFirebaseConfigured={isFirebaseConfigured}
             />
         </>
     )
