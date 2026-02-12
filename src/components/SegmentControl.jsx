@@ -1,4 +1,4 @@
-import { Plus, MoreVertical, Trash2, Edit2, Heart } from 'lucide-react'
+import { Plus, MoreVertical, Trash2, Edit2, Heart, CalendarDays } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createEmptyTab } from '../utils/templates'
@@ -17,7 +17,7 @@ const getEmojiForTab = (title) => {
     return '📚'
 }
 
-const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate, onTachycardiaClick, showTachycardia }) => {
+const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate, onTachycardiaClick, showTachycardia, onCalendarClick, showCalendar }) => {
     const [menuTabId, setMenuTabId] = useState(null)
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
     const [deleteConfirm, setDeleteConfirm] = useState(null)
@@ -126,10 +126,23 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                         <Plus size={16} />
                     </button>
 
+                    {/* Calendar Button */}
+                    <button
+                        onClick={onCalendarClick}
+                        className={`relative flex-shrink-0 ml-2 px-3 py-2 rounded-xl flex items-center gap-2 transition-all ${showCalendar
+                            ? 'bg-[var(--color-accent)] text-white'
+                            : 'bg-white/5 text-[var(--color-text-secondary)] hover:bg-white/10 border border-white/10'
+                            }`}
+                        title="Calendar"
+                    >
+                        <CalendarDays size={16} />
+                        <span className="text-sm font-medium hidden sm:inline">Calendar</span>
+                    </button>
+
                     {/* Tachycardia AI Button */}
                     <button
                         onClick={onTachycardiaClick}
-                        className={`relative flex-shrink-0 ml-2 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
+                        className={`relative flex-shrink-0 ml-1 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
                             ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
                             : 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30 border border-pink-500/30'
                             }`}

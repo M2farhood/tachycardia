@@ -12,6 +12,7 @@ import NotesSection from './components/NotesSection'
 import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
 import TachycardiaTab from './components/TachycardiaTab'
+import CalendarPage from './components/CalendarPage'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -51,6 +52,7 @@ function App() {
   const [todayMinutes, setTodayMinutes] = useState(0)
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [showTachycardia, setShowTachycardia] = useState(false)
+  const [showCalendar, setShowCalendar] = useState(false)
 
   // Load study time from localStorage
   useEffect(() => {
@@ -326,12 +328,15 @@ function App() {
         onTabAdd={addTab}
         onTabDelete={handleTabDelete}
         onTabUpdate={updateTab}
-        onTachycardiaClick={() => setShowTachycardia(!showTachycardia)}
+        onTachycardiaClick={() => { setShowTachycardia(!showTachycardia); setShowCalendar(false); }}
         showTachycardia={showTachycardia}
+        onCalendarClick={() => { setShowCalendar(!showCalendar); setShowTachycardia(false); }}
+        showCalendar={showCalendar}
       />
 
-      {/* Tachycardia AI Tab or Regular Content */}
-      {showTachycardia ? (
+      {showCalendar ? (
+        <CalendarPage />
+      ) : showTachycardia ? (
         <TachycardiaTab
           studyData={data}
           onBack={() => setShowTachycardia(false)}
