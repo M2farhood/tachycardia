@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Circle, Clock } from 'lucide-react'
 import { useCalendarStorage } from '../hooks/useCalendarStorage'
 import CalendarDayColumn from './CalendarDayColumn'
 
@@ -63,33 +63,60 @@ const CalendarPage = ({ isFocusMode = false }) => {
     }, [weekStart, todayKey])
 
     if (isFocusMode) {
+        const todaysTasks = tasks[todayKey] || []
+
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in max-w-xl mx-auto w-full">
-                <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                    Today's Agenda
+            <div className="flex flex-col items-center min-h-[60vh] animate-fade-in max-w-2xl mx-auto w-full pt-12">
+                <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse box-shadow-glow"></span>
+                    Today's Timeline
                 </h2>
 
-                <div className="w-full glass-panel rounded-2xl p-6">
-                    <CalendarDayColumn
-                        dateKey={todayKey}
-                        dayLabel={today.toLocaleDateString('en-US', { weekday: 'short' })}
-                        fullDayLabel="Today"
-                        dateNum={today.getDate()}
-                        month={MONTH_NAMES[today.getMonth()]}
-                        isToday={true}
-                        tasks={tasks[todayKey]}
-                        onAddTask={addTask}
-                        onToggleTask={toggleTask}
-                        onEditTask={editTask}
-                        onDeleteTask={deleteTask}
-                        onClearDay={clearDay}
-                    />
-                </div>
+                <div className="w-full relative pl-8 border-l-2 border-white/10 ml-4 space-y-12 pb-20">
+                    {todaysTasks.length === 0 ? (
+                        <div className="text-white/40 italic pl-4">No tasks scheduled for today. Enjoy your freedom!</div>
+                    ) : (
+                        todaysTasks.map((task, idx) => (
+                            <div key={task.id} className="relative group">
+                                {/* Timeline Dot */}
+                                <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-[#0a0c10] ${task.completed ? 'bg-green-500' : 'bg-blue-500'} transition-colors`}></div>
 
-                <p className="text-white/40 text-sm mt-6 text-center max-w-md">
-                    "Focus on being productive instead of busy."
-                </p>
+                                <div className={`p-6 rounded-2xl border transition-all ${task.completed
+                                        ? 'bg-white/5 border-transparent opacity-50'
+                                        : 'bg-white/10 border-white/10 hover:border-blue-500/50 hover:bg-white/15'
+                                    }`}>
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h3 className={`text-xl font-medium mb-2 ${task.completed ? 'line-through text-white/50' : 'text-white'}`}>
+                                                {task.text}
+                                            </h3>
+                                            <div className="flex items-center gap-4 text-sm text-white/40">
+                                                {task.time && (
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Clock size={14} /> {task.time}
+                                                    </span>
+                                                )}
+                                                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
+                                                    {task.category || 'General'}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <button
+                                            onClick={() => toggleTask(todayKey, task.id)}
+                                            className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${task.completed
+                                                    ? 'bg-green-500 border-green-500 text-black'
+                                                    : 'border-white/30 hover:border-white text-transparent'
+                                                }`}
+                                        >
+                                            <Circle size={16} fill="currentColor" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
             </div>
         )
     }
