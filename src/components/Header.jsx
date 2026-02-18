@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings } from 'lucide-react'
+import { Settings, Brain } from 'lucide-react'
 import SettingsModal from './SettingsModal'
 
 const Header = ({
