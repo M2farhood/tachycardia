@@ -340,17 +340,22 @@ function App() {
 
       {isFocusMode && currentTab && (
         <FocusMode
-          activeTask={currentTab.topics.find(t => !t.completed)}
+          activeTask={currentTab.topics.find(t => !t.completed)} // Initial active task
+          allTasks={currentTab.topics.filter(t => !t.completed)} // All incomplete tasks for carousel
           onComplete={(taskId) => {
             updateTopic(currentTab.id, taskId, { completed: true })
           }}
           onExit={() => setIsFocusMode(false)}
-          onSkip={(taskId) => {
-            // Move to end of list or just skip to next locally
-            // For now, let's just reorder it to the bottom
-            const topic = currentTab.topics.find(t => t.id === taskId)
-            const otherTopics = currentTab.topics.filter(t => t.id !== taskId)
-            reorderTopics(currentTab.id, [...otherTopics, topic])
+          onStartTimer={(taskId) => handleTimerStart(currentTab.id, taskId)}
+          onAddSubtasks={(taskId, newSubtasks) => {
+            // Add each subtask
+            newSubtasks.forEach(subName => {
+              addSubtask(currentTab.id, taskId, {
+                id: Date.now() + Math.random(), // Simple ID generation
+                name: subName,
+                completed: false
+              })
+            })
           }}
           studyData={data}
         />

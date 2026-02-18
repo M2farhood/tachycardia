@@ -383,6 +383,61 @@ export function parseTaskActions(response) {
     return { tasks, cleanMessage }
 }
 
+const SUBTASK_GENERATION_PROMPT = `You are a helpful study assistant. Breakdown the following task into 3-5 distinct, actionable micro-steps.
+Return ONLY a raw JSON array of strings. No markdown formatting.
+Example: ["Open the textbook", "Read the introduction", "Summarize key points"]`
+
+/**
+ * Generate subtasks for a given task
+ */
+export async function generateSubtasks(taskName, studyData) {
+    if (!OPENROUTER_API_KEY && !GEMINI_API_KEY) {
+        // Fallback for no keys
+        return [
+            "Break this into smaller steps yourself",
+            "Set a timer for 5 minutes",
+            "Just start the first sentence"
+        ]
+    }
+
+    try {
+        let responseText = ''
+
+        if (OPENROUTER_API_KEY) {
+            responseText = await callOpenRouter(
+                `Task: "${taskName}". Break this down.`,
+                studyData,
+                SUBTASK_GENERATION_PROMPT
+            )
+        } else {
+            responseText = await callGemini(
+                `${SUBTASK_GENERATION_PROMPT}\n\nTask: "${taskName}"`,
+                studyData
+            )
+        }
+
+        // Clean up markdown if present
+        let cleanText = responseText.trim()
+        if (cleanText.startsWith('```json')) {
+            cleanText = cleanText.slice(7)
+        } else if (cleanText.startsWith('```')) {
+            cleanText = cleanText.slice(3)
+        }
+
+        if (cleanText.endsWith('```')) {
+            cleanText = cleanText.slice(0, -3)
+        }
+
+        const subtasks = JSON.parse(cleanText.trim())
+        if (Array.isArray(subtasks)) return subtasks
+
+        return ["Start with a small step"] // Fallback
+    } catch (e) {
+        console.error("AI Subtask Generation Failed:", e)
+        return ["Just take a deep breath", "Start with one small thing"]
+    }
+}
+
 // Prompt for AI-powered plan parsing
 const PLAN_PARSING_PROMPT = `You are a study plan parser. Your job is to extract study tasks from freeform text and return structured JSON.
 
@@ -515,4 +570,3 @@ function formatDateShort(dateStr) {
         return null
     }
 }
-
