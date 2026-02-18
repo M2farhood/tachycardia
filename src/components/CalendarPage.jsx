@@ -28,7 +28,7 @@ const formatWeekRange = (start) => {
     return `${MONTH_NAMES[start.getMonth()]} ${start.getDate()} – ${MONTH_NAMES[end.getMonth()]} ${end.getDate()}`
 }
 
-const CalendarPage = () => {
+const CalendarPage = ({ isFocusMode = false }) => {
     const { tasks, addTask, toggleTask, deleteTask, editTask, clearDay } = useCalendarStorage()
     const [weekOffset, setWeekOffset] = useState(0)
 
@@ -61,6 +61,38 @@ const CalendarPage = () => {
             }
         })
     }, [weekStart, todayKey])
+
+    if (isFocusMode) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in max-w-xl mx-auto w-full">
+                <h2 className="text-2xl font-bold text-white mb-8 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                    Today's Agenda
+                </h2>
+
+                <div className="w-full glass-panel rounded-2xl p-6">
+                    <CalendarDayColumn
+                        dateKey={todayKey}
+                        dayLabel={today.toLocaleDateString('en-US', { weekday: 'short' })}
+                        fullDayLabel="Today"
+                        dateNum={today.getDate()}
+                        month={MONTH_NAMES[today.getMonth()]}
+                        isToday={true}
+                        tasks={tasks[todayKey]}
+                        onAddTask={addTask}
+                        onToggleTask={toggleTask}
+                        onEditTask={editTask}
+                        onDeleteTask={deleteTask}
+                        onClearDay={clearDay}
+                    />
+                </div>
+
+                <p className="text-white/40 text-sm mt-6 text-center max-w-md">
+                    "Focus on being productive instead of busy."
+                </p>
+            </div>
+        )
+    }
 
     return (
         <div className="calendar-page">

@@ -18,7 +18,9 @@ const Header = ({
     syncStatus = 'idle',
     onSignIn = () => { },
     onSignOut = () => { },
-    isFirebaseConfigured = false
+    isFirebaseConfigured = false,
+    isFocusMode = false,
+    onToggleFocus = () => { }
 }) => {
     const [showSettings, setShowSettings] = useState(false)
 
@@ -49,6 +51,18 @@ const Header = ({
 
                     {/* Right side - Avatar & Settings */}
                     <div className="flex items-center gap-3">
+                        {/* Focus Mode Toggle */}
+                        <button
+                            onClick={onToggleFocus}
+                            className={`p-2.5 rounded-full liquid-press touch-target transition-all ${isFocusMode
+                                ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                                : 'glass-panel-subtle text-white/60 hover:text-white'
+                                }`}
+                            title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+                        >
+                            <Brain size={18} />
+                        </button>
+
                         <button
                             onClick={() => setShowSettings(true)}
                             className="p-2.5 rounded-full glass-panel-subtle liquid-press touch-target"

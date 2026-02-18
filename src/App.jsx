@@ -13,6 +13,7 @@ import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
 import TachycardiaTab from './components/TachycardiaTab'
 import CalendarPage from './components/CalendarPage'
+import FocusMode from './components/FocusMode'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -53,6 +54,7 @@ function App() {
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [showTachycardia, setShowTachycardia] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [isFocusMode, setIsFocusMode] = useState(false)
 
   // Load study time from localStorage
   useEffect(() => {
@@ -318,6 +320,8 @@ function App() {
         onSignIn={signIn}
         onSignOut={signOut}
         isFirebaseConfigured={isFirebaseConfigured}
+        isFocusMode={isFocusMode}
+        onToggleFocus={() => setIsFocusMode(!isFocusMode)}
       />
 
       {/* Segment Control */}
@@ -334,8 +338,26 @@ function App() {
         showCalendar={showCalendar}
       />
 
+      {isFocusMode && currentTab && (
+        <FocusMode
+          activeTask={currentTab.topics.find(t => !t.completed)}
+          onComplete={(taskId) => {
+            updateTopic(currentTab.id, taskId, { completed: true })
+          }}
+          onExit={() => setIsFocusMode(false)}
+          onSkip={(taskId) => {
+            // Move to end of list or just skip to next locally
+            // For now, let's just reorder it to the bottom
+            const topic = currentTab.topics.find(t => t.id === taskId)
+            const otherTopics = currentTab.topics.filter(t => t.id !== taskId)
+            reorderTopics(currentTab.id, [...otherTopics, topic])
+          }}
+          studyData={data}
+        />
+      )}
+
       {showCalendar ? (
-        <CalendarPage />
+        <CalendarPage isFocusMode={isFocusMode} />
       ) : showTachycardia ? (
         <TachycardiaTab
           studyData={data}
