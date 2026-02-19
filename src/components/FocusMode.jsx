@@ -112,8 +112,11 @@ const FocusMode = ({
         }
     }
 
+    const [aiError, setAiError] = useState(null)
+
     const handleImStuck = async () => {
         setShowStuckMenu(true)
+        setAiError(null)
         if (suggestedSubtasks.length > 0) return // Don't regenerate if already have valid suggestions
 
         setIsLoadingAi(true)
@@ -121,7 +124,9 @@ const FocusMode = ({
             const subtasks = await generateSubtasks(currentTask.name, studyData)
             setSuggestedSubtasks(subtasks)
         } catch (error) {
-            setSuggestedSubtasks(["Just start anywhere.", "Open your notes."])
+            console.error(error)
+            setAiError(error.message || "Failed to generate advice")
+            setSuggestedSubtasks([])
         } finally {
             setIsLoadingAi(false)
         }
@@ -137,44 +142,13 @@ const FocusMode = ({
         }
     }
 
-    const handleComplete = () => {
-        setIsCompleted(true)
-        setTimeout(() => {
-            onComplete(currentTask.id)
-            setIsCompleted(false)
-            // Move to next task if available
-            if (currentTaskIndex < allTasks.length - 1) {
-                setCurrentTaskIndex(prev => prev + 1)
-            } else if (allTasks.length > 1) {
-                setCurrentTaskIndex(0) // Loop back or handle empty
-            } else {
-                onExit() // Exit if last task
-            }
-            setShowStuckMenu(false)
-        }, 1500)
-    }
+    // ... handleComplete ...
 
-    if (!currentTask) {
-        return (
-            <div className="fixed inset-0 z-50 bg-[#0f1115] flex flex-col items-center justify-center text-white p-6">
-                <div className="text-center max-w-md">
-                    <Brain size={64} className="mx-auto text-blue-400 mb-6 opacity-50" />
-                    <h2 className="text-3xl font-bold mb-4">All Caught Up!</h2>
-                    <p className="text-white/60 mb-8">No specific tasks found. You're free to explore!</p>
-                    <button
-                        onClick={onExit}
-                        className="px-8 py-3 bg-white/10 hover:bg-white/20 rounded-full font-medium transition-all"
-                    >
-                        Exit Focus Mode
-                    </button>
-                </div>
-            </div>
-        )
-    }
+    // ... if (!currentTask) ...
 
     return (
         <div className={`fixed inset-0 z-50 bg-[#0a0c10] text-white flex flex-col transition-all duration-1000 ${isCompleted ? 'scale-110 opacity-0' : 'opacity-100'}`}>
-            {/* Ambient Background */}
+            {/* ... Ambient Background & Header ... */}
             <div className="absolute inset-0 bg-gradient-radial from-blue-900/20 to-transparent opacity-50 animate-pulse-slow pointer-events-none"></div>
 
             {/* Header */}
@@ -268,6 +242,16 @@ const FocusMode = ({
                                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></div>
                                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></div>
                                 Thinking...
+                            </div>
+                        ) : aiError ? (
+                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
+                                <p className="text-red-300 mb-4">{aiError}</p>
+                                <button
+                                    onClick={handleImStuck}
+                                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg text-sm transition-colors"
+                                >
+                                    Try Again
+                                </button>
                             </div>
                         ) : (
                             <div className="space-y-6">

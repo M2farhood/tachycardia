@@ -118,7 +118,7 @@ async function callGemini(userMessage, studyData) {
     const fullPrompt = SYSTEM_PROMPT + context
 
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
             method: 'POST',
             headers: {
@@ -357,47 +357,30 @@ export async function askTachycardia(userMessage, studyData) {
  * Check if AI is available
  */
 export function isAIAvailable() {
-    return !!(OPENROUTER_API_KEY || GEMINI_API_KEY || MISTRAL_API_KEY)
+    return !!(OPENROUTER_API_KEY || GEMINI_API_KEY || MISTRAL_API_KEY || GEMINI_API_KEY_BACKUP)
 }
 
 /**
- * Parse task actions from AI response
- * Returns { tasks: [{tabId, name, category}], cleanMessage: string }
+ * Get AI configuration status
+ * Returns object with status and missing keys info
  */
-export function parseTaskActions(response) {
-    const taskPattern = /\[ADD_TASK:([^:]+):([^:]+):([^\]]+)\]/g
-    const tasks = []
-    let match
-
-    while ((match = taskPattern.exec(response)) !== null) {
-        tasks.push({
-            tabId: match[1].trim(),
-            name: match[2].trim(),
-            category: match[3].trim()
-        })
+export function checkAIConfiguration() {
+    const keys = {
+        OpenRouter: !!OPENROUTER_API_KEY,
+        Gemini: !!GEMINI_API_KEY,
+        Mistral: !!MISTRAL_API_KEY,
+        Backup: !!GEMINI_API_KEY_BACKUP
     }
-
-    // Remove task tags from the message
-    const cleanMessage = response.replace(taskPattern, '').trim()
-
-    return { tasks, cleanMessage }
+    const hasKeys = Object.values(keys).some(k => k)
+    return { isConfigured: hasKeys, keys }
 }
-
-const SUBTASK_GENERATION_PROMPT = `You are a helpful study assistant. Breakdown the following task into 3-5 distinct, actionable micro-steps.
-Return ONLY a raw JSON array of strings. No markdown formatting.
-Example: ["Open the textbook", "Read the introduction", "Summarize key points"]`
 
 /**
  * Generate subtasks for a given task
  */
 export async function generateSubtasks(taskName, studyData) {
-    if (!OPENROUTER_API_KEY && !GEMINI_API_KEY) {
-        // Fallback for no keys
-        return [
-            "Break this into smaller steps yourself",
-            "Set a timer for 5 minutes",
-            "Just start the first sentence"
-        ]
+    if (!isAIAvailable()) {
+        throw new Error("AI is not configured. Please add an API key (Gemini, OpenRouter, or Mistral) to your .env file.")
     }
 
     try {
@@ -409,8 +392,23 @@ export async function generateSubtasks(taskName, studyData) {
                 studyData,
                 SUBTASK_GENERATION_PROMPT
             )
+        } else if (GEMINI_API_KEY || GEMINI_API_KEY_BACKUP) {
+            const keyToUse = GEMINI_API_KEY || GEMINI_API_KEY_BACKUP
+            if (GEMINI_API_KEY) {
+                responseText = await callGemini(
+                    `${SUBTASK_GENERATION_PROMPT}\n\nTask: "${taskName}"`,
+                    studyData
+                )
+            } else {
+                responseText = await callGeminiWithKey(
+                    `${SUBTASK_GENERATION_PROMPT}\n\nTask: "${taskName}"`,
+                    studyData,
+                    keyToUse
+                )
+            }
         } else {
-            responseText = await callGemini(
+            // Fallback to Mistral if available
+            responseText = await callMistral(
                 `${SUBTASK_GENERATION_PROMPT}\n\nTask: "${taskName}"`,
                 studyData
             )
@@ -434,7 +432,7 @@ export async function generateSubtasks(taskName, studyData) {
         return ["Start with a small step"] // Fallback
     } catch (e) {
         console.error("AI Subtask Generation Failed:", e)
-        return ["Just take a deep breath", "Start with one small thing"]
+        throw e // Re-throw to let component handle it
     }
 }
 

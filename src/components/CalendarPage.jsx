@@ -29,7 +29,19 @@ const formatWeekRange = (start) => {
 }
 
 const CalendarPage = ({ isFocusMode = false }) => {
-    const { tasks, addTask, toggleTask, deleteTask, editTask, clearDay } = useCalendarStorage()
+    const {
+        tasks,
+        addTask,
+        toggleTask,
+        deleteTask,
+        editTask,
+        clearDay,
+        addSubtask,
+        toggleSubtask,
+        deleteSubtask
+    } = useCalendarStorage()
+
+    // ... existing date logic ...
     const [weekOffset, setWeekOffset] = useState(0)
 
     const today = useMemo(() => {
@@ -63,6 +75,7 @@ const CalendarPage = ({ isFocusMode = false }) => {
     }, [weekStart, todayKey])
 
     if (isFocusMode) {
+        // ... existing Focus Mode logic (unchanged for now) ...
         const todaysTasks = tasks[todayKey] || []
 
         return (
@@ -82,8 +95,8 @@ const CalendarPage = ({ isFocusMode = false }) => {
                                 <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-[#0a0c10] ${task.completed ? 'bg-green-500' : 'bg-blue-500'} transition-colors`}></div>
 
                                 <div className={`p-6 rounded-2xl border transition-all ${task.completed
-                                        ? 'bg-white/5 border-transparent opacity-50'
-                                        : 'bg-white/10 border-white/10 hover:border-blue-500/50 hover:bg-white/15'
+                                    ? 'bg-white/5 border-transparent opacity-50'
+                                    : 'bg-white/10 border-white/10 hover:border-blue-500/50 hover:bg-white/15'
                                     }`}>
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
@@ -105,8 +118,8 @@ const CalendarPage = ({ isFocusMode = false }) => {
                                         <button
                                             onClick={() => toggleTask(todayKey, task.id)}
                                             className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${task.completed
-                                                    ? 'bg-green-500 border-green-500 text-black'
-                                                    : 'border-white/30 hover:border-white text-transparent'
+                                                ? 'bg-green-500 border-green-500 text-black'
+                                                : 'border-white/30 hover:border-white text-transparent'
                                                 }`}
                                         >
                                             <Circle size={16} fill="currentColor" />
@@ -122,25 +135,25 @@ const CalendarPage = ({ isFocusMode = false }) => {
     }
 
     return (
-        <div className="calendar-page">
+        <div className="flex flex-col h-[calc(100vh-180px)] overflow-hidden">
             {/* Sticky week header */}
-            <div className="calendar-header">
+            <div className="flex items-center justify-between px-6 py-4">
                 <button
                     onClick={() => setWeekOffset(prev => prev - 1)}
-                    className="calendar-nav-btn"
+                    className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
                     title="Previous week"
                 >
-                    <ChevronLeft size={20} />
+                    <ChevronLeft size={24} />
                 </button>
 
                 <div className="text-center">
-                    <h2 className="text-lg font-semibold text-[var(--color-text-primary)] tracking-tight">
+                    <h2 className="text-2xl font-bold text-white tracking-tight">
                         {formatWeekRange(weekStart)}
                     </h2>
                     {weekOffset !== 0 && (
                         <button
                             onClick={() => setWeekOffset(0)}
-                            className="text-[11px] text-[var(--color-accent)] hover:underline mt-0.5"
+                            className="text-sm text-blue-400 hover:text-blue-300 hover:underline mt-1"
                         >
                             Back to this week
                         </button>
@@ -149,32 +162,37 @@ const CalendarPage = ({ isFocusMode = false }) => {
 
                 <button
                     onClick={() => setWeekOffset(prev => prev + 1)}
-                    className="calendar-nav-btn"
+                    className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
                     title="Next week"
                 >
-                    <ChevronRight size={20} />
+                    <ChevronRight size={24} />
                 </button>
             </div>
 
-            {/* Full-page vertical day list */}
-            <div className="calendar-vertical-list">
-                {weekDays.map(day => (
-                    <CalendarDayColumn
-                        key={day.dateKey}
-                        dateKey={day.dateKey}
-                        dayLabel={day.dayLabel}
-                        fullDayLabel={day.fullDayLabel}
-                        dateNum={day.dateNum}
-                        month={day.month}
-                        isToday={day.isToday}
-                        tasks={tasks[day.dateKey]}
-                        onAddTask={addTask}
-                        onToggleTask={toggleTask}
-                        onEditTask={editTask}
-                        onDeleteTask={deleteTask}
-                        onClearDay={clearDay}
-                    />
-                ))}
+            {/* Horizontal Scroll Area */}
+            <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 pb-6 custom-scrollbar">
+                <div className="flex h-full gap-4 min-w-max">
+                    {weekDays.map(day => (
+                        <CalendarDayColumn
+                            key={day.dateKey}
+                            dateKey={day.dateKey}
+                            dayLabel={day.dayLabel}
+                            fullDayLabel={day.fullDayLabel}
+                            dateNum={day.dateNum}
+                            month={day.month}
+                            isToday={day.isToday}
+                            tasks={tasks[day.dateKey]}
+                            onAddTask={addTask}
+                            onToggleTask={toggleTask}
+                            onEditTask={editTask}
+                            onDeleteTask={deleteTask}
+                            onClearDay={clearDay}
+                            onAddSubtask={addSubtask}
+                            onToggleSubtask={toggleSubtask}
+                            onDeleteSubtask={deleteSubtask}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     )

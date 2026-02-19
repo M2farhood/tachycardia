@@ -1,8 +1,24 @@
 import { useState, useRef, useEffect } from 'react'
 import { MoreVertical, Plus, Trash2 } from 'lucide-react'
-import CalendarTaskItem from './CalendarTaskItem'
+import CalendarTaskCard from './CalendarTaskCard'
 
-const CalendarDayColumn = ({ dateKey, dayLabel, fullDayLabel, dateNum, month, isToday, tasks, onAddTask, onToggleTask, onEditTask, onDeleteTask, onClearDay }) => {
+const CalendarDayColumn = ({
+    dateKey,
+    dayLabel,
+    fullDayLabel,
+    dateNum,
+    month,
+    isToday,
+    tasks,
+    onAddTask,
+    onToggleTask,
+    onEditTask,
+    onDeleteTask,
+    onClearDay,
+    onAddSubtask,
+    onToggleSubtask,
+    onDeleteSubtask
+}) => {
     const [menuOpen, setMenuOpen] = useState(false)
     const [adding, setAdding] = useState(false)
     const [newText, setNewText] = useState('')
@@ -39,40 +55,82 @@ const CalendarDayColumn = ({ dateKey, dayLabel, fullDayLabel, dateNum, month, is
     const dayTasks = tasks || []
 
     return (
-        <div className={`calendar-day-row ${isToday ? 'calendar-day-today' : ''}`}>
-            {/* Left: date badge */}
-            <div className="calendar-date-badge">
-                <span className={`calendar-date-num ${isToday ? 'calendar-date-today' : ''}`}>
-                    {dateNum}
-                </span>
-                <div className="calendar-date-meta">
-                    <span className={`calendar-day-name ${isToday ? 'text-[var(--color-accent)]' : ''}`}>
-                        {fullDayLabel}
-                    </span>
-                    <span className="calendar-month-label">{month}</span>
+        <div className={`
+            calendar-day-card min-w-[300px] max-w-[350px] flex-shrink-0 h-full flex flex-col rounded-2xl border transition-all duration-300
+            ${isToday ? 'bg-blue-500/5 border-blue-500/30' : 'bg-[#12141a] border-white/5'}
+        `}>
+            {/* Header */}
+            <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className={`
+                        w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold text-lg
+                        ${isToday ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-white/60'}
+                    `}>
+                        {dateNum}
+                    </div>
+                    <div className="flex flex-col">
+                        <span className={`text-sm font-medium ${isToday ? 'text-blue-400' : 'text-white/80'}`}>
+                            {fullDayLabel}
+                        </span>
+                        <span className="text-xs text-white/40 uppercase tracking-wider">{month}</span>
+                    </div>
+                </div>
+
+                {/* Menu */}
+                <div className="relative" ref={menuRef}>
+                    <button
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        className="p-2 hover:bg-white/5 rounded-lg text-white/30 hover:text-white transition-colors"
+                    >
+                        <MoreVertical size={16} />
+                    </button>
+
+                    {menuOpen && (
+                        <div className="absolute right-0 top-full mt-1 z-50 glass-panel border border-white/10 rounded-xl py-1 min-w-[140px] shadow-xl animate-fade-in">
+                            <button
+                                onClick={() => { setMenuOpen(false); setAdding(true) }}
+                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-colors"
+                            >
+                                <Plus size={14} /> Add task
+                            </button>
+                            {dayTasks.length > 0 && (
+                                <button
+                                    onClick={() => { setMenuOpen(false); onClearDay(dateKey) }}
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                                >
+                                    <Trash2 size={14} /> Clear all
+                                </button>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Right: tasks area */}
-            <div className="calendar-tasks-area">
+            {/* Tasks Area - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
                 {dayTasks.length > 0 ? (
-                    <div className="calendar-tasks-list">
-                        {dayTasks.map(task => (
-                            <CalendarTaskItem
-                                key={task.id}
-                                task={task}
-                                onToggle={() => onToggleTask(dateKey, task.id)}
-                                onEdit={(newText) => onEditTask(dateKey, task.id, newText)}
-                                onDelete={() => onDeleteTask(dateKey, task.id)}
-                            />
-                        ))}
+                    dayTasks.map(task => (
+                        <CalendarTaskCard
+                            key={task.id}
+                            task={task}
+                            onToggle={() => onToggleTask(dateKey, task.id)}
+                            onEdit={(newText) => onEditTask(dateKey, task.id, newText)}
+                            onDelete={() => onDeleteTask(dateKey, task.id)}
+                            onAddSubtask={(text) => onAddSubtask && onAddSubtask(dateKey, task.id, text)}
+                            onToggleSubtask={(subId) => onToggleSubtask && onToggleSubtask(dateKey, task.id, subId)}
+                            onDeleteSubtask={(subId) => onDeleteSubtask && onDeleteSubtask(dateKey, task.id, subId)}
+                        />
+                    ))
+                ) : !adding && (
+                    <div className="h-full flex flex-col items-center justify-center text-white/20">
+                        <p className="text-sm italic">No tasks yet</p>
                     </div>
-                ) : !adding ? (
-                    <p className="text-[12px] text-[var(--color-text-tertiary)] italic py-1">No tasks</p>
-                ) : null}
+                )}
+            </div>
 
-                {/* Inline add input */}
-                {adding && (
+            {/* Bottom Add Input */}
+            <div className="p-3 border-t border-white/5 bg-black/20 rounded-b-2xl">
+                {adding ? (
                     <input
                         ref={inputRef}
                         value={newText}
@@ -82,39 +140,16 @@ const CalendarDayColumn = ({ dateKey, dayLabel, fullDayLabel, dateNum, month, is
                             if (e.key === 'Escape') { setAdding(false); setNewText('') }
                         }}
                         onBlur={() => { if (!newText.trim()) setAdding(false) }}
-                        className="calendar-add-input"
-                        placeholder="New task... (Enter to add, Esc to cancel)"
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                        placeholder="New task... (Enter to add)"
                     />
-                )}
-            </div>
-
-            {/* Three-dot menu */}
-            <div className="relative flex-shrink-0" ref={menuRef}>
-                <button
-                    onClick={() => setMenuOpen(!menuOpen)}
-                    className="calendar-day-menu-btn"
-                    title="Day options"
-                >
-                    <MoreVertical size={16} />
-                </button>
-
-                {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-50 glass-panel rounded-lg py-1 min-w-[140px] animate-fade-in shadow-lg">
-                        <button
-                            onClick={() => { setMenuOpen(false); setAdding(true) }}
-                            className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-[var(--color-text-secondary)] hover:bg-white/5 transition-colors"
-                        >
-                            <Plus size={14} /> Add task
-                        </button>
-                        {dayTasks.length > 0 && (
-                            <button
-                                onClick={() => { setMenuOpen(false); onClearDay(dateKey) }}
-                                className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm text-red-400 hover:bg-white/5 transition-colors"
-                            >
-                                <Trash2 size={14} /> Clear all
-                            </button>
-                        )}
-                    </div>
+                ) : (
+                    <button
+                        onClick={() => setAdding(true)}
+                        className="w-full py-2 flex items-center justify-center gap-2 text-sm text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-all border border-dashed border-white/10 hover:border-white/20"
+                    >
+                        <Plus size={14} /> Add Task
+                    </button>
                 )}
             </div>
         </div>

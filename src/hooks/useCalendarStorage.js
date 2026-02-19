@@ -27,7 +27,12 @@ export const useCalendarStorage = () => {
             ...prev,
             [dateKey]: [
                 ...(prev[dateKey] || []),
-                { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text, completed: false }
+                {
+                    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                    text,
+                    completed: false,
+                    subtasks: []
+                }
             ]
         }))
     }, [])
@@ -63,6 +68,54 @@ export const useCalendarStorage = () => {
         }))
     }, [])
 
+    const addSubtask = useCallback((dateKey, taskId, text) => {
+        setTasks(prev => ({
+            ...prev,
+            [dateKey]: (prev[dateKey] || []).map(t => {
+                if (t.id !== taskId) return t
+                return {
+                    ...t,
+                    subtasks: [
+                        ...(t.subtasks || []),
+                        {
+                            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+                            text,
+                            completed: false
+                        }
+                    ]
+                }
+            })
+        }))
+    }, [])
+
+    const toggleSubtask = useCallback((dateKey, taskId, subtaskId) => {
+        setTasks(prev => ({
+            ...prev,
+            [dateKey]: (prev[dateKey] || []).map(t => {
+                if (t.id !== taskId) return t
+                return {
+                    ...t,
+                    subtasks: (t.subtasks || []).map(s =>
+                        s.id === subtaskId ? { ...s, completed: !s.completed } : s
+                    )
+                }
+            })
+        }))
+    }, [])
+
+    const deleteSubtask = useCallback((dateKey, taskId, subtaskId) => {
+        setTasks(prev => ({
+            ...prev,
+            [dateKey]: (prev[dateKey] || []).map(t => {
+                if (t.id !== taskId) return t
+                return {
+                    ...t,
+                    subtasks: (t.subtasks || []).filter(s => s.id !== subtaskId)
+                }
+            })
+        }))
+    }, [])
+
     const clearDay = useCallback((dateKey) => {
         setTasks(prev => {
             const next = { ...prev }
@@ -71,5 +124,5 @@ export const useCalendarStorage = () => {
         })
     }, [])
 
-    return { tasks, addTask, toggleTask, deleteTask, editTask, clearDay }
+    return { tasks, addTask, toggleTask, deleteTask, editTask, clearDay, addSubtask, toggleSubtask, deleteSubtask }
 }
