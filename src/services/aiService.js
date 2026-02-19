@@ -375,6 +375,10 @@ export function checkAIConfiguration() {
     return { isConfigured: hasKeys, keys }
 }
 
+const SUBTASK_GENERATION_PROMPT = `You are a helpful study assistant. Breakdown the following task into 3-5 distinct, actionable micro-steps.
+Return ONLY a raw JSON array of strings. No markdown formatting.
+Example: ["Open the textbook", "Read the introduction", "Summarize key points"]`
+
 /**
  * Generate subtasks for a given task
  */
@@ -534,7 +538,7 @@ export async function parsePlanWithAI(planText) {
     try {
         tasks = JSON.parse(jsonStr)
     } catch (parseError) {
-        console.error('Failed to parse AI response:', content)
+        console.error('Failed to parse AI response:', content, parseError)
         throw new Error('AI returned invalid JSON')
     }
 
@@ -568,3 +572,27 @@ function formatDateShort(dateStr) {
         return null
     }
 }
+
+/**
+ * Parse task actions from AI response
+ * Returns { tasks: [{tabId, name, category}], cleanMessage: string }
+ */
+export function parseTaskActions(response) {
+    const taskPattern = /\[ADD_TASK:([^:]+):([^:]+):([^\]]+)\]/g
+    const tasks = []
+    let match
+
+    while ((match = taskPattern.exec(response)) !== null) {
+        tasks.push({
+            tabId: match[1].trim(),
+            name: match[2].trim(),
+            category: match[3].trim()
+        })
+    }
+
+    // Remove task tags from the message
+    const cleanMessage = response.replace(taskPattern, '').trim()
+
+    return { tasks, cleanMessage }
+}
+

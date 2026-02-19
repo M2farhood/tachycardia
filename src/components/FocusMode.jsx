@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle, ArrowRight, Brain, CloudRain, VolumeX, AlertCircle, Clock, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { askTachycardia, generateSubtasks } from '../services/aiService'
+import { generateSubtasks } from '../services/aiService'
 
 const FocusMode = ({
     activeTask,
@@ -142,9 +142,14 @@ const FocusMode = ({
         }
     }
 
-    // ... handleComplete ...
+    const handleComplete = () => {
+        setIsCompleted(true)
+        setTimeout(() => {
+            if (onComplete) onComplete(currentTask?.id)
+        }, 800)
+    }
 
-    // ... if (!currentTask) ...
+    if (!currentTask) return null
 
     return (
         <div className={`fixed inset-0 z-50 bg-[#0a0c10] text-white flex flex-col transition-all duration-1000 ${isCompleted ? 'scale-110 opacity-0' : 'opacity-100'}`}>
