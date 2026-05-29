@@ -119,7 +119,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                     >
                         <div
                             className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white'
+                                ? 'bg-accent text-white shadow-lg shadow-[var(--color-accent-glow)]/20'
                                 : 'bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 text-white'
                                 }`}
                         >
@@ -183,7 +183,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                             placeholder="Ask Tachycardia anything..."
                             rows={1}
                             disabled={isLoading}
-                            className="w-full px-4 py-3 pr-12 rounded-2xl bg-black/30 border border-white/10 focus:border-pink-500/50 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all disabled:opacity-50"
+                            className="w-full px-4 py-3 pr-12 rounded-2xl bg-black/30 border border-white/10 focus:border-accent/50 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
                             style={{ minHeight: '50px', maxHeight: '120px' }}
                         />
                     </div>
@@ -191,7 +191,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                     <button
                         type="submit"
                         disabled={!input.trim() || isLoading}
-                        className="px-5 py-3 rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="px-5 py-3 rounded-2xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
                     >
                         <Send size={18} />
                     </button>

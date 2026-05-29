@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@theme {
+  --color-accent: var(--color-accent);
+  --color-accent-glow: var(--color-accent-glow);
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Newsreader:wght@400;500;600;700&family=Public+Sans:wght@400;500;600&display=swap');
 
 /* Custom design tokens - Dark Mode Dr. Chen Theme */
@@ -10,8 +15,8 @@
   --color-glass: rgba(30, 30, 40, 0.3);
   --color-glass-border: rgba(255, 255, 255, 0.08);
   --color-glass-hover: rgba(255, 255, 255, 0.05);
-  --color-accent: #3b82f6;
-  --color-accent-glow: rgba(59, 130, 246, 0.4);
+  --color-accent: #D96B4E; /* Claude Terracotta Orange */
+  --color-accent-glow: rgba(217, 107, 78, 0.4);
   --color-success: #22c55e;
   --color-text-primary: #ffffff;
   --color-text-secondary: rgba(255, 255, 255, 0.5);
@@ -127,7 +132,26 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: linear-gradient(135deg, var(--color-bg-start), var(--color-bg-mid), var(--color-bg-end));
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--color-text-primary);
+}
+
+/* Container for large screens (1920px+) */
+.app-container {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+@media (min-width: 1024px) {
+  .app-container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-container {
+    max-width: 720px;
+  }
 }
 
 /* Glassmorphism panel */
@@ -184,11 +208,11 @@ body {
 
 /* Glow effects */
 .glow-blue {
-  box-shadow: 0 0 20px var(--color-accent-glow), 0 0 40px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 20px var(--color-accent-glow), 0 0 40px rgba(217, 107, 78, 0.2);
 }
 
 .glow-avatar {
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 0 3px rgba(217, 107, 78, 0.3), 0 0 20px rgba(217, 107, 78, 0.2);
 }
 
 /* Custom checkbox - glowing blue */
@@ -244,6 +268,10 @@ body {
   gap: 4px;
 }
 
+.segment-control::-webkit-scrollbar {
+  display: none;
+}
+
 .segment-btn {
   padding: 8px 16px;
   border-radius: 50px;
@@ -267,10 +295,16 @@ body {
 
 /* Topic list item */
 .topic-item {
-  padding: 16px 20px;
+  padding: 14px 16px;
   border-radius: 16px;
   transition: all 0.15s ease;
   cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .topic-item {
+    padding: 16px 20px;
+  }
 }
 
 .topic-item:hover {
@@ -285,7 +319,7 @@ body {
 .topic-item.completed .topic-name {
   color: rgba(255, 255, 255, 0.4);
   text-decoration: line-through;
-  text-decoration-color: rgba(59, 130, 246, 0.5);
+  text-decoration-color: var(--color-accent-glow);
 }
 
 /* Stats card blob decoration */
@@ -324,9 +358,9 @@ body {
   left: 0;
   right: 0;
   background: linear-gradient(180deg,
-      rgba(59, 130, 246, 0.4) 0%,
-      rgba(59, 130, 246, 0.3) 50%,
-      rgba(59, 130, 246, 0.2) 100%);
+      rgba(217, 107, 78, 0.4) 0%,
+      rgba(217, 107, 78, 0.3) 50%,
+      rgba(217, 107, 78, 0.2) 100%);
   pointer-events: none;
 }
 
@@ -343,7 +377,7 @@ body {
   position: absolute;
   width: 200%;
   height: 100%;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120'%3E%3Cpath fill='rgba(59,130,246,0.3)' d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z'/%3E%3C/svg%3E") repeat-x;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 120'%3E%3Cpath fill='rgba(217,107,78,0.3)' d='M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z'/%3E%3C/svg%3E") repeat-x;
   background-size: 600px 20px;
   animation: wave 3s linear infinite;
 }
@@ -387,6 +421,11 @@ body {
   .topic-item .cursor-grab {
     opacity: 0.3 !important;
   }
+
+  /* Show action buttons always on touch devices */
+  .topic-item .mobile-visible {
+    opacity: 1 !important;
+  }
 }
 
 /* Animations */
@@ -403,10 +442,6 @@ body {
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -505,6 +540,19 @@ body {
   }
 }
 
+/* Safe area padding for notched phones */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
+/* Mobile-first responsive padding */
+@media (max-width: 380px) {
+  .px-6 {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+}
+
 /* Calendar — Full-page vertical layout */
 .calendar-page {
   display: flex;
@@ -574,12 +622,12 @@ body {
 }
 
 .calendar-day-today {
-  background: rgba(59, 130, 246, 0.04);
-  border-bottom-color: rgba(59, 130, 246, 0.1);
+  background: rgba(217, 107, 78, 0.04);
+  border-bottom-color: rgba(217, 107, 78, 0.1);
 }
 
 .calendar-day-today:hover {
-  background: rgba(59, 130, 246, 0.06);
+  background: rgba(217, 107, 78, 0.06);
 }
 
 /* Date badge */

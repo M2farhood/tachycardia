@@ -26,6 +26,7 @@ const TopicList = ({
     const [editingWeightId, setEditingWeightId] = useState(null)
     const [weightValue, setWeightValue] = useState('')
     const dragNode = useRef(null)
+    const inputRef = useRef(null)
 
     const handleAddTopic = () => {
         if (newTopicName.trim()) {
@@ -38,6 +39,8 @@ const TopicList = ({
                 subtasks: []
             })
             setNewTopicName('')
+            // Re-focus input for rapid entry
+            setTimeout(() => inputRef.current?.focus(), 50)
         }
     }
 
@@ -155,6 +158,46 @@ const TopicList = ({
         return { completed, total: subtasks.length }
     }
 
+    // Empty state
+    if (tab.topics.length === 0) {
+        return (
+            <div className="px-6 py-4">
+                <div className="glass-panel rounded-2xl overflow-hidden">
+                    {/* Empty state */}
+                    <div className="py-12 px-6 text-center">
+                        <div className="text-4xl mb-3">📝</div>
+                        <p className="text-white/60 font-medium text-base mb-1">No tasks yet</p>
+                        <p className="text-white/30 text-sm mb-6">Add your first task to get started</p>
+                    </div>
+
+                    {/* Add Topic - Prominent for empty state */}
+                    <div className="p-4 border-t border-white/5">
+                        <div className="flex gap-3">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={newTopicName}
+                                onChange={(e) => setNewTopicName(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
+                                placeholder="Type a task and press Enter..."
+                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-accent/50 text-base"
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleAddTopic}
+                                disabled={!newTopicName.trim()}
+                                className="px-5 py-3.5 bg-accent hover:opacity-90 disabled:opacity-30 disabled:bg-accent/20 text-white rounded-xl transition-colors liquid-press font-medium flex items-center gap-2"
+                            >
+                                <Plus size={20} />
+                                <span className="hidden sm:inline">Add</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     return (
         <div className="px-6 py-4">
             <div className="glass-panel rounded-2xl overflow-hidden">
@@ -167,7 +210,6 @@ const TopicList = ({
                         const isExpanded = expandedId === topic.id
                         const isSubtasksExpanded = expandedSubtasks[topic.id]
                         const subtaskProgress = getSubtaskProgress(topic)
-                        const hasSubtasks = (topic.subtasks || []).length > 0
 
                         return (
                             <div key={topic.id} className="flex flex-col">
@@ -177,14 +219,14 @@ const TopicList = ({
                                     onDragEnd={handleDragEnd}
                                     onDragOver={(e) => handleDragOver(e, index)}
                                     onDragLeave={handleDragLeave}
-                                    className={`topic-item flex items-center gap-4 group transition-all ${topic.completed ? 'completed' : ''
-                                        } ${isDragging ? 'opacity-50 scale-95' : ''} ${isDragOver ? 'border-t-2 border-blue-500 -mt-[2px] pt-[18px]' : ''
+                                    className={`topic-item flex items-center gap-3 sm:gap-4 group transition-all ${topic.completed ? 'completed' : ''
+                                        } ${isDragging ? 'opacity-50 scale-95' : ''} ${isDragOver ? 'border-t-2 border-accent -mt-[2px] pt-[18px]' : ''
                                         }`}
                                 >
                                     {/* Expand/Collapse Chevron */}
                                     <button
                                         onClick={(e) => toggleSubtasksExpand(topic.id, e)}
-                                        className="p-1 rounded transition-all hover:bg-white/10 text-white/60"
+                                        className="p-1 rounded transition-all hover:bg-white/10 text-white/60 flex-shrink-0"
                                     >
                                         {isSubtasksExpanded ? (
                                             <ChevronDown size={16} />
@@ -193,8 +235,8 @@ const TopicList = ({
                                         )}
                                     </button>
 
-                                    {/* Drag Handle */}
-                                    <div className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-50 transition-opacity touch-none">
+                                    {/* Drag Handle - hidden on mobile */}
+                                    <div className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-50 transition-opacity touch-none hidden sm:block">
                                         <GripVertical size={16} className="text-white/40" />
                                     </div>
 
@@ -218,25 +260,25 @@ const TopicList = ({
                                                     if (e.key === 'Enter') saveEdit()
                                                     if (e.key === 'Escape') setEditingId(null)
                                                 }}
-                                                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white text-lg focus:outline-none focus:border-blue-500"
+                                                className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white text-base sm:text-lg focus:outline-none focus:border-accent"
                                                 autoFocus
                                             />
                                         ) : (
                                             <p
                                                 onClick={() => toggleExpand(topic.id)}
                                                 onDoubleClick={() => startEdit(topic)}
-                                                title="Click to expand, double-click to edit"
-                                                className={`topic-name text-white font-medium text-lg cursor-pointer transition-all ${isExpanded ? 'whitespace-normal break-words text-xl py-2' : 'truncate'
+                                                title="Tap to expand, double-tap to edit"
+                                                className={`topic-name text-white font-medium text-base sm:text-lg cursor-pointer transition-all ${isExpanded ? 'whitespace-normal break-words text-lg sm:text-xl py-2' : 'truncate'
                                                     } ${topic.completed ? 'line-through text-white/40' : ''}`}
                                             >
                                                 {topic.name}
                                             </p>
                                         )}
-                                        <div className="flex items-center gap-2 mt-0.5">
+                                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                             {subtaskProgress && (
                                                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${subtaskProgress.completed === subtaskProgress.total
                                                     ? 'text-green-300 bg-green-500/20 border-green-500/20'
-                                                    : 'text-blue-300 bg-blue-500/20 border-blue-500/20'
+                                                    : 'text-accent bg-accent/20 border-accent/20'
                                                     }`}>
                                                     {subtaskProgress.completed}/{subtaskProgress.total}
                                                 </span>
@@ -286,41 +328,36 @@ const TopicList = ({
                                                 </button>
                                             )}
                                             {topic.category && (
-                                                <span className="text-sm text-white/40">{topic.category}</span>
+                                                <span className="text-sm text-white/40 hidden sm:inline">{topic.category}</span>
                                             )}
                                         </div>
                                     </div>
 
-                                    {/* Time / Timer Button */}
-                                    <div className="flex items-center gap-2">
+                                    {/* Actions - always visible on mobile */}
+                                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                         {!topic.completed && (
                                             <button
                                                 onClick={() => onTimerStart(tab.id, topic.id)}
-                                                className={`p-2 rounded-full transition-all ${isActive
-                                                    ? 'bg-blue-500 glow-blue animate-pulse-glow'
-                                                    : 'hover:bg-white/10 opacity-0 group-hover:opacity-100'
+                                                className={`p-2 rounded-full transition-all mobile-visible ${isActive
+                                                    ? 'bg-accent glow-blue animate-pulse-glow'
+                                                    : 'hover:bg-white/10 sm:opacity-0 sm:group-hover:opacity-100 opacity-60'
                                                     }`}
                                             >
                                                 <Play size={14} className="text-white" />
                                             </button>
                                         )}
-                                        <span className="text-sm text-white/30 tabular-nums w-12 text-right">
-                                            {topic.timeEstimate || defaultDuration}m
-                                        </span>
+                                        <button
+                                            onClick={() => onTopicDelete(tab.id, topic.id)}
+                                            className="p-2 rounded-full hover:bg-red-500/20 sm:opacity-0 sm:group-hover:opacity-100 opacity-40 transition-all mobile-visible"
+                                        >
+                                            <Trash2 size={14} className="text-red-400/80" />
+                                        </button>
                                     </div>
-
-                                    {/* Delete */}
-                                    <button
-                                        onClick={() => onTopicDelete(tab.id, topic.id)}
-                                        className="p-2 rounded-full hover:bg-red-500/20 opacity-0 group-hover:opacity-100 transition-all"
-                                    >
-                                        <Trash2 size={16} className="text-red-400/60" />
-                                    </button>
                                 </div>
 
                                 {/* Subtasks Section */}
                                 {isSubtasksExpanded && (
-                                    <div className="ml-14 pl-4 border-l border-white/10 mb-2">
+                                    <div className="ml-10 sm:ml-14 pl-4 border-l border-white/10 mb-2">
                                         {/* Subtask List */}
                                         {(topic.subtasks || []).map(subtask => (
                                             <div
@@ -329,7 +366,7 @@ const TopicList = ({
                                             >
                                                 <button
                                                     onClick={() => handleToggleSubtask(topic.id, subtask.id, subtask.completed)}
-                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${subtask.completed
+                                                    className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${subtask.completed
                                                         ? 'bg-green-500 border-green-500'
                                                         : 'border-white/30 hover:border-white/50'
                                                         }`}
@@ -344,7 +381,7 @@ const TopicList = ({
                                                 </span>
                                                 <button
                                                     onClick={() => handleDeleteSubtask(topic.id, subtask.id)}
-                                                    className="p-1 rounded hover:bg-red-500/20 opacity-0 group-hover/subtask:opacity-100 transition-all"
+                                                    className="p-1 rounded hover:bg-red-500/20 sm:opacity-0 sm:group-hover/subtask:opacity-100 opacity-40 transition-all mobile-visible"
                                                 >
                                                     <Trash2 size={12} className="text-red-400/60" />
                                                 </button>
@@ -359,12 +396,12 @@ const TopicList = ({
                                                 onChange={(e) => setNewSubtaskName(prev => ({ ...prev, [topic.id]: e.target.value }))}
                                                 onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask(topic.id)}
                                                 placeholder="Add subtask..."
-                                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent/50"
                                             />
                                             <button
                                                 onClick={() => handleAddSubtask(topic.id)}
                                                 disabled={!newSubtaskName[topic.id]?.trim()}
-                                                className="p-1.5 bg-blue-500/20 hover:bg-blue-500/30 disabled:opacity-30 text-blue-400 rounded-lg transition-colors"
+                                                className="p-1.5 bg-accent/20 hover:bg-accent/30 disabled:opacity-30 text-accent rounded-lg transition-colors"
                                             >
                                                 <Plus size={16} />
                                             </button>
@@ -376,23 +413,25 @@ const TopicList = ({
                     })}
                 </div>
 
-                {/* Add Topic */}
+                {/* Add Topic - Always visible and prominent */}
                 <div className="p-4 border-t border-white/5">
                     <div className="flex gap-3">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={newTopicName}
                             onChange={(e) => setNewTopicName(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddTopic()}
-                            placeholder="Add a topic..."
-                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 text-base"
+                            placeholder="Add a task..."
+                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-accent/50 text-base"
                         />
                         <button
                             onClick={handleAddTopic}
                             disabled={!newTopicName.trim()}
-                            className="px-4 py-3 bg-blue-500/20 hover:bg-blue-500/30 disabled:opacity-30 disabled:hover:bg-blue-500/20 text-blue-400 rounded-xl transition-colors liquid-press"
+                            className="px-4 py-3 bg-accent/20 hover:bg-accent/30 disabled:opacity-30 disabled:hover:bg-accent/20 text-accent rounded-xl transition-colors liquid-press flex items-center gap-2"
                         >
                             <Plus size={20} />
+                            <span className="hidden sm:inline text-sm font-medium">Add</span>
                         </button>
                     </div>
                 </div>
@@ -402,4 +441,3 @@ const TopicList = ({
 }
 
 export default TopicList
-

@@ -41,10 +41,10 @@ const Header = ({
                 <div className="flex items-start justify-between">
                     {/* Left side - Greeting */}
                     <div>
-                        <p className="text-sm font-medium uppercase tracking-widest text-white/40 mb-1">
+                        <p className="text-xs sm:text-sm font-medium uppercase tracking-widest text-white/40 mb-1">
                             Dashboard
                         </p>
-                        <h1 className="text-3xl font-bold tracking-tight text-white">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
                             {getGreeting()}, {userName}
                         </h1>
                     </div>
@@ -55,7 +55,7 @@ const Header = ({
                         <button
                             onClick={onToggleFocus}
                             className={`p-2.5 rounded-full liquid-press touch-target transition-all ${isFocusMode
-                                ? 'bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]'
+                                ? 'bg-accent text-white shadow-[0_0_20px_var(--color-accent-glow)]'
                                 : 'glass-panel-subtle text-white/60 hover:text-white'
                                 }`}
                             title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
@@ -72,8 +72,8 @@ const Header = ({
                         </button>
 
                         {/* User Avatar with glow */}
-                        <div className="w-12 h-12 rounded-full glow-avatar overflow-hidden bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center">
-                            <span className="text-xl font-bold text-white">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full glow-avatar overflow-hidden bg-accent flex items-center justify-center">
+                            <span className="text-lg sm:text-xl font-bold text-white">
                                 {userName.charAt(0).toUpperCase()}
                             </span>
                         </div>

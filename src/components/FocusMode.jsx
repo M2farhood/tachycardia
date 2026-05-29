@@ -153,14 +153,14 @@ const FocusMode = ({
 
     return (
         <div className={`fixed inset-0 z-50 bg-[#0a0c10] text-white flex flex-col transition-all duration-1000 ${isCompleted ? 'scale-110 opacity-0' : 'opacity-100'}`}>
-            {/* ... Ambient Background & Header ... */}
-            <div className="absolute inset-0 bg-gradient-radial from-blue-900/20 to-transparent opacity-50 animate-pulse-slow pointer-events-none"></div>
+            {/* Ambient Background & Header */}
+            <div className="absolute inset-0 bg-gradient-radial from-[var(--color-accent-glow)] to-transparent opacity-30 animate-pulse-slow pointer-events-none"></div>
 
             {/* Header */}
             <div className="relative z-10 flex justify-between items-center p-6">
                 <div className="flex items-center gap-4">
                     <button onClick={toggleRainNoise} className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all text-white/50 hover:text-white group" title="Rain Noise">
-                        {isPlaying ? <CloudRain size={24} className="text-blue-400" /> : <VolumeX size={24} />}
+                        {isPlaying ? <CloudRain size={24} className="text-accent" /> : <VolumeX size={24} />}
                     </button>
                 </div>
 
@@ -192,7 +192,7 @@ const FocusMode = ({
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-4xl mx-auto w-full text-center relative z-10">
-                <div className="mb-8 text-blue-400 font-medium tracking-widest uppercase text-sm animate-fade-in">
+                <div className="mb-8 text-accent font-medium tracking-widest uppercase text-sm animate-fade-in">
                     Current Focus
                 </div>
 
@@ -206,7 +206,7 @@ const FocusMode = ({
                 <div className={`flex flex-col items-center gap-4 mt-8 transition-all duration-300 ${isSkipping ? 'opacity-0' : 'opacity-100'}`}>
                     <button
                         onClick={() => onStartTimer(currentTask.id)}
-                        className="group relative px-12 py-6 bg-blue-600 hover:bg-blue-500 rounded-2xl font-bold text-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-blue-900/20 w-72 overflow-hidden flex items-center justify-center gap-3"
+                        className="group relative px-12 py-6 bg-accent hover:opacity-90 rounded-2xl font-bold text-xl transition-all hover:scale-105 active:scale-95 shadow-lg shadow-[var(--color-accent-glow)] w-72 overflow-hidden flex items-center justify-center gap-3"
                     >
                         <Clock size={24} />
                         Start Session
@@ -243,9 +243,9 @@ const FocusMode = ({
 
                         {isLoadingAi ? (
                             <div className="flex items-center justify-center py-8 text-white/40 gap-3">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-100"></div>
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-200"></div>
+                                <div className="w-2 h-2 bg-accent rounded-full animate-bounce"></div>
+                                <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-100"></div>
+                                <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-200"></div>
                                 Thinking...
                             </div>
                         ) : aiError ? (
@@ -267,7 +267,7 @@ const FocusMode = ({
                                                 type="checkbox"
                                                 checked={!!selectedSubtasks[idx]}
                                                 onChange={(e) => setSelectedSubtasks(prev => ({ ...prev, [idx]: e.target.checked }))}
-                                                className="w-5 h-5 rounded border-white/30 text-blue-500 focus:ring-blue-500 focus:ring-offset-0 bg-transparent"
+                                                className="w-5 h-5 rounded border-white/30 text-accent focus:ring-accent focus:ring-offset-0 bg-transparent"
                                             />
                                             <span className="text-white/90">{step}</span>
                                         </label>
@@ -277,7 +277,7 @@ const FocusMode = ({
                                 <button
                                     onClick={handleAddSelectedSubtasks}
                                     disabled={!Object.values(selectedSubtasks).some(Boolean)}
-                                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2"
+                                    className="w-full py-4 bg-accent hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2"
                                 >
                                     <Plus size={20} />
                                     Add Selected Steps to Task

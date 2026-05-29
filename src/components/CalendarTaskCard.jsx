@@ -62,7 +62,7 @@ const CalendarTaskCard = ({
             group relative p-3 rounded-xl border transition-all duration-200
             ${task.completed
                 ? 'bg-green-500/5 border-green-500/20'
-                : 'bg-white/5 border-white/10 hover:border-blue-500/30 hover:bg-white/10'
+                : 'bg-white/5 border-white/10 hover:border-accent/30 hover:bg-white/10'
             }
         `}>
             {/* Header / Main Task */}
@@ -96,7 +96,7 @@ const CalendarTaskCard = ({
                                     setIsEditing(false)
                                 }
                             }}
-                            className="w-full bg-black/20 rounded px-2 py-1 text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                            className="w-full bg-black/20 rounded px-2 py-1 text-sm text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-accent/50"
                         />
                     ) : (
                         <div>
@@ -119,7 +119,7 @@ const CalendarTaskCard = ({
                                 <div className="flex items-center gap-2 mt-1.5">
                                     <div className="h-1 flex-1 bg-white/10 rounded-full overflow-hidden max-w-[60px]">
                                         <div
-                                            className="h-full bg-blue-500/50 rounded-full transition-all duration-500"
+                                            className="h-full bg-accent/50 rounded-full transition-all duration-500"
                                             style={{ width: `${progress}%` }}
                                         />
                                     </div>
@@ -178,7 +178,7 @@ const CalendarTaskCard = ({
                                 onClick={() => onToggleSubtask(sub.id)}
                                 className={`
                                     w-3.5 h-3.5 rounded border flex items-center justify-center transition-colors
-                                    ${sub.completed ? 'bg-blue-500 border-blue-500' : 'border-white/20 hover:border-white/40'}
+                                    ${sub.completed ? 'bg-accent border-accent' : 'border-white/20 hover:border-white/40'}
                                 `}
                             >
                                 {sub.completed && <Check size={8} strokeWidth={4} className="text-white" />}

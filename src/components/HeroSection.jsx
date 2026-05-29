@@ -23,10 +23,10 @@ const HeroSection = ({
     const offset = circumference - (circumference * percentage) / 100
 
     return (
-        <div className="px-6 py-6 flex items-center justify-between no-print">
+        <div className="px-6 py-4 sm:py-6 flex items-center justify-between no-print">
             {/* Left side - Title */}
             <div className="flex-1 min-w-0">
-                <h2 className="text-3xl font-bold tracking-tight text-white leading-tight">
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
                     {emoji && <span className="mr-2">{emoji}</span>}
                     <span className="inline-editable">{title}</span>
                 </h2>
@@ -45,38 +45,33 @@ const HeroSection = ({
                     {showGlobal ? 'Total' : 'Section'}
                 </div>
 
-                <svg width="100" height="100" className="progress-ring transform transition-transform group-hover:scale-105">
-                    {/* Background ring */}
-                    <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        strokeWidth="6"
-                        className="progress-ring-bg"
+                <svg width="80" height="80" className="sm:hidden progress-ring transform transition-transform group-hover:scale-105">
+                    <circle cx="40" cy="40" r="34" fill="none" strokeWidth="5" className="progress-ring-bg" />
+                    <circle cx="40" cy="40" r="34" fill="none" strokeWidth="5"
+                        className={`transition-all duration-700 ease-out ${showGlobal ? 'stroke-accent' : 'progress-ring-fill'}`}
+                        strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 - (2 * Math.PI * 34 * percentage) / 100}
+                        strokeLinecap="round"
                     />
+                </svg>
+                <svg width="100" height="100" className="hidden sm:block progress-ring transform transition-transform group-hover:scale-105">
+                    {/* Background ring */}
+                    <circle cx="50" cy="50" r="45" fill="none" strokeWidth="6" className="progress-ring-bg" />
                     {/* Progress ring */}
-                    <circle
-                        cx="50"
-                        cy="50"
-                        r="45"
-                        fill="none"
-                        strokeWidth="6"
-                        className={`transition-all duration-700 ease-out ${showGlobal ? 'stroke-blue-400' : 'progress-ring-fill'}`}
-                        strokeDasharray={circumference}
-                        strokeDashoffset={offset}
+                    <circle cx="50" cy="50" r="45" fill="none" strokeWidth="6"
+                        className={`transition-all duration-700 ease-out ${showGlobal ? 'stroke-accent' : 'progress-ring-fill'}`}
+                        strokeDasharray={circumference} strokeDashoffset={offset}
                         strokeLinecap="round"
                     />
                 </svg>
 
                 {/* Percentage text */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-2xl font-bold text-white tabular-nums">
+                    <span className="text-xl sm:text-2xl font-bold text-white tabular-nums">
                         {percentage}%
                     </span>
                     {showGlobal && (
-                        <div className="absolute bottom-6">
-                            <Globe size={10} className="text-blue-400" />
+                        <div className="absolute bottom-4 sm:bottom-6">
+                            <Globe size={10} className="text-accent" />
                         </div>
                     )}
                 </div>

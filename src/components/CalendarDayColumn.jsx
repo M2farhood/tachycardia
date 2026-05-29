@@ -57,19 +57,19 @@ const CalendarDayColumn = ({
     return (
         <div className={`
             calendar-day-card min-w-[300px] max-w-[350px] flex-shrink-0 h-full flex flex-col rounded-2xl border transition-all duration-300
-            ${isToday ? 'bg-blue-500/5 border-blue-500/30' : 'bg-[#12141a] border-white/5'}
+            ${isToday ? 'bg-accent/5 border-accent/30' : 'bg-[#12141a] border-white/5'}
         `}>
             {/* Header */}
             <div className="p-4 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className={`
                         w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold text-lg
-                        ${isToday ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' : 'bg-white/5 text-white/60'}
+                        ${isToday ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-white/5 text-white/60'}
                     `}>
                         {dateNum}
                     </div>
                     <div className="flex flex-col">
-                        <span className={`text-sm font-medium ${isToday ? 'text-blue-400' : 'text-white/80'}`}>
+                        <span className={`text-sm font-medium ${isToday ? 'text-accent' : 'text-white/80'}`}>
                             {fullDayLabel}
                         </span>
                         <span className="text-xs text-white/40 uppercase tracking-wider">{month}</span>
@@ -140,7 +140,7 @@ const CalendarDayColumn = ({
                             if (e.key === 'Escape') { setAdding(false); setNewText('') }
                         }}
                         onBlur={() => { if (!newText.trim()) setAdding(false) }}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50"
+                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent/50"
                         placeholder="New task... (Enter to add)"
                     />
                 ) : (
