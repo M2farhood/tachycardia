@@ -9,6 +9,7 @@ import {
     serverTimestamp
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../config/firebase'
+import { migrate } from '../utils/migrations'
 
 const COLLECTION_NAME = 'study_tracker_users'
 
@@ -61,7 +62,8 @@ export const pullFromCloud = async (userId) => {
         const docSnap = await getDoc(docRef)
 
         if (docSnap.exists()) {
-            return { data: docSnap.data().data, error: null }
+            // Cloud data may be from a device on an older schema — upgrade it.
+            return { data: migrate(docSnap.data().data), error: null }
         }
 
         return { data: null, error: null } // No data in cloud yet
@@ -87,66 +89,15 @@ export const subscribeToChanges = (userId, callback) => {
     return onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
             const cloudData = docSnap.data()
-            callback(cloudData.data, cloudData.updatedAt)
+            callback(migrate(cloudData.data), cloudData.updatedAt)
         }
     }, (error) => {
         console.error('Snapshot error:', error)
     })
 }
 
-/**
- * Merge local and cloud data (latest wins per-field)
- * @param {object} localData - Local study tracker data
- * @param {object} cloudData - Cloud study tracker data
- * @returns {object} Merged data
- */
-export const mergeData = (localData, cloudData) => {
-    if (!localData) return cloudData
-    if (!cloudData) return localData
-
-    // For the study tracker, we'll use a simple "latest wins" strategy
-    // based on which data has more recent activity
-
-    const localLastActivity = getLastActivity(localData)
-    const cloudLastActivity = getLastActivity(cloudData)
-
-    // If cloud is more recent, prefer cloud but preserve local settings
-    if (cloudLastActivity > localLastActivity) {
-        return {
-            ...cloudData,
-            settings: { ...cloudData.settings, ...localData.settings }
-        }
-    }
-
-    // If local is more recent, prefer local
-    return localData
-}
-
-/**
- * Get the most recent activity timestamp from data
- */
-const getLastActivity = (data) => {
-    if (!data || !data.tabs) return 0
-
-    let maxTime = 0
-
-    for (const tab of data.tabs) {
-        for (const topic of tab.topics || []) {
-            // Check topic timestamps
-            if (topic.updatedAt) {
-                const time = new Date(topic.updatedAt).getTime()
-                if (time > maxTime) maxTime = time
-            }
-            // Check completion times
-            if (topic.completedAt) {
-                const time = new Date(topic.completedAt).getTime()
-                if (time > maxTime) maxTime = time
-            }
-        }
-    }
-
-    return maxTime
-}
+// Per-entity merge lives in a pure, Firebase-free module (so it is unit-testable).
+export { mergeData } from '../utils/syncMerge'
 
 /**
  * Check if cloud sync is available

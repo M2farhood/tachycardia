@@ -1,3 +1,5 @@
+import { migrate } from './migrations'
+
 // Export data as JSON file download
 export const exportData = (data, filename = 'study-tracker-backup.json') => {
     const exportPayload = {
@@ -59,7 +61,8 @@ export const importData = (file) => {
                 delete data.exportedAt
                 delete data.exportVersion
 
-                resolve(data)
+                // Upgrade old backups to the current schema before loading them
+                resolve(migrate(data))
             } catch (error) {
                 reject(new Error(`Failed to import: ${error.message}`))
             }
@@ -78,7 +81,7 @@ export const getStorageUsage = () => {
     let totalSize = 0
 
     for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
             totalSize += localStorage[key].length * 2 // UTF-16 uses 2 bytes per char
         }
     }

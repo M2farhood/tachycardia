@@ -1,7 +1,7 @@
 // Authentication Hook
 // Provides reactive auth state and sync functionality for React components
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
     signInWithGoogle as authSignIn,
     signOut as authSignOut,
@@ -33,23 +33,30 @@ export const useAuth = (localData, onDataSync) => {
         return () => unsubscribe()
     }, [])
 
+    // Keep the latest local data in a ref so the cloud subscription can read it
+    // without being torn down and recreated on every local edit.
+    const localDataRef = useRef(localData)
+    useEffect(() => {
+        localDataRef.current = localData
+    }, [localData])
+
     // Subscribe to cloud changes when signed in
     useEffect(() => {
         if (!user || !isSyncAvailable()) return
 
-        const unsubscribe = subscribeToChanges(user.uid, (cloudData, cloudUpdatedAt) => {
-            if (cloudData && onDataSync) {
-                // Only update if cloud data is newer
-                const merged = mergeData(localData, cloudData)
-                if (merged !== localData) {
-                    onDataSync(merged)
-                    setSyncStatus('synced')
-                }
+        const unsubscribe = subscribeToChanges(user.uid, (cloudData) => {
+            if (!cloudData || !onDataSync) return
+            // mergeData returns the same reference when nothing actually changed,
+            // which prevents a write -> snapshot -> write feedback loop.
+            const merged = mergeData(localDataRef.current, cloudData)
+            if (merged !== localDataRef.current) {
+                onDataSync(merged)
+                setSyncStatus('synced')
             }
         })
 
         return () => unsubscribe()
-    }, [user, localData, onDataSync])
+    }, [user, onDataSync])
 
     // Sync local data to cloud when it changes (debounced)
     useEffect(() => {

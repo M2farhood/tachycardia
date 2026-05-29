@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
+import { migrate, needsMigration } from '../utils/migrations'
 
 const STORAGE_KEY = 'study_tracker_data'
+
+// ISO timestamp helper for stamping per-entity updatedAt on every mutation.
+const now = () => new Date().toISOString()
 
 export const useLocalStorage = (initialValue) => {
     // Initialize state from localStorage or use initial value
@@ -8,7 +12,18 @@ export const useLocalStorage = (initialValue) => {
         try {
             const stored = localStorage.getItem(STORAGE_KEY)
             if (stored) {
-                return JSON.parse(stored)
+                const parsed = JSON.parse(stored)
+                const upgraded = migrate(parsed)
+                // Persist immediately if the load upgraded the schema, so the
+                // on-disk copy matches what the app is now running with.
+                if (needsMigration(parsed)) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded))
+                    } catch (writeError) {
+                        console.error('Error persisting migrated data:', writeError)
+                    }
+                }
+                return upgraded
             }
         } catch (error) {
             console.error('Error reading from localStorage:', error)
@@ -36,9 +51,10 @@ export const useLocalStorage = (initialValue) => {
         }
     }, [data])
 
-    // Update entire data object
+    // Update entire data object. Bumps root updatedAt so an import/restore wins
+    // the next cloud merge.
     const updateData = useCallback((newData) => {
-        setData(newData)
+        setData(newData ? { ...newData, updatedAt: now() } : newData)
         setIsFirstVisit(false)
     }, [])
 
@@ -46,8 +62,9 @@ export const useLocalStorage = (initialValue) => {
     const updateTab = useCallback((tabId, updates) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
-                tab.id === tabId ? { ...tab, ...updates } : tab
+                tab.id === tabId ? { ...tab, ...updates, updatedAt: now() } : tab
             )
         }))
     }, [])
@@ -56,12 +73,13 @@ export const useLocalStorage = (initialValue) => {
     const updateTopic = useCallback((tabId, topicId, updates) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
                     ? {
                         ...tab,
                         topics: tab.topics.map(topic =>
-                            topic.id === topicId ? { ...topic, ...updates } : topic
+                            topic.id === topicId ? { ...topic, ...updates, updatedAt: now() } : topic
                         )
                     }
                     : tab
@@ -69,25 +87,29 @@ export const useLocalStorage = (initialValue) => {
         }))
     }, [])
 
-    // Add a new topic to a tab
+    // Add a new topic to a tab. Bumps the tab's updatedAt so the adding device's
+    // topic ordering wins the merge.
     const addTopic = useCallback((tabId, newTopic) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
-                    ? { ...tab, topics: [...tab.topics, newTopic] }
+                    ? { ...tab, updatedAt: now(), topics: [...tab.topics, { ...newTopic, updatedAt: now() }] }
                     : tab
             )
         }))
     }, [])
 
-    // Delete a topic from a tab
+    // Delete a topic from a tab (records a tombstone so the deletion syncs).
     const deleteTopic = useCallback((tabId, topicId) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
+            deleted: { ...(prev.deleted || {}), [topicId]: now() },
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
-                    ? { ...tab, topics: tab.topics.filter(t => t.id !== topicId) }
+                    ? { ...tab, updatedAt: now(), topics: tab.topics.filter(t => t.id !== topicId) }
                     : tab
             )
         }))
@@ -97,24 +119,28 @@ export const useLocalStorage = (initialValue) => {
     const addTab = useCallback((newTab) => {
         setData(prev => ({
             ...prev,
-            tabs: [...prev.tabs, newTab]
+            updatedAt: now(),
+            tabs: [...prev.tabs, { ...newTab, updatedAt: now() }]
         }))
     }, [])
 
-    // Delete a tab
+    // Delete a tab (records a tombstone).
     const deleteTab = useCallback((tabId) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
+            deleted: { ...(prev.deleted || {}), [tabId]: now() },
             tabs: prev.tabs.filter(tab => tab.id !== tabId)
         }))
     }, [])
 
-    // Reorder topics within a tab
+    // Reorder topics within a tab (bumps the tab so the new order wins the merge).
     const reorderTopics = useCallback((tabId, newTopics) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
-                tab.id === tabId ? { ...tab, topics: newTopics } : tab
+                tab.id === tabId ? { ...tab, updatedAt: now(), topics: newTopics } : tab
             )
         }))
     }, [])
@@ -123,11 +149,13 @@ export const useLocalStorage = (initialValue) => {
     const updateSettings = useCallback((updates) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             settings: { ...prev.settings, ...updates }
         }))
     }, [])
 
-    // Update timer session
+    // Update timer session. Intentionally does NOT bump updatedAt: the timer is
+    // device-local state and must not win cloud merges or trigger sync churn.
     const updateTimerSession = useCallback((session) => {
         setData(prev => ({
             ...prev,
@@ -139,13 +167,14 @@ export const useLocalStorage = (initialValue) => {
     const addSubtask = useCallback((tabId, topicId, newSubtask) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
                     ? {
                         ...tab,
                         topics: tab.topics.map(topic =>
                             topic.id === topicId
-                                ? { ...topic, subtasks: [...(topic.subtasks || []), newSubtask] }
+                                ? { ...topic, updatedAt: now(), subtasks: [...(topic.subtasks || []), { ...newSubtask, updatedAt: now() }] }
                                 : topic
                         )
                     }
@@ -158,6 +187,7 @@ export const useLocalStorage = (initialValue) => {
     const updateSubtask = useCallback((tabId, topicId, subtaskId, updates) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
                     ? {
@@ -167,7 +197,7 @@ export const useLocalStorage = (initialValue) => {
                                 ? {
                                     ...topic,
                                     subtasks: (topic.subtasks || []).map(subtask =>
-                                        subtask.id === subtaskId ? { ...subtask, ...updates } : subtask
+                                        subtask.id === subtaskId ? { ...subtask, ...updates, updatedAt: now() } : subtask
                                     )
                                 }
                                 : topic
@@ -178,17 +208,19 @@ export const useLocalStorage = (initialValue) => {
         }))
     }, [])
 
-    // Delete a subtask from a topic
+    // Delete a subtask from a topic (records a tombstone).
     const deleteSubtask = useCallback((tabId, topicId, subtaskId) => {
         setData(prev => ({
             ...prev,
+            updatedAt: now(),
+            deleted: { ...(prev.deleted || {}), [subtaskId]: now() },
             tabs: prev.tabs.map(tab =>
                 tab.id === tabId
                     ? {
                         ...tab,
                         topics: tab.topics.map(topic =>
                             topic.id === topicId
-                                ? { ...topic, subtasks: (topic.subtasks || []).filter(s => s.id !== subtaskId) }
+                                ? { ...topic, updatedAt: now(), subtasks: (topic.subtasks || []).filter(s => s.id !== subtaskId) }
                                 : topic
                         )
                     }
