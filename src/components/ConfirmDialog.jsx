@@ -30,8 +30,8 @@ const ConfirmDialog = ({
                 <div className="p-6">
                     {/* Icon */}
                     {isDangerous && (
-                        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-red-500/20 rounded-full">
-                            <AlertTriangle className="w-7 h-7 text-red-400" />
+                        <div className="flex items-center justify-center w-14 h-14 mx-auto mb-4 bg-[var(--color-danger)]/20 rounded-full">
+                            <AlertTriangle className="w-7 h-7 text-[var(--color-danger)]" />
                         </div>
                     )}
 
@@ -49,13 +49,13 @@ const ConfirmDialog = ({
                     {requireTyping && (
                         <div className="mb-5">
                             <p className="text-xs text-white/40 mb-2 text-center">
-                                Type <span className="font-mono font-bold text-red-400">{requireTyping}</span> to confirm:
+                                Type <span className="font-mono font-bold text-[var(--color-danger)]">{requireTyping}</span> to confirm:
                             </p>
                             <input
                                 type="text"
                                 value={typedValue}
                                 onChange={(e) => setTypedValue(e.target.value)}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-white focus:outline-none focus:border-red-500/50"
+                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-white focus:outline-none focus:border-[var(--color-danger)]"
                                 placeholder={requireTyping}
                                 autoFocus
                             />
@@ -80,8 +80,8 @@ const ConfirmDialog = ({
                         }}
                         disabled={!canConfirm}
                         className={`flex-1 px-4 py-4 font-medium transition-colors rounded-br-3xl ${isDangerous
-                                ? 'text-red-400 hover:bg-red-500/10 disabled:text-red-400/30 disabled:cursor-not-allowed'
-                                : 'text-blue-400 hover:bg-blue-500/10'
+                                ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 disabled:text-[var(--color-danger)]/30 disabled:cursor-not-allowed'
+                                : 'text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'
                             }`}
                     >
                         {confirmText}

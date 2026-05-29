@@ -54,12 +54,9 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                 </button>
 
                 <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-rose-500 blur-lg opacity-50 animate-pulse" />
-                        <div className="relative flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-pink-500/20 to-rose-500/20 border border-pink-500/30">
-                            <Heart size={20} className="text-pink-400 animate-pulse" fill="currentColor" />
-                            <span className="font-semibold text-white">Tachycardia</span>
-                        </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)]">
+                        <Heart size={20} className="text-accent" fill="currentColor" />
+                        <span className="font-semibold text-white">Tachycardia</span>
                     </div>
 
                     {messages.length > 0 && (
@@ -80,9 +77,8 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4">
                         <div className="relative mb-6">
-                            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-rose-500 blur-2xl opacity-30 animate-pulse" />
-                            <div className="relative w-20 h-20 rounded-full bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center">
-                                <Heart size={40} className="text-white animate-pulse" fill="currentColor" />
+                            <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center">
+                                <Heart size={40} className="text-white" fill="currentColor" />
                             </div>
                         </div>
 
@@ -101,9 +97,9 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                                     key={action.id}
                                     onClick={() => sendQuickAction(action.id)}
                                     disabled={isLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 hover:border-pink-500/40 text-white/80 hover:text-white transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] hover:border-[var(--color-accent)] text-white/80 hover:text-white transition-all disabled:opacity-50"
                                 >
-                                    <action.icon size={16} className="text-pink-400" />
+                                    <action.icon size={16} className="text-accent" />
                                     <span className="text-sm">{action.label}</span>
                                 </button>
                             ))}
@@ -119,14 +115,14 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                     >
                         <div
                             className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                ? 'bg-accent text-white shadow-lg shadow-[var(--color-accent-glow)]/20'
-                                : 'bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 text-white'
+                                ? 'bg-accent text-white'
+                                : 'bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] text-white'
                                 }`}
                         >
                             {message.role === 'assistant' && (
                                 <div className="flex items-center gap-2 mb-1">
-                                    <Heart size={14} className="text-pink-400" fill="currentColor" />
-                                    <span className="text-xs text-pink-400 font-medium">Tachycardia</span>
+                                    <Heart size={14} className="text-accent" fill="currentColor" />
+                                    <span className="text-xs text-accent font-medium">Tachycardia</span>
                                 </div>
                             )}
                             <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
@@ -137,15 +133,15 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                 {/* Loading Indicator */}
                 {isLoading && (
                     <div className="flex justify-start">
-                        <div className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border border-pink-500/20 rounded-2xl px-4 py-3">
+                        <div className="bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] rounded-2xl px-4 py-3">
                             <div className="flex items-center gap-2">
-                                <Heart size={14} className="text-pink-400 animate-pulse" fill="currentColor" />
-                                <span className="text-xs text-pink-400 font-medium">Tachycardia</span>
+                                <Heart size={14} className="text-accent" fill="currentColor" />
+                                <span className="text-xs text-accent font-medium">Tachycardia</span>
                             </div>
                             <div className="flex items-center gap-1 mt-2">
-                                <div className="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <div className="w-2 h-2 rounded-full bg-pink-400 animate-bounce" style={{ animationDelay: '300ms' }} />
+                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }} />
+                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }} />
+                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
                             </div>
                         </div>
                     </div>
@@ -162,9 +158,9 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                             key={action.id}
                             onClick={() => sendQuickAction(action.id)}
                             disabled={isLoading}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-pink-500/30 text-white/60 hover:text-white text-xs transition-all disabled:opacity-50"
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[var(--color-accent-glow)] text-white/60 hover:text-white text-xs transition-all disabled:opacity-50"
                         >
-                            <action.icon size={12} className="text-pink-400" />
+                            <action.icon size={12} className="text-accent" />
                             <span>{action.label}</span>
                         </button>
                     ))}

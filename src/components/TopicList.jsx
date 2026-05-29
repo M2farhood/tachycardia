@@ -237,7 +237,7 @@ const TopicList = ({
 
                                     {/* Drag Handle - hidden on mobile */}
                                     <div className="cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-50 transition-opacity touch-none hidden sm:block">
-                                        <GripVertical size={16} className="text-white/40" />
+                                        <GripVertical size={16} className="text-[var(--text-tertiary)]" />
                                     </div>
 
                                     {/* Checkbox */}
@@ -277,7 +277,7 @@ const TopicList = ({
                                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                             {subtaskProgress && (
                                                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded border ${subtaskProgress.completed === subtaskProgress.total
-                                                    ? 'text-green-300 bg-green-500/20 border-green-500/20'
+                                                    ? 'text-[var(--color-success)] bg-[var(--color-success)]/15 border-[var(--color-success)]/20'
                                                     : 'text-accent bg-accent/20 border-accent/20'
                                                     }`}>
                                                     {subtaskProgress.completed}/{subtaskProgress.total}
@@ -301,10 +301,10 @@ const TopicList = ({
                                                         placeholder="0"
                                                         min="0"
                                                         max="100"
-                                                        className="w-14 px-1.5 py-0.5 text-xs bg-purple-500/20 border border-purple-500/50 rounded text-purple-200 focus:outline-none focus:border-purple-400"
+                                                        className="w-14 px-1.5 py-0.5 text-xs bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] rounded text-accent focus:outline-none focus:border-[var(--color-accent)]"
                                                         autoFocus
                                                     />
-                                                    <span className="text-xs text-purple-300">%</span>
+                                                    <span className="text-xs text-accent">%</span>
                                                 </div>
                                             ) : (
                                                 <button
@@ -313,7 +313,7 @@ const TopicList = ({
                                                         startWeightEdit(topic)
                                                     }}
                                                     className={`text-xs font-medium px-1.5 py-0.5 rounded border transition-all flex items-center gap-1 ${topic.weight > 0
-                                                        ? 'text-purple-300 bg-purple-500/20 border-purple-500/20 hover:bg-purple-500/30'
+                                                        ? 'text-accent bg-[var(--color-accent-dim)] border-[var(--color-accent-glow)] hover:opacity-90'
                                                         : 'text-white/40 bg-white/5 border-white/10 hover:bg-white/10 hover:text-white/60'
                                                         }`}
                                                     title="Set weight percentage"
@@ -339,7 +339,7 @@ const TopicList = ({
                                             <button
                                                 onClick={() => onTimerStart(tab.id, topic.id)}
                                                 className={`p-2 rounded-full transition-all mobile-visible ${isActive
-                                                    ? 'bg-accent glow-blue animate-pulse-glow'
+                                                    ? 'bg-accent ring-2 ring-accent ring-opacity-50'
                                                     : 'hover:bg-white/10 sm:opacity-0 sm:group-hover:opacity-100 opacity-60'
                                                     }`}
                                             >
@@ -348,9 +348,9 @@ const TopicList = ({
                                         )}
                                         <button
                                             onClick={() => onTopicDelete(tab.id, topic.id)}
-                                            className="p-2 rounded-full hover:bg-red-500/20 sm:opacity-0 sm:group-hover:opacity-100 opacity-40 transition-all mobile-visible"
+                                            className="p-2 rounded-full hover:bg-[var(--color-danger)]/20 sm:opacity-0 sm:group-hover:opacity-100 opacity-40 transition-all mobile-visible"
                                         >
-                                            <Trash2 size={14} className="text-red-400/80" />
+                                            <Trash2 size={14} className="text-[var(--color-danger)]/80" />
                                         </button>
                                     </div>
                                 </div>
@@ -367,7 +367,7 @@ const TopicList = ({
                                                 <button
                                                     onClick={() => handleToggleSubtask(topic.id, subtask.id, subtask.completed)}
                                                     className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0 ${subtask.completed
-                                                        ? 'bg-green-500 border-green-500'
+                                                        ? 'bg-[var(--color-success)] border-[var(--color-success)]'
                                                         : 'border-white/30 hover:border-white/50'
                                                         }`}
                                                 >
@@ -381,9 +381,9 @@ const TopicList = ({
                                                 </span>
                                                 <button
                                                     onClick={() => handleDeleteSubtask(topic.id, subtask.id)}
-                                                    className="p-1 rounded hover:bg-red-500/20 sm:opacity-0 sm:group-hover/subtask:opacity-100 opacity-40 transition-all mobile-visible"
+                                                    className="p-1 rounded hover:bg-[var(--color-danger)]/20 sm:opacity-0 sm:group-hover/subtask:opacity-100 opacity-40 transition-all mobile-visible"
                                                 >
-                                                    <Trash2 size={12} className="text-red-400/60" />
+                                                    <Trash2 size={12} className="text-[var(--color-danger)]/60" />
                                                 </button>
                                             </div>
                                         ))}

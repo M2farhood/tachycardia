@@ -297,7 +297,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl mb-3 transition-colors"
           >
             <span className="text-white font-medium">All Sections</span>
-            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-blue-500' : 'border border-white/30'
+            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-accent' : 'border border-white/30'
               }`}>
               {printAll && <Check size={14} className="text-white" />}
             </div>
@@ -323,7 +323,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
                       <span className="text-white/40 text-xs ml-2">{completed}/{total}</span>
                     </div>
                   </div>
-                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-blue-500' : 'border border-white/30'
+                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-accent' : 'border border-white/30'
                     }`}>
                     {isSelected && <Check size={14} className="text-white" />}
                   </div>
@@ -338,7 +338,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
           <button
             onClick={handlePrint}
             disabled={selectedTabs.size === 0}
-            className="w-full py-3 bg-blue-500 hover:bg-blue-600 disabled:bg-white/10 disabled:text-white/30 text-white font-medium rounded-xl transition-colors liquid-press"
+            className="w-full py-3 bg-accent hover:opacity-90 disabled:bg-white/10 disabled:text-white/30 text-white font-medium rounded-xl transition-colors liquid-press"
           >
             Print {selectedTabs.size > 0 ? `(${selectedTabs.size} section${selectedTabs.size > 1 ? 's' : ''})` : ''}
           </button>

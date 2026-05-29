@@ -154,7 +154,7 @@ const FocusMode = ({
     return (
         <div className={`fixed inset-0 z-50 bg-[#0a0c10] text-white flex flex-col transition-all duration-1000 ${isCompleted ? 'scale-110 opacity-0' : 'opacity-100'}`}>
             {/* Ambient Background & Header */}
-            <div className="absolute inset-0 bg-gradient-radial from-[var(--color-accent-glow)] to-transparent opacity-30 animate-pulse-slow pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-radial from-[var(--color-accent-glow)] to-transparent opacity-20 pointer-events-none"></div>
 
             {/* Header */}
             <div className="relative z-10 flex justify-between items-center p-6">
@@ -216,13 +216,13 @@ const FocusMode = ({
                         onClick={handleImStuck}
                         className="px-8 py-4 bg-[#1a1d24] hover:bg-[#252932] text-white/60 hover:text-white rounded-2xl font-medium text-lg transition-all w-72 flex items-center justify-center gap-3"
                     >
-                        <AlertCircle size={24} className="text-orange-400" />
+                        <AlertCircle size={24} className="text-[var(--color-danger)]" />
                         I'm Stuck
                     </button>
 
                     <button
                         onClick={handleComplete}
-                        className="mt-4 text-white/30 hover:text-green-400 transition-colors flex items-center gap-2 text-sm"
+                        className="mt-4 text-white/30 hover:text-[var(--color-success)] transition-colors flex items-center gap-2 text-sm"
                     >
                         <CheckCircle size={16} /> Mark as Complete
                     </button>
@@ -235,7 +235,7 @@ const FocusMode = ({
                     <div className="max-w-2xl mx-auto">
                         <div className="flex justify-between items-start mb-6">
                             <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Brain className="text-purple-400" />
+                                <Brain className="text-accent" />
                                 Let's break it down
                             </h3>
                             <button onClick={() => setShowStuckMenu(false)} className="text-white/40 hover:text-white">✕</button>
@@ -249,11 +249,11 @@ const FocusMode = ({
                                 Thinking...
                             </div>
                         ) : aiError ? (
-                            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-center">
-                                <p className="text-red-300 mb-4">{aiError}</p>
+                            <div className="p-4 bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20 rounded-xl text-center">
+                                <p className="text-[var(--color-danger)] mb-4">{aiError}</p>
                                 <button
                                     onClick={handleImStuck}
-                                    className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-200 rounded-lg text-sm transition-colors"
+                                    className="px-4 py-2 bg-[var(--color-danger)]/20 hover:bg-[var(--color-danger)]/30 text-[var(--color-danger)] rounded-lg text-sm transition-colors"
                                 >
                                     Try Again
                                 </button>

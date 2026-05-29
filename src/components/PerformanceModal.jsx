@@ -49,23 +49,23 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                 {/* Stats Row */}
                 <div className="p-5 grid grid-cols-3 gap-3 border-b border-white/5">
                     {/* Total Time (All Time) */}
-                    <div className="bg-gradient-to-br from-purple-500/20 to-pink-500/20 rounded-2xl p-4 text-center">
-                        <Calendar size={18} className="text-purple-400 mx-auto mb-2" />
+                    <div className="bg-white/5 rounded-2xl p-4 text-center">
+                        <Calendar size={18} className="text-accent mx-auto mb-2" />
                         <p className="text-xl font-bold text-white">{formatTime(totalMinutes)}</p>
                         <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Total</p>
                     </div>
 
                     {/* Today */}
-                    <div className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-2xl p-4 text-center">
-                        <Clock size={18} className="text-blue-400 mx-auto mb-2" />
+                    <div className="bg-white/5 rounded-2xl p-4 text-center">
+                        <Clock size={18} className="text-accent mx-auto mb-2" />
                         <p className="text-xl font-bold text-white">{formatTime(todayMinutes)}</p>
                         <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Today</p>
                     </div>
 
                     {/* Completion */}
                     <div className="bg-white/5 rounded-2xl p-4 text-center">
-                        <div className="w-5 h-5 rounded-full bg-green-500/20 mx-auto mb-2 flex items-center justify-center">
-                            <Check size={12} className="text-green-400" />
+                        <div className="w-5 h-5 rounded-full bg-[var(--color-success)]/20 mx-auto mb-2 flex items-center justify-center">
+                            <Check size={12} className="text-[var(--color-success)]" />
                         </div>
                         <p className="text-xl font-bold text-white">{overallPercent}%</p>
                         <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Done</p>
@@ -76,7 +76,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                 <div className="px-5 py-3 border-b border-white/5">
                     <div className="h-2 bg-white/10 rounded-full overflow-hidden">
                         <div
-                            className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all"
+                            className="h-full bg-accent rounded-full transition-all"
                             style={{ width: `${overallPercent}%` }}
                         />
                     </div>
@@ -104,11 +104,11 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                     {tab.topics.map(topic => (
                                         <div
                                             key={topic.id}
-                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${topic.completed ? 'bg-green-500/10' : 'bg-white/5'
+                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${topic.completed ? 'bg-[var(--color-success)]/10' : 'bg-white/5'
                                                 }`}
                                         >
                                             {topic.completed ? (
-                                                <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
+                                                <div className="w-5 h-5 rounded-full bg-[var(--color-success)] flex items-center justify-center flex-shrink-0">
                                                     <Check size={12} className="text-white" />
                                                 </div>
                                             ) : (

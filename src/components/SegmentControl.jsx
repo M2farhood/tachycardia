@@ -183,16 +183,15 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     {/* Tachycardia AI Button */}
                     <button
                         onClick={onTachycardiaClick}
-                        className={`relative flex-shrink-0 ml-1 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
-                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
-                            : 'bg-gradient-to-r from-pink-500/20 to-rose-500/20 text-pink-300 hover:from-pink-500/30 hover:to-rose-500/30 border border-pink-500/30'
+                        className={`flex-shrink-0 ml-1 px-4 py-2 rounded-xl flex items-center gap-2 transition-all ${showTachycardia
+                            ? 'bg-accent text-white'
+                            : 'bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border)] hover:bg-[var(--surface-3)]'
                             }`}
                         title="Tachycardia AI"
                     >
-                        <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 opacity-0 hover:opacity-20 blur-lg transition-opacity" />
                         <Heart
                             size={16}
-                            className={`${showTachycardia ? 'text-white' : 'text-pink-400'} ${!showTachycardia ? 'animate-pulse' : ''}`}
+                            className={showTachycardia ? 'text-white' : ''}
                             fill={showTachycardia ? 'currentColor' : 'none'}
                         />
                         <span className="text-sm font-medium hidden sm:inline">Tachycardia</span>

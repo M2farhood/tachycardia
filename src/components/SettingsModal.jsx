@@ -108,7 +108,7 @@ const SettingsModal = ({
                                             if (e.key === 'Escape') setEditingName(false)
                                         }}
                                         placeholder="Enter your name"
-                                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-base focus:outline-none focus:border-blue-500"
+                                        className="flex-1 px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white text-base focus:outline-none focus:border-[var(--color-accent)]"
                                         autoFocus
                                     />
                                     <button
@@ -165,17 +165,17 @@ const SettingsModal = ({
                                 </button>
                             ) : (
                                 /* Signed In State */
-                                <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-xl p-3 space-y-3">
+                                <div className="bg-[var(--color-success)]/10 border border-[var(--color-success)]/20 rounded-xl p-3 space-y-3">
                                     <div className="flex items-center gap-3">
                                         {user.photoURL ? (
                                             <img
                                                 src={user.photoURL}
                                                 alt="Profile"
-                                                className="w-9 h-9 rounded-full border-2 border-green-500/30"
+                                                className="w-9 h-9 rounded-full border-2 border-[var(--color-success)]/30"
                                             />
                                         ) : (
-                                            <div className="w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center">
-                                                <User size={16} className="text-green-400" />
+                                            <div className="w-9 h-9 rounded-full bg-[var(--color-success)]/20 flex items-center justify-center">
+                                                <User size={16} className="text-[var(--color-success)]" />
                                             </div>
                                         )}
                                         <div className="flex-1 min-w-0">
@@ -188,17 +188,17 @@ const SettingsModal = ({
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             {isSyncing ? (
-                                                <Loader size={14} className="text-blue-400 animate-spin" />
+                                                <Loader size={14} className="text-accent animate-spin" />
                                             ) : syncStatus === 'synced' ? (
-                                                <CheckCircle size={14} className="text-green-400" />
+                                                <CheckCircle size={14} className="text-[var(--color-success)]" />
                                             ) : syncStatus === 'error' ? (
-                                                <CloudOff size={14} className="text-red-400" />
+                                                <CloudOff size={14} className="text-[var(--color-danger)]" />
                                             ) : (
                                                 <Cloud size={14} className="text-white/40" />
                                             )}
-                                            <span className={`text-xs ${syncStatus === 'synced' ? 'text-green-400' :
-                                                    syncStatus === 'syncing' ? 'text-blue-400' :
-                                                        syncStatus === 'error' ? 'text-red-400' :
+                                            <span className={`text-xs ${syncStatus === 'synced' ? 'text-[var(--color-success)]' :
+                                                    syncStatus === 'syncing' ? 'text-accent' :
+                                                        syncStatus === 'error' ? 'text-[var(--color-danger)]' :
                                                             'text-white/40'
                                                 }`}>
                                                 {syncStatus === 'synced' ? 'Synced' :
@@ -331,7 +331,7 @@ const SettingsModal = ({
                                                 const time = settings?.examDate?.split('T')[1] || '09:00'
                                                 onSettingsChange({ examDate: `${date}T${time}` })
                                             }}
-                                            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50 min-w-0"
+                                            className="flex-1 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[var(--color-accent)] min-w-0"
                                         />
                                         <input
                                             type="time"
@@ -341,7 +341,7 @@ const SettingsModal = ({
                                                 const date = settings?.examDate?.split('T')[0] || new Date().toISOString().split('T')[0]
                                                 onSettingsChange({ examDate: `${date}T${time}` })
                                             }}
-                                            className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-blue-500/50"
+                                            className="w-24 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-[var(--color-accent)]"
                                         />
                                     </div>
                                 )}
@@ -351,7 +351,7 @@ const SettingsModal = ({
                         {/* Performance Button */}
                         <button
                             onClick={() => setShowPerformance(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 hover:from-blue-500/30 hover:to-cyan-500/30 text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-blue-500/20"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
                         >
                             <BarChart2 size={16} />
                             View All Performance
@@ -369,7 +369,7 @@ const SettingsModal = ({
                         {/* Import Study Plan Button */}
                         <button
                             onClick={() => setShowPlanImporter(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 hover:from-emerald-500/30 hover:to-cyan-500/30 text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-emerald-500/20"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-white/90 text-base font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
                         >
                             <FileText size={16} />
                             📥 Import Study Plan
@@ -384,7 +384,7 @@ const SettingsModal = ({
                                 </div>
                                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
                                     <div
-                                        className={`h-full rounded-full ${storage.percent > 80 ? 'bg-red-500' : 'bg-blue-500/50'}`}
+                                        className={`h-full rounded-full ${storage.percent > 80 ? 'bg-[var(--color-danger)]' : 'bg-accent/50'}`}
                                         style={{ width: `${Math.min(storage.percent, 100)}%` }}
                                     />
                                 </div>

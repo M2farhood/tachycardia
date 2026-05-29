@@ -33,7 +33,7 @@ const TemplateModal = ({ onSelect, onClose }) => {
                                 className="text-left p-4 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 hover:border-white/10 transition-all liquid-press group"
                             >
                                 <div className="text-2xl mb-2">{emoji}</div>
-                                <h3 className="font-semibold text-white text-sm group-hover:text-blue-300 transition-colors">
+                                <h3 className="font-semibold text-white text-sm group-hover:text-accent transition-colors">
                                     {name}
                                 </h3>
                                 <p className="text-white/40 text-xs mt-0.5">{description}</p>

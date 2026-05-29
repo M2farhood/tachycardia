@@ -102,8 +102,8 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-white/10">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20">
-                            <FileText size={20} className="text-emerald-400" />
+                        <div className="p-2 rounded-xl bg-[var(--color-accent-dim)]">
+                            <FileText size={20} className="text-accent" />
                         </div>
                         <div>
                             <h2 className="text-lg font-semibold text-white">Import Study Plan</h2>
@@ -114,7 +114,7 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                                     <>
                                         {parsedTasks.length} tasks found
                                         {parsingMethod === 'ai' && (
-                                            <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px]">
+                                            <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-[var(--color-accent-dim)] text-accent text-[10px]">
                                                 <Sparkles size={10} /> AI
                                             </span>
                                         )}
@@ -152,17 +152,17 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
 
 - Complete Chapter 5 (2h)
 - Review Notes (1h)`}
-                                className="w-full h-56 p-4 rounded-2xl bg-black/30 border border-white/10 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm"
+                                className="w-full h-56 p-4 rounded-2xl bg-black/30 border border-white/10 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)] text-sm"
                             />
 
                             {error && (
-                                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                                    <AlertCircle size={16} className="text-red-400" />
-                                    <span className="text-sm text-red-300">{error}</span>
+                                <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20">
+                                    <AlertCircle size={16} className="text-[var(--color-danger)]" />
+                                    <span className="text-sm text-[var(--color-danger)]">{error}</span>
                                 </div>
                             )}
 
-                            <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-white/5 space-y-3">
+                            <div className="p-4 rounded-2xl bg-[var(--color-accent-dim)] border border-white/5 space-y-3">
                                 <div className="flex items-center justify-between">
                                     <p className="text-xs text-white/60">💡 <b>Generate Plan with AI</b></p>
                                     <button
@@ -185,7 +185,7 @@ Please generate the plan now.`
                                             navigator.clipboard.writeText(prompt)
                                             // Brief visual feedback could go here
                                         }}
-                                        className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-cyan-300 transition-colors"
+                                        className="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-accent transition-colors"
                                     >
                                         Copy Prompt
                                     </button>
@@ -205,7 +205,7 @@ Please generate the plan now.`
                                 <select
                                     value={selectedTabId}
                                     onChange={(e) => setSelectedTabId(e.target.value)}
-                                    className="w-full p-3 rounded-xl bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                                    className="w-full p-3 rounded-xl bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)]"
                                 >
                                     {tabs?.map(tab => (
                                         <option key={tab.id} value={tab.id}>
@@ -218,7 +218,7 @@ Please generate the plan now.`
                             {/* Select All */}
                             <button
                                 onClick={handleSelectAll}
-                                className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                                className="text-sm text-accent hover:opacity-80 transition-opacity"
                             >
                                 {parsedTasks.every(t => t.selected) ? 'Deselect All' : 'Select All'}
                             </button>
@@ -230,12 +230,12 @@ Please generate the plan now.`
                                         key={task.id}
                                         onClick={() => handleToggleTask(task.id)}
                                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${task.selected
-                                            ? 'bg-cyan-500/10 border border-cyan-500/30'
+                                            ? 'bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)]'
                                             : 'bg-white/5 border border-white/5 opacity-50'
                                             }`}
                                     >
                                         <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center ${task.selected
-                                            ? 'bg-cyan-500 text-white'
+                                            ? 'bg-accent text-white'
                                             : 'bg-white/10'
                                             }`}>
                                             {task.selected && <Check size={14} />}
@@ -244,13 +244,13 @@ Please generate the plan now.`
                                             <p className="text-sm text-white truncate">{task.name}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 {task.dateFormatted && (
-                                                    <span className="text-xs text-cyan-400">{task.dateFormatted}</span>
+                                                    <span className="text-xs text-accent">{task.dateFormatted}</span>
                                                 )}
                                                 {task.durationFormatted && (
                                                     <span className="text-xs text-white/40">{task.durationFormatted}</span>
                                                 )}
                                                 {task.weight && (
-                                                    <span className="text-xs text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                                                    <span className="text-xs text-accent bg-[var(--color-accent-dim)] px-1.5 py-0.5 rounded">
                                                         Weight: {task.weight}%
                                                     </span>
                                                 )}
@@ -261,9 +261,9 @@ Please generate the plan now.`
                             </div>
 
                             {error && (
-                                <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
-                                    <AlertCircle size={16} className="text-red-400" />
-                                    <span className="text-sm text-red-300">{error}</span>
+                                <div className="flex items-center gap-2 p-3 rounded-xl bg-[var(--color-danger)]/10 border border-[var(--color-danger)]/20">
+                                    <AlertCircle size={16} className="text-[var(--color-danger)]" />
+                                    <span className="text-sm text-[var(--color-danger)]">{error}</span>
                                 </div>
                             )}
                         </div>
@@ -283,7 +283,7 @@ Please generate the plan now.`
                             <button
                                 onClick={handleParse}
                                 disabled={!planText.trim() || isParsing}
-                                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="flex-1 py-3 px-4 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {isParsing ? (
                                     <><Loader2 size={18} className="animate-spin" /> Parsing...</>
@@ -303,7 +303,7 @@ Please generate the plan now.`
                             <button
                                 onClick={handleImport}
                                 disabled={selectedCount === 0}
-                                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-500 text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="flex-1 py-3 px-4 rounded-xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 <Download size={18} />
                                 Import {selectedCount} Task{selectedCount !== 1 ? 's' : ''}

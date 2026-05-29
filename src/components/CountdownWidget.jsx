@@ -40,8 +40,8 @@ const CountdownWidget = ({ targetDate, title = 'Exam', isEnabled }) => {
         <div className="relative overflow-hidden glass-panel-subtle rounded-xl animate-fade-in border border-white/5 group">
             <div className="px-4 py-2 flex items-center gap-3 relative z-10">
                 <div className="flex items-center gap-2 text-white/50 text-xs font-medium uppercase tracking-wider">
-                    <Clock size={14} className="text-orange-400" />
-                    <span className="group-hover:text-orange-400 transition-colors">{title}</span>
+                    <Clock size={14} className="text-accent" />
+                    <span className="group-hover:text-accent transition-colors">{title}</span>
                 </div>
 
                 <div className="h-4 w-px bg-white/10" />
@@ -63,7 +63,7 @@ const CountdownWidget = ({ targetDate, title = 'Exam', isEnabled }) => {
                     </div>
                     <div className="w-px h-6 bg-white/5" />
                     <div className="flex flex-col items-center leading-none">
-                        <span className="text-lg font-bold text-orange-400 tabular-nums min-w-[20px] text-center">
+                        <span className="text-lg font-bold text-accent tabular-nums min-w-[20px] text-center">
                             {String(timeLeft.seconds).padStart(2, '0')}
                         </span>
                         <span className="text-[9px] text-white/40 uppercase tracking-wide">Secs</span>
@@ -71,9 +71,8 @@ const CountdownWidget = ({ targetDate, title = 'Exam', isEnabled }) => {
                 </div>
             </div>
 
-            {/* Burning Bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-[2px] w-full bg-gradient-to-r from-orange-600 via-orange-400 to-yellow-400 bg-[length:200%_100%] animate-[burn_3s_ease-in-out_infinite] opacity-50 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute bottom-0 left-0 right-0 h-[10px] w-full bg-orange-500/10 blur-xl animate-pulse" />
+            {/* Static accent bar */}
+            <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-accent opacity-30 rounded-full" />
         </div>
     )
 }

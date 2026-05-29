@@ -19,9 +19,9 @@ const StatsCards = ({
             {/* Streak Card */}
             <div className="stats-card glass-panel rounded-2xl p-5">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
-                    <Flame size={20} className="text-orange-400" />
+                    <Flame size={20} className="text-[var(--text-secondary)]" />
                 </div>
-                <p className="text-sm font-medium uppercase tracking-wider text-white/40 mb-1">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-white/40 mb-1">
                     Streak
                 </p>
                 <p className="text-3xl font-bold text-white">
@@ -32,9 +32,9 @@ const StatsCards = ({
             {/* Today's Study Time Card */}
             <div className="stats-card glass-panel rounded-2xl p-5">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
-                    <Clock size={20} className="text-accent" />
+                    <Clock size={20} className="text-[var(--text-secondary)]" />
                 </div>
-                <p className="text-sm font-medium uppercase tracking-wider text-white/40 mb-1">
+                <p className="text-[11px] font-medium uppercase tracking-wider text-white/40 mb-1">
                     Today
                 </p>
                 <p className="text-3xl font-bold text-white">
@@ -45,10 +45,10 @@ const StatsCards = ({
             {/* All-time Study Time Card (spans full width) */}
             <div className="stats-card glass-panel rounded-2xl p-5 col-span-2 flex items-center gap-4">
                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 shrink-0">
-                    <Hourglass size={20} className="text-white/60" />
+                    <Hourglass size={20} className="text-[var(--text-secondary)]" />
                 </div>
                 <div className="flex items-baseline justify-between flex-1">
-                    <p className="text-sm font-medium uppercase tracking-wider text-white/40">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">
                         Total Studied
                     </p>
                     <p className="text-2xl font-bold text-white">

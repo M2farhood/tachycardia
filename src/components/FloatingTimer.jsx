@@ -15,7 +15,7 @@ const FloatingTimer = ({
             <div className="fixed bottom-6 left-6 z-40 no-print">
                 <button
                     onClick={onStart}
-                    className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-lg hover:scale-110 transition-transform glow-blue"
+                    className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-lg hover:opacity-90 transition-opacity"
                     title="Start Study Session"
                 >
                     <Play size={20} className="text-white ml-0.5" />
@@ -27,26 +27,11 @@ const FloatingTimer = ({
     return (
         <div className="fixed bottom-6 left-4 right-4 z-40 no-print" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="floating-bar rounded-2xl overflow-hidden animate-slide-up max-w-lg mx-auto">
-                {/* Water fill background */}
+                {/* Progress track — replaces water fill */}
                 <div
-                    className="absolute inset-0 water-fill-bg transition-all duration-1000 ease-out"
-                    style={{
-                        height: `${Math.max(timeProgress * 100, 5)}%`,
-                        bottom: 0,
-                        top: 'auto'
-                    }}
+                    className="absolute top-0 left-0 h-[2px] bg-accent transition-all duration-1000 ease-out rounded-full"
+                    style={{ width: `${Math.max(timeProgress * 100, 1)}%` }}
                 />
-
-                {/* Wave animation overlay */}
-                <div
-                    className="absolute left-0 right-0 wave-container"
-                    style={{
-                        bottom: `${Math.max(timeProgress * 100 - 5, 0)}%`
-                    }}
-                >
-                    <div className="wave wave1"></div>
-                    <div className="wave wave2"></div>
-                </div>
 
                 {/* Content */}
                 <div className="relative z-10 flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4">
@@ -74,8 +59,8 @@ const FloatingTimer = ({
                         <button
                             onClick={onPauseResume}
                             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all liquid-press ${isRunning
-                                ? 'bg-white/20 hover:bg-white/30'
-                                : 'bg-accent glow-blue hover:opacity-90'
+                                ? 'bg-[var(--surface-2)] hover:bg-[var(--surface-3)]'
+                                : 'bg-accent hover:opacity-90'
                                 }`}
                         >
                             {isRunning ? (
