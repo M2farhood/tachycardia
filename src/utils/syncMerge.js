@@ -95,6 +95,25 @@ const mergeTab = (l, c, tombstones) => {
     }
 }
 
+// Calendar is { [dateKey]: Task[] }. Each day's task list merges by id (a calendar
+// task has the same {id, completed, subtasks, updatedAt} shape as a topic), and
+// empty days are dropped.
+const mergeCalendar = (localCal = {}, cloudCal = {}, tombstones) => {
+    const keys = new Set([...Object.keys(localCal || {}), ...Object.keys(cloudCal || {})])
+    const out = {}
+    for (const k of keys) {
+        const merged = mergeById(
+            localCal?.[k] || [],
+            cloudCal?.[k] || [],
+            tombstones,
+            (a, b) => mergeTopic(a, b, tombstones),
+            localCal?.[k]
+        )
+        if (merged.length) out[k] = merged
+    }
+    return out
+}
+
 /**
  * Merge local and cloud data per-entity.
  * Returns the SAME `localData` reference when the merge produces no real change,
@@ -121,6 +140,9 @@ export const mergeData = (localData, cloudData) => {
             (l, c) => mergeTab(l, c, tombstones),
             primary.tabs
         ),
+        calendar: mergeCalendar(localData.calendar, cloudData.calendar, tombstones),
+        // Study days are append-only across devices — union and keep sorted.
+        studyDates: [...new Set([...(localData.studyDates || []), ...(cloudData.studyDates || [])])].sort(),
         deleted: tombstones,
         // Timer is device-local; never adopt the other device's running timer.
         timerSession: localData.timerSession ?? null,

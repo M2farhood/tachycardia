@@ -1,10 +1,40 @@
 import { useState, useEffect, useCallback } from 'react'
 import { migrate, needsMigration } from '../utils/migrations'
+import { generateId } from '../utils/templates'
 
 const STORAGE_KEY = 'study_tracker_data'
+const LEGACY_CALENDAR_KEY = 'study_tracker_calendar'
 
 // ISO timestamp helper for stamping per-entity updatedAt on every mutation.
 const now = () => new Date().toISOString()
+
+// One-time import of the old separate calendar localStorage key into the main
+// data object (so it gets cloud sync). Stamps updatedAt so entries can merge.
+// Returns { data, changed }. Leaves the legacy key for the caller to remove.
+const importLegacyCalendar = (data) => {
+    if (!data) return { data, changed: false }
+    const alreadyHasCalendar = data.calendar && Object.keys(data.calendar).length > 0
+    if (alreadyHasCalendar) return { data, changed: false }
+
+    let legacy = null
+    try {
+        legacy = JSON.parse(localStorage.getItem(LEGACY_CALENDAR_KEY) || 'null')
+    } catch {
+        legacy = null
+    }
+    if (!legacy || Object.keys(legacy).length === 0) return { data, changed: false }
+
+    const stamp = data.updatedAt || now()
+    const calendar = {}
+    for (const [dateKey, list] of Object.entries(legacy)) {
+        calendar[dateKey] = (list || []).map((task) => ({
+            ...task,
+            updatedAt: task.updatedAt || stamp,
+            subtasks: (task.subtasks || []).map((s) => ({ ...s, updatedAt: s.updatedAt || stamp })),
+        }))
+    }
+    return { data: { ...data, calendar, updatedAt: now() }, changed: true }
+}
 
 export const useLocalStorage = (initialValue) => {
     // Initialize state from localStorage or use initial value
@@ -13,12 +43,15 @@ export const useLocalStorage = (initialValue) => {
             const stored = localStorage.getItem(STORAGE_KEY)
             if (stored) {
                 const parsed = JSON.parse(stored)
-                const upgraded = migrate(parsed)
-                // Persist immediately if the load upgraded the schema, so the
-                // on-disk copy matches what the app is now running with.
-                if (needsMigration(parsed)) {
+                const migrated = migrate(parsed)
+                // Pull the old standalone calendar key into the main data object.
+                const { data: upgraded, changed: calendarImported } = importLegacyCalendar(migrated)
+                // Persist immediately if the load upgraded the schema or imported
+                // the calendar, so the on-disk copy matches what we're running.
+                if (needsMigration(parsed) || calendarImported) {
                     try {
                         localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded))
+                        if (calendarImported) localStorage.removeItem(LEGACY_CALENDAR_KEY)
                     } catch (writeError) {
                         console.error('Error persisting migrated data:', writeError)
                     }
@@ -229,9 +262,108 @@ export const useLocalStorage = (initialValue) => {
         }))
     }, [])
 
+    // Record that the user studied on `dateKey` (YYYY-MM-DD), for the streak.
+    // Returns the same data reference if the day is already recorded (no churn).
+    const recordStudyDay = useCallback((dateKey) => {
+        setData(prev => {
+            if (!prev) return prev
+            const dates = prev.studyDates || []
+            if (dates.includes(dateKey)) return prev
+            return { ...prev, studyDates: [...dates, dateKey], updatedAt: now() }
+        })
+    }, [])
+
+    // --- Calendar CRUD --------------------------------------------------------
+    // Calendar lives at data.calendar = { [dateKey]: Task[] }. Each task/subtask
+    // carries updatedAt and deletions go through the tombstone map, exactly like
+    // topics, so the calendar rides on the same per-entity cloud merge.
+
+    // Apply `updater` to one day's task list; drops the day if it ends up empty.
+    const withCalendarDay = (prev, dateKey, updater) => {
+        const list = prev.calendar?.[dateKey] || []
+        const nextList = updater(list)
+        const calendar = { ...(prev.calendar || {}) }
+        if (nextList.length === 0) delete calendar[dateKey]
+        else calendar[dateKey] = nextList
+        return { ...prev, calendar, updatedAt: now() }
+    }
+
+    const addCalendarTask = useCallback((dateKey, text) => {
+        setData(prev => withCalendarDay(prev, dateKey, list => [
+            ...list,
+            { id: generateId(), text, completed: false, subtasks: [], updatedAt: now() }
+        ]))
+    }, [])
+
+    const toggleCalendarTask = useCallback((dateKey, taskId) => {
+        setData(prev => withCalendarDay(prev, dateKey, list =>
+            list.map(t => t.id === taskId ? { ...t, completed: !t.completed, updatedAt: now() } : t)
+        ))
+    }, [])
+
+    const editCalendarTask = useCallback((dateKey, taskId, newText) => {
+        setData(prev => withCalendarDay(prev, dateKey, list =>
+            list.map(t => t.id === taskId ? { ...t, text: newText, updatedAt: now() } : t)
+        ))
+    }, [])
+
+    const deleteCalendarTask = useCallback((dateKey, taskId) => {
+        setData(prev => ({
+            ...withCalendarDay(prev, dateKey, list => list.filter(t => t.id !== taskId)),
+            deleted: { ...(prev.deleted || {}), [taskId]: now() }
+        }))
+    }, [])
+
+    const clearCalendarDay = useCallback((dateKey) => {
+        setData(prev => {
+            const ids = (prev.calendar?.[dateKey] || []).map(t => t.id)
+            const calendar = { ...(prev.calendar || {}) }
+            delete calendar[dateKey]
+            const deleted = { ...(prev.deleted || {}) }
+            ids.forEach(id => { deleted[id] = now() })
+            return { ...prev, calendar, deleted, updatedAt: now() }
+        })
+    }, [])
+
+    const addCalendarSubtask = useCallback((dateKey, taskId, text) => {
+        setData(prev => withCalendarDay(prev, dateKey, list =>
+            list.map(t => t.id !== taskId ? t : {
+                ...t,
+                updatedAt: now(),
+                subtasks: [...(t.subtasks || []), { id: generateId(), text, completed: false, updatedAt: now() }]
+            })
+        ))
+    }, [])
+
+    const toggleCalendarSubtask = useCallback((dateKey, taskId, subtaskId) => {
+        setData(prev => withCalendarDay(prev, dateKey, list =>
+            list.map(t => t.id !== taskId ? t : {
+                ...t,
+                updatedAt: now(),
+                subtasks: (t.subtasks || []).map(s =>
+                    s.id === subtaskId ? { ...s, completed: !s.completed, updatedAt: now() } : s
+                )
+            })
+        ))
+    }, [])
+
+    const deleteCalendarSubtask = useCallback((dateKey, taskId, subtaskId) => {
+        setData(prev => ({
+            ...withCalendarDay(prev, dateKey, list =>
+                list.map(t => t.id !== taskId ? t : {
+                    ...t,
+                    updatedAt: now(),
+                    subtasks: (t.subtasks || []).filter(s => s.id !== subtaskId)
+                })
+            ),
+            deleted: { ...(prev.deleted || {}), [subtaskId]: now() }
+        }))
+    }, [])
+
     // Clear all data
     const clearAllData = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY)
+        localStorage.removeItem(LEGACY_CALENDAR_KEY)
         setData(null)
         setIsFirstVisit(true)
     }, [])
@@ -252,6 +384,17 @@ export const useLocalStorage = (initialValue) => {
         reorderTopics,
         updateSettings,
         updateTimerSession,
+        recordStudyDay,
+        // Calendar
+        calendar: data?.calendar || {},
+        addCalendarTask,
+        toggleCalendarTask,
+        editCalendarTask,
+        deleteCalendarTask,
+        clearCalendarDay,
+        addCalendarSubtask,
+        toggleCalendarSubtask,
+        deleteCalendarSubtask,
         clearAllData
     }
 }

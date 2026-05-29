@@ -15,7 +15,7 @@
  */
 
 // Bump this whenever the data shape changes, and add a matching migration below.
-export const CURRENT_SCHEMA_VERSION = 2
+export const CURRENT_SCHEMA_VERSION = 4
 
 /**
  * Migrations keyed by the version they PRODUCE.
@@ -79,6 +79,35 @@ const migrations = {
             })),
         }
     },
+
+    // v2 -> v3: calendar moves into the main data object so it syncs to the
+    // cloud (it used to live in a separate, un-synced localStorage key). This
+    // step just ensures the `calendar` field exists and stamps updatedAt on any
+    // entries already present; the one-time import of the legacy localStorage
+    // key happens at load time in useLocalStorage (a migration can't read it).
+    3: (data) => {
+        const stamp = data.updatedAt || data.settings?.createdAt || new Date().toISOString()
+        const calendar = {}
+        for (const [dateKey, list] of Object.entries(data.calendar || {})) {
+            calendar[dateKey] = (list || []).map((task) => ({
+                ...task,
+                updatedAt: task.updatedAt || stamp,
+                subtasks: (task.subtasks || []).map((s) => ({
+                    ...s,
+                    updatedAt: s.updatedAt || stamp,
+                })),
+            }))
+        }
+        return { ...data, calendar }
+    },
+
+    // v3 -> v4: real, date-based study streak. `studyDates` holds the YYYY-MM-DD
+    // of every day the user logged study time; the streak is derived from it
+    // instead of the old fake "completed topics / 3" formula.
+    4: (data) => ({
+        ...data,
+        studyDates: data.studyDates || [],
+    }),
 }
 
 /**

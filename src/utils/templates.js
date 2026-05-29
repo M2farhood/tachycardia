@@ -108,9 +108,13 @@ export const templates = {
     }
 }
 
-// Generate a unique ID
+// Generate a unique ID. Uses crypto.randomUUID (collision-free) when available,
+// falling back to a timestamp+random string on older runtimes.
 export const generateId = () => {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID()
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
 }
 
 // Create a new empty topic
@@ -143,6 +147,8 @@ export const getInitialState = (templateKey) => {
         schemaVersion: CURRENT_SCHEMA_VERSION,
         updatedAt: now,
         deleted: {},
+        calendar: {},
+        studyDates: [],
         settings: {
             timerDuration: 25,
             isMuted: false,

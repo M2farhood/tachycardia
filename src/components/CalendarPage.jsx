@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Circle, Clock } from 'lucide-react'
-import { useCalendarStorage } from '../hooks/useCalendarStorage'
 import CalendarDayColumn from './CalendarDayColumn'
 
 // Get the Saturday that starts the week containing `date`
@@ -28,20 +27,18 @@ const formatWeekRange = (start) => {
     return `${MONTH_NAMES[start.getMonth()]} ${start.getDate()} – ${MONTH_NAMES[end.getMonth()]} ${end.getDate()}`
 }
 
-const CalendarPage = ({ isFocusMode = false }) => {
-    const {
-        tasks,
-        addTask,
-        toggleTask,
-        deleteTask,
-        editTask,
-        clearDay,
-        addSubtask,
-        toggleSubtask,
-        deleteSubtask
-    } = useCalendarStorage()
-
-    // ... existing date logic ...
+const CalendarPage = ({
+    isFocusMode = false,
+    tasks = {},
+    onAddTask,
+    onToggleTask,
+    onEditTask,
+    onDeleteTask,
+    onClearDay,
+    onAddSubtask,
+    onToggleSubtask,
+    onDeleteSubtask
+}) => {
     const [weekOffset, setWeekOffset] = useState(0)
 
     const today = useMemo(() => {
@@ -81,7 +78,7 @@ const CalendarPage = ({ isFocusMode = false }) => {
         return (
             <div className="flex flex-col items-center min-h-[60vh] animate-fade-in max-w-2xl mx-auto w-full pt-12">
                 <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse box-shadow-glow"></span>
+                    <span className="w-3 h-3 rounded-full bg-accent animate-pulse box-shadow-glow"></span>
                     Today's Timeline
                 </h2>
 
@@ -89,14 +86,14 @@ const CalendarPage = ({ isFocusMode = false }) => {
                     {todaysTasks.length === 0 ? (
                         <div className="text-white/40 italic pl-4">No tasks scheduled for today. Enjoy your freedom!</div>
                     ) : (
-                        todaysTasks.map((task, idx) => (
+                        todaysTasks.map((task) => (
                             <div key={task.id} className="relative group">
                                 {/* Timeline Dot */}
-                                <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-[#0a0c10] ${task.completed ? 'bg-green-500' : 'bg-blue-500'} transition-colors`}></div>
+                                <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-[#0a0c10] ${task.completed ? 'bg-green-500' : 'bg-accent'} transition-colors`}></div>
 
                                 <div className={`p-6 rounded-2xl border transition-all ${task.completed
                                     ? 'bg-white/5 border-transparent opacity-50'
-                                    : 'bg-white/10 border-white/10 hover:border-blue-500/50 hover:bg-white/15'
+                                    : 'bg-white/10 border-white/10 hover:border-accent/50 hover:bg-white/15'
                                     }`}>
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
@@ -116,7 +113,7 @@ const CalendarPage = ({ isFocusMode = false }) => {
                                         </div>
 
                                         <button
-                                            onClick={() => toggleTask(todayKey, task.id)}
+                                            onClick={() => onToggleTask(todayKey, task.id)}
                                             className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${task.completed
                                                 ? 'bg-green-500 border-green-500 text-black'
                                                 : 'border-white/30 hover:border-white text-transparent'
@@ -153,7 +150,7 @@ const CalendarPage = ({ isFocusMode = false }) => {
                     {weekOffset !== 0 && (
                         <button
                             onClick={() => setWeekOffset(0)}
-                            className="text-sm text-blue-400 hover:text-blue-300 hover:underline mt-1"
+                            className="text-sm text-accent hover:opacity-80 hover:underline mt-1"
                         >
                             Back to this week
                         </button>
@@ -182,14 +179,14 @@ const CalendarPage = ({ isFocusMode = false }) => {
                             month={day.month}
                             isToday={day.isToday}
                             tasks={tasks[day.dateKey]}
-                            onAddTask={addTask}
-                            onToggleTask={toggleTask}
-                            onEditTask={editTask}
-                            onDeleteTask={deleteTask}
-                            onClearDay={clearDay}
-                            onAddSubtask={addSubtask}
-                            onToggleSubtask={toggleSubtask}
-                            onDeleteSubtask={deleteSubtask}
+                            onAddTask={onAddTask}
+                            onToggleTask={onToggleTask}
+                            onEditTask={onEditTask}
+                            onDeleteTask={onDeleteTask}
+                            onClearDay={onClearDay}
+                            onAddSubtask={onAddSubtask}
+                            onToggleSubtask={onToggleSubtask}
+                            onDeleteSubtask={onDeleteSubtask}
                         />
                     ))}
                 </div>

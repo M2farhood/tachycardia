@@ -35,6 +35,16 @@ function App() {
     reorderTopics,
     updateSettings,
     updateTimerSession,
+    recordStudyDay,
+    calendar,
+    addCalendarTask,
+    toggleCalendarTask,
+    editCalendarTask,
+    deleteCalendarTask,
+    clearCalendarDay,
+    addCalendarSubtask,
+    toggleCalendarSubtask,
+    deleteCalendarSubtask,
     clearAllData
   } = useLocalStorage(null)
 
@@ -117,8 +127,11 @@ function App() {
     setTotalMinutes(newTotal)
     localStorage.setItem('study_tracker_total_time', newTotal.toString())
 
+    // Record today for the streak (synced; no-op if already recorded today)
+    recordStudyDay(getTodayKey())
+
     updateTimerSession(null)
-  }, [updateTimerSession, todayMinutes, totalMinutes, data?.settings?.timerDuration])
+  }, [updateTimerSession, recordStudyDay, todayMinutes, totalMinutes, data?.settings?.timerDuration])
 
   // Timer hook
   const { timeLeft, formattedTime, isRunning } = useTimer(
@@ -133,15 +146,25 @@ function App() {
     return data.tabs.find(t => t.id === activeTabId) || data.tabs[0]
   }, [data?.tabs, activeTabId])
 
-  // Calculate streak (simplified)
+  // Real, date-based streak: consecutive days of logged study up to today.
+  // If today hasn't been studied yet, the streak still counts up to yesterday.
   const streak = useMemo(() => {
-    if (!data?.tabs) return 0
-    let totalCompleted = 0
-    data.tabs.forEach(tab => {
-      totalCompleted += tab.topics.filter(t => t.completed).length
-    })
-    return totalCompleted > 0 ? Math.min(Math.floor(totalCompleted / 3) + 1, 30) : 0
-  }, [data?.tabs])
+    const dates = data?.studyDates
+    if (!dates || dates.length === 0) return 0
+    const studied = new Set(dates)
+    const keyOf = (d) => d.toISOString().split('T')[0]
+
+    const now = new Date()
+    let cursor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    if (!studied.has(keyOf(cursor))) cursor.setUTCDate(cursor.getUTCDate() - 1)
+
+    let count = 0
+    while (studied.has(keyOf(cursor))) {
+      count++
+      cursor.setUTCDate(cursor.getUTCDate() - 1)
+    }
+    return count
+  }, [data?.studyDates])
 
   // Calculate global stats
   const globalStats = useMemo(() => {
@@ -271,7 +294,7 @@ function App() {
           <p className="text-white/60">No sections available.</p>
           <button
             onClick={() => handleClearAll()}
-            className="mt-4 text-blue-400 hover:underline"
+            className="mt-4 text-accent hover:underline"
           >
             Reset and start over
           </button>
@@ -302,6 +325,7 @@ function App() {
 
   return (
     <div className="min-h-screen pb-safe">
+      <div className="app-container">
       {/* Header */}
       <Header
         data={data}
@@ -362,7 +386,18 @@ function App() {
       )}
 
       {showCalendar ? (
-        <CalendarPage isFocusMode={isFocusMode} />
+        <CalendarPage
+          isFocusMode={isFocusMode}
+          tasks={calendar}
+          onAddTask={addCalendarTask}
+          onToggleTask={toggleCalendarTask}
+          onEditTask={editCalendarTask}
+          onDeleteTask={deleteCalendarTask}
+          onClearDay={clearCalendarDay}
+          onAddSubtask={addCalendarSubtask}
+          onToggleSubtask={toggleCalendarSubtask}
+          onDeleteSubtask={deleteCalendarSubtask}
+        />
       ) : showTachycardia ? (
         <TachycardiaTab
           studyData={data}
@@ -419,6 +454,7 @@ function App() {
           />
         </>
       )}
+      </div>{/* end app-container */}
 
       {/* Floating Timer */}
       <FloatingTimer
