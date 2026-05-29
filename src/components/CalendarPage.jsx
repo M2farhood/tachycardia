@@ -84,7 +84,7 @@ const CalendarPage = ({
 
                 <div className="w-full relative pl-8 border-l-2 border-white/10 ml-4 space-y-12 pb-20">
                     {todaysTasks.length === 0 ? (
-                        <div className="text-white/40 italic pl-4">No tasks scheduled for today. Enjoy your freedom!</div>
+                        <div className="text-[var(--text-tertiary)] italic pl-4">No tasks scheduled for today. Enjoy your freedom!</div>
                     ) : (
                         todaysTasks.map((task) => (
                             <div key={task.id} className="relative group">
@@ -97,10 +97,10 @@ const CalendarPage = ({
                                     }`}>
                                     <div className="flex items-start justify-between gap-4">
                                         <div>
-                                            <h3 className={`text-xl font-medium mb-2 ${task.completed ? 'line-through text-white/50' : 'text-white'}`}>
+                                            <h3 className={`text-xl font-medium mb-2 ${task.completed ? 'line-through text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>
                                                 {task.text}
                                             </h3>
-                                            <div className="flex items-center gap-4 text-sm text-white/40">
+                                            <div className="flex items-center gap-4 text-[13px] text-[var(--text-tertiary)]">
                                                 {task.time && (
                                                     <span className="flex items-center gap-1.5">
                                                         <Clock size={14} /> {task.time}
@@ -137,7 +137,7 @@ const CalendarPage = ({
             <div className="flex items-center justify-between px-6 py-4">
                 <button
                     onClick={() => setWeekOffset(prev => prev - 1)}
-                    className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
+                    className="p-2 hover:bg-[var(--surface-2)] rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
                     title="Previous week"
                 >
                     <ChevronLeft size={24} />
@@ -159,7 +159,7 @@ const CalendarPage = ({
 
                 <button
                     onClick={() => setWeekOffset(prev => prev + 1)}
-                    className="p-2 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-colors"
+                    className="p-2 hover:bg-[var(--surface-2)] rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
                     title="Next week"
                 >
                     <ChevronRight size={24} />

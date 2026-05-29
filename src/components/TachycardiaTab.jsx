@@ -47,10 +47,10 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
             <div className="flex items-center justify-between mb-4">
                 <button
                     onClick={onBack}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] transition-colors"
                 >
-                    <ArrowLeft size={18} className="text-white/60" />
-                    <span className="text-sm text-white/60">Back</span>
+                    <ArrowLeft size={18} className="text-[var(--text-secondary)]" />
+                    <span className="text-[13px] text-[var(--text-secondary)]">Back</span>
                 </button>
 
                 <div className="flex items-center gap-3">
@@ -62,7 +62,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                     {messages.length > 0 && (
                         <button
                             onClick={clearChat}
-                            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/40 hover:text-red-400 transition-all"
+                            className="p-2 rounded-xl bg-[var(--surface-1)] hover:bg-red-500/20 text-[var(--text-tertiary)] hover:text-red-400 transition-all"
                             title="Clear chat"
                         >
                             <Trash2 size={18} />
@@ -72,7 +72,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto rounded-3xl glass-panel border border-white/10 p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto rounded-2xl surface p-4 space-y-4">
                 {/* Welcome Message */}
                 {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4">
@@ -85,7 +85,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                         <h2 className="text-2xl font-bold text-white mb-2">
                             Hey there! I'm Tachycardia 💓
                         </h2>
-                        <p className="text-white/50 max-w-sm mb-8">
+                        <p className="text-[var(--text-secondary)] max-w-sm mb-8">
                             Your AI study companion. I know your tabs, topics, and progress.
                             Ask me anything about your studies!
                         </p>
@@ -97,7 +97,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                                     key={action.id}
                                     onClick={() => sendQuickAction(action.id)}
                                     disabled={isLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] hover:border-[var(--color-accent)] text-white/80 hover:text-white transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] hover:border-[var(--color-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
                                 >
                                     <action.icon size={16} className="text-accent" />
                                     <span className="text-sm">{action.label}</span>
@@ -158,7 +158,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                             key={action.id}
                             onClick={() => sendQuickAction(action.id)}
                             disabled={isLoading}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:border-[var(--color-accent-glow)] text-white/60 hover:text-white text-xs transition-all disabled:opacity-50"
+                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-subtle)] hover:border-[var(--color-accent-glow)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] transition-all disabled:opacity-50"
                         >
                             <action.icon size={12} className="text-accent" />
                             <span>{action.label}</span>
@@ -179,7 +179,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                             placeholder="Ask Tachycardia anything..."
                             rows={1}
                             disabled={isLoading}
-                            className="w-full px-4 py-3 pr-12 rounded-2xl bg-black/30 border border-white/10 focus:border-accent/50 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
+                            className="w-full px-4 py-3 pr-12 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)] focus:border-accent/50 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
                             style={{ minHeight: '50px', maxHeight: '120px' }}
                         />
                     </div>

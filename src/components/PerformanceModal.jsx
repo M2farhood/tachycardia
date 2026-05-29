@@ -29,52 +29,52 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
             onClick={onClose}
         >
             <div
-                className="glass-panel rounded-3xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden animate-slide-up"
+                className="surface rounded-2xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-hidden animate-slide-up"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-white/5">
+                <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
                     <div>
-                        <h2 className="text-lg font-bold text-white">Performance</h2>
-                        <p className="text-xs text-white/40 mt-0.5">{completedTopics}/{totalTopics} topics completed</p>
+                        <h2 className="text-xl font-bold text-[var(--text-primary)]">Performance</h2>
+                        <p className="text-[11px] text-[var(--text-tertiary)] mt-0.5">{completedTopics}/{totalTopics} topics completed</p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-white/10 rounded-full transition-colors"
+                        className="p-2 hover:bg-[var(--surface-2)] rounded-full transition-colors"
                     >
-                        <X size={18} className="text-white/50" />
+                        <X size={18} className="text-[var(--text-tertiary)]" />
                     </button>
                 </div>
 
                 {/* Stats Row */}
-                <div className="p-5 grid grid-cols-3 gap-3 border-b border-white/5">
+                <div className="p-5 grid grid-cols-3 gap-3 border-b border-[var(--border-subtle)]">
                     {/* Total Time (All Time) */}
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
+                    <div className="bg-[var(--surface-2)] rounded-xl p-4 text-center">
                         <Calendar size={18} className="text-accent mx-auto mb-2" />
-                        <p className="text-xl font-bold text-white">{formatTime(totalMinutes)}</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Total</p>
+                        <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{formatTime(totalMinutes)}</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider mt-1">Total</p>
                     </div>
 
                     {/* Today */}
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
+                    <div className="bg-[var(--surface-2)] rounded-xl p-4 text-center">
                         <Clock size={18} className="text-accent mx-auto mb-2" />
-                        <p className="text-xl font-bold text-white">{formatTime(todayMinutes)}</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Today</p>
+                        <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{formatTime(todayMinutes)}</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider mt-1">Today</p>
                     </div>
 
                     {/* Completion */}
-                    <div className="bg-white/5 rounded-2xl p-4 text-center">
+                    <div className="bg-[var(--surface-2)] rounded-xl p-4 text-center">
                         <div className="w-5 h-5 rounded-full bg-[var(--color-success)]/20 mx-auto mb-2 flex items-center justify-center">
                             <Check size={12} className="text-[var(--color-success)]" />
                         </div>
-                        <p className="text-xl font-bold text-white">{overallPercent}%</p>
-                        <p className="text-[10px] text-white/40 uppercase tracking-wider mt-1">Done</p>
+                        <p className="text-xl font-bold text-[var(--text-primary)] tabular-nums">{overallPercent}%</p>
+                        <p className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider mt-1">Done</p>
                     </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div className="px-5 py-3 border-b border-white/5">
-                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                <div className="px-5 py-3 border-b border-[var(--border-subtle)]">
+                    <div className="h-1.5 bg-[var(--surface-3)] rounded-full overflow-hidden">
                         <div
                             className="h-full bg-accent rounded-full transition-all"
                             style={{ width: `${overallPercent}%` }}
@@ -96,7 +96,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                         <span>{tab.emoji || '📚'}</span>
                                         {tab.title}
                                     </h3>
-                                    <span className="text-xs text-white/40">{tabCompleted}/{tabTotal}</span>
+                                    <span className="text-[11px] text-[var(--text-tertiary)]">{tabCompleted}/{tabTotal}</span>
                                 </div>
 
                                 {/* Topics */}
@@ -104,7 +104,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                     {tab.topics.map(topic => (
                                         <div
                                             key={topic.id}
-                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${topic.completed ? 'bg-[var(--color-success)]/10' : 'bg-white/5'
+                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg ${topic.completed ? 'bg-[var(--color-success)]/10' : 'bg-[var(--surface-1)]'
                                                 }`}
                                         >
                                             {topic.completed ? (
@@ -112,9 +112,9 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                                     <Check size={12} className="text-white" />
                                                 </div>
                                             ) : (
-                                                <Circle size={20} className="text-white/20 flex-shrink-0" />
+                                                <Circle size={20} className="text-[var(--text-tertiary)] flex-shrink-0" />
                                             )}
-                                            <span className={`text-sm flex-1 ${topic.completed ? 'text-white/60 line-through' : 'text-white/80'
+                                            <span className={`text-[13px] flex-1 ${topic.completed ? 'text-[var(--text-tertiary)] line-through' : 'text-[var(--text-secondary)]'
                                                 }`}>
                                                 {topic.name}
                                             </span>

@@ -149,7 +149,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                                 {isActive && (
                                     <button
                                         onClick={(e) => toggleMenu(e, tab.id)}
-                                        className={`p-1.5 -ml-1 rounded-full hover:bg-white/10 transition-colors ${menuTabId === tab.id ? 'text-white bg-white/10' : 'text-white/40 hover:text-white/70'}`}
+                                        className={`p-1.5 -ml-1 rounded-full hover:bg-[var(--surface-2)] transition-colors ${menuTabId === tab.id ? 'text-[var(--text-primary)] bg-[var(--surface-2)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'}`}
                                     >
                                         <MoreVertical size={14} />
                                     </button>
@@ -161,7 +161,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     {/* Add Section Button */}
                     <button
                         onClick={handleAddSection}
-                        className="segment-btn liquid-press flex-shrink-0 !text-white/30 hover:!text-white/60 !px-3"
+                        className="segment-btn liquid-press flex-shrink-0 !text-[var(--text-tertiary)] hover:!text-[var(--text-secondary)] !px-3"
                         title="Add Section"
                     >
                         <Plus size={16} />
@@ -210,11 +210,11 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                         top: Math.min(menuPos.top, window.innerHeight - 100), // Prevent going off bottom
                         left: Math.min(menuPos.left, window.innerWidth - 140), // Prevent going off right
                     }}
-                    className="glass-panel rounded-xl py-1 min-w-[130px] z-50 animate-fade-in shadow-xl"
+                    className="surface rounded-xl py-1 min-w-[130px] z-50 animate-fade-in shadow-xl"
                 >
                     <button
                         onClick={() => handleRename(tabs.find(t => t.id === menuTabId))}
-                        className="w-full px-4 py-2.5 text-left text-base text-white/80 hover:bg-white/10 flex items-center gap-3"
+                        className="w-full px-4 py-2.5 text-left text-[15px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-3"
                     >
                         <Edit2 size={14} />
                         Rename

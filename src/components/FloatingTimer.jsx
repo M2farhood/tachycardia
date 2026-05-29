@@ -38,22 +38,22 @@ const FloatingTimer = ({
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <button
                             onClick={onReset}
-                            className="p-2 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+                            className="p-2 rounded-full hover:bg-[var(--surface-2)] transition-colors flex-shrink-0"
                         >
-                            <X size={18} className="text-white/50" />
+                            <X size={18} className="text-[var(--text-tertiary)]" />
                         </button>
                         <div className="min-w-0">
-                            <p className="text-white/60 text-xs">
+                            <p className="text-[var(--text-tertiary)] text-[11px] uppercase tracking-wide">
                                 {isRunning ? 'Studying' : 'Paused'}
                             </p>
-                            <p className="text-white font-semibold text-base sm:text-lg tracking-tight truncate">
+                            <p className="text-[var(--text-primary)] font-semibold text-[15px] sm:text-lg tracking-tight truncate">
                                 {currentTopicName || 'Study Session'}
                             </p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-                        <span className="text-white font-bold text-xl sm:text-2xl tabular-nums">
+                        <span className="text-[var(--text-primary)] font-bold text-xl sm:text-2xl tabular-nums">
                             {formattedTime}
                         </span>
                         <button

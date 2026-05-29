@@ -17,9 +17,9 @@
   --border-subtle: oklch(21% 0.008 25);
 
   /* Text */
-  --text-primary:   oklch(94% 0.004 25);
-  --text-secondary: oklch(62% 0.006 25);
-  --text-tertiary:  oklch(42% 0.005 25);
+  --text-primary:   oklch(96% 0.004 25);
+  --text-secondary: oklch(74% 0.006 25);
+  --text-tertiary:  oklch(60% 0.005 25);
 
   /* Accent — terracotta */
   --color-accent:     oklch(62% 0.12 35);
@@ -99,13 +99,18 @@
 }
 
 .light-theme .glass-panel {
-  background: oklch(98% 0.004 25);
-  border-color: oklch(88% 0.005 25);
+  background: transparent;
+  border: none;
 }
 
 .light-theme .glass-panel-subtle {
+  background: transparent;
+  border: none;
+}
+
+.light-theme .surface {
   background: oklch(98% 0.004 25);
-  border-color: oklch(91% 0.004 25);
+  border-color: oklch(88% 0.005 25);
 }
 
 .light-theme .segment-control {
@@ -191,16 +196,26 @@ h1, h2, h3 { text-wrap: balance; }
   }
 }
 
-/* Surface panels */
+/* Surface panels — flattened; rely on space + hairlines */
 .glass-panel {
-  background: var(--surface-1);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 3px oklch(0% 0 0 / 0.3);
+  background: transparent;
+  border: none;
 }
 
 .glass-panel-subtle {
+  background: transparent;
+  border: none;
+}
+
+/* Real surface — use only where containment is needed (modals, floating bar, dropdowns) */
+.surface {
   background: var(--surface-1);
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border);
+}
+
+/* Hairline divider utility */
+.divider-line {
+  border-top: 1px solid var(--border-subtle);
 }
 
 /* Focus styles for accessibility */
@@ -285,13 +300,14 @@ h1, h2, h3 { text-wrap: balance; }
   transition: stroke-dashoffset 0.5s ease;
 }
 
-/* Pill segmented control */
+/* Pill segmented control — lighter fill, reduced weight */
 .segment-control {
-  background: rgba(30, 30, 40, 0.5);
+  background: var(--surface-1);
   border-radius: 50px;
-  padding: 4px;
+  padding: 3px;
   display: inline-flex;
-  gap: 4px;
+  gap: 2px;
+  border: 1px solid var(--border-subtle);
 }
 
 .segment-control::-webkit-scrollbar {
@@ -299,11 +315,11 @@ h1, h2, h3 { text-wrap: balance; }
 }
 
 .segment-btn {
-  padding: 8px 16px;
+  padding: 6px 14px;
   border-radius: 50px;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text-tertiary);
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
@@ -311,35 +327,35 @@ h1, h2, h3 { text-wrap: balance; }
 }
 
 .segment-btn:hover {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--text-secondary);
 }
 
 .segment-btn.active {
-  background: var(--surface-3);
+  background: var(--surface-2);
   color: var(--text-primary);
 }
 
-/* Topic list item */
+/* Topic list item — hairline rows, no card chrome */
 .topic-item {
-  padding: 14px 16px;
-  border-radius: 16px;
+  padding: 11px 16px;
+  border-radius: 8px;
   transition: all 0.15s ease;
   cursor: pointer;
 }
 
 @media (min-width: 640px) {
   .topic-item {
-    padding: 16px 20px;
+    padding: 12px 20px;
   }
 }
 
 .topic-item:hover {
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface-1);
 }
 
 .topic-item:active {
   transform: scale(0.98);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface-2);
 }
 
 .topic-item.completed .topic-name {
@@ -660,7 +676,8 @@ h1, h2, h3 { text-wrap: balance; }
     display: none !important;
   }
 
-  .glass-panel {
+  .glass-panel,
+  .surface {
     background: white !important;
     border: 1px solid #e5e7eb !important;
     backdrop-filter: none !important;
@@ -706,7 +723,7 @@ h1, h2, h3 { text-wrap: balance; }
 /* Dividers */
 .divider {
   height: 1px;
-  background: var(--color-divider);
+  background: var(--border-subtle);
 }
 
 /* Focus Mode Specifics */

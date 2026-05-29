@@ -37,14 +37,14 @@ const Header = ({
 
     return (
         <>
-            <header className="px-6 pt-8 pb-4 no-print">
+            <header className="px-6 pt-8 pb-3 no-print">
                 <div className="flex items-start justify-between">
                     {/* Left side - Greeting */}
                     <div>
-                        <p className="text-xs sm:text-sm font-medium uppercase tracking-widest text-white/40 mb-1">
+                        <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
                             Dashboard
                         </p>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
                             {getGreeting()}, {userName}
                         </h1>
                     </div>
@@ -56,7 +56,7 @@ const Header = ({
                             onClick={onToggleFocus}
                             className={`p-2.5 rounded-full liquid-press touch-target transition-all ${isFocusMode
                                 ? 'bg-accent text-white shadow-[0_0_20px_var(--color-accent-glow)]'
-                                : 'glass-panel-subtle text-white/60 hover:text-white'
+                                : 'bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                 }`}
                             title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
                         >
@@ -65,10 +65,10 @@ const Header = ({
 
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="p-2.5 rounded-full glass-panel-subtle liquid-press touch-target"
+                            className="p-2.5 rounded-full bg-[var(--surface-1)] liquid-press touch-target"
                             title="Settings"
                         >
-                            <Settings size={18} className="text-white/60" />
+                            <Settings size={18} className="text-[var(--text-secondary)]" />
                         </button>
 
                         {/* User Avatar with glow */}

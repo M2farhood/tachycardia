@@ -159,7 +159,7 @@ const FocusMode = ({
             {/* Header */}
             <div className="relative z-10 flex justify-between items-center p-6">
                 <div className="flex items-center gap-4">
-                    <button onClick={toggleRainNoise} className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all text-white/50 hover:text-white group" title="Rain Noise">
+                    <button onClick={toggleRainNoise} className="p-3 rounded-full bg-white/5 hover:bg-white/10 transition-all text-[var(--text-secondary)] hover:text-white group" title="Rain Noise">
                         {isPlaying ? <CloudRain size={24} className="text-accent" /> : <VolumeX size={24} />}
                     </button>
                 </div>
@@ -169,23 +169,23 @@ const FocusMode = ({
                     <button
                         onClick={handlePrevTask}
                         disabled={currentTaskIndex === 0}
-                        className="text-white/30 hover:text-white disabled:opacity-20 transition-colors"
+                        className="text-[var(--text-tertiary)] hover:text-white disabled:opacity-20 transition-colors"
                     >
                         <ChevronLeft size={20} />
                     </button>
-                    <span className="text-sm font-medium text-white/60">
+                    <span className="text-[13px] font-medium text-[var(--text-secondary)]">
                         Task {currentTaskIndex + 1} of {allTasks.length}
                     </span>
                     <button
                         onClick={handleNextTask}
                         disabled={currentTaskIndex === allTasks.length - 1}
-                        className="text-white/30 hover:text-white disabled:opacity-20 transition-colors"
+                        className="text-[var(--text-tertiary)] hover:text-white disabled:opacity-20 transition-colors"
                     >
                         <ChevronRight size={20} />
                     </button>
                 </div>
 
-                <button onClick={onExit} className="px-4 py-2 text-sm text-white/40 hover:text-white transition-colors">
+                <button onClick={onExit} className="px-4 py-2 text-[13px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors">
                     Exit Focus
                 </button>
             </div>
@@ -214,7 +214,7 @@ const FocusMode = ({
 
                     <button
                         onClick={handleImStuck}
-                        className="px-8 py-4 bg-[#1a1d24] hover:bg-[#252932] text-white/60 hover:text-white rounded-2xl font-medium text-lg transition-all w-72 flex items-center justify-center gap-3"
+                        className="px-8 py-4 bg-[#1a1d24] hover:bg-[#252932] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-2xl font-medium text-lg transition-all w-72 flex items-center justify-center gap-3"
                     >
                         <AlertCircle size={24} className="text-[var(--color-danger)]" />
                         I'm Stuck
@@ -222,7 +222,7 @@ const FocusMode = ({
 
                     <button
                         onClick={handleComplete}
-                        className="mt-4 text-white/30 hover:text-[var(--color-success)] transition-colors flex items-center gap-2 text-sm"
+                        className="mt-4 text-[var(--text-tertiary)] hover:text-[var(--color-success)] transition-colors flex items-center gap-2 text-[13px]"
                     >
                         <CheckCircle size={16} /> Mark as Complete
                     </button>
@@ -238,11 +238,11 @@ const FocusMode = ({
                                 <Brain className="text-accent" />
                                 Let's break it down
                             </h3>
-                            <button onClick={() => setShowStuckMenu(false)} className="text-white/40 hover:text-white">✕</button>
+                            <button onClick={() => setShowStuckMenu(false)} className="text-[var(--text-secondary)] hover:text-white">✕</button>
                         </div>
 
                         {isLoadingAi ? (
-                            <div className="flex items-center justify-center py-8 text-white/40 gap-3">
+                            <div className="flex items-center justify-center py-8 text-[var(--text-tertiary)] gap-3">
                                 <div className="w-2 h-2 bg-accent rounded-full animate-bounce"></div>
                                 <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-100"></div>
                                 <div className="w-2 h-2 bg-accent rounded-full animate-bounce delay-200"></div>
@@ -269,7 +269,7 @@ const FocusMode = ({
                                                 onChange={(e) => setSelectedSubtasks(prev => ({ ...prev, [idx]: e.target.checked }))}
                                                 className="w-5 h-5 rounded border-white/30 text-accent focus:ring-accent focus:ring-offset-0 bg-transparent"
                                             />
-                                            <span className="text-white/90">{step}</span>
+                                            <span className="text-[var(--text-secondary)]">{step}</span>
                                         </label>
                                     ))}
                                 </div>

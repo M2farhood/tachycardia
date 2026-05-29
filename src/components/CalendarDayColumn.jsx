@@ -64,15 +64,15 @@ const CalendarDayColumn = ({
                 <div className="flex items-center gap-3">
                     <div className={`
                         w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold text-lg
-                        ${isToday ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-white/5 text-white/60'}
+                        ${isToday ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}
                     `}>
                         {dateNum}
                     </div>
                     <div className="flex flex-col">
-                        <span className={`text-sm font-medium ${isToday ? 'text-accent' : 'text-white/80'}`}>
+                        <span className={`text-[13px] font-medium ${isToday ? 'text-accent' : 'text-[var(--text-primary)]'}`}>
                             {fullDayLabel}
                         </span>
-                        <span className="text-xs text-white/40 uppercase tracking-wider">{month}</span>
+                        <span className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider">{month}</span>
                     </div>
                 </div>
 
@@ -80,23 +80,23 @@ const CalendarDayColumn = ({
                 <div className="relative" ref={menuRef}>
                     <button
                         onClick={() => setMenuOpen(!menuOpen)}
-                        className="p-2 hover:bg-white/5 rounded-lg text-white/30 hover:text-white transition-colors"
+                        className="p-2 hover:bg-[var(--surface-2)] rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
                     >
                         <MoreVertical size={16} />
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute right-0 top-full mt-1 z-50 glass-panel border border-white/10 rounded-xl py-1 min-w-[140px] shadow-xl animate-fade-in">
+                        <div className="absolute right-0 top-full mt-1 z-50 surface rounded-xl py-1 min-w-[140px] shadow-xl animate-fade-in">
                             <button
                                 onClick={() => { setMenuOpen(false); setAdding(true) }}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-white/70 hover:bg-white/5 transition-colors"
+                                className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
                             >
                                 <Plus size={14} /> Add task
                             </button>
                             {dayTasks.length > 0 && (
                                 <button
                                     onClick={() => { setMenuOpen(false); onClearDay(dateKey) }}
-                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:bg-white/5 transition-colors"
+                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-red-400 hover:bg-[var(--surface-2)] transition-colors"
                                 >
                                     <Trash2 size={14} /> Clear all
                                 </button>
@@ -122,8 +122,8 @@ const CalendarDayColumn = ({
                         />
                     ))
                 ) : !adding && (
-                    <div className="h-full flex flex-col items-center justify-center text-white/20">
-                        <p className="text-sm italic">No tasks yet</p>
+                    <div className="h-full flex flex-col items-center justify-center text-[var(--text-tertiary)]">
+                        <p className="text-[13px] italic">No tasks yet</p>
                     </div>
                 )}
             </div>
@@ -140,13 +140,13 @@ const CalendarDayColumn = ({
                             if (e.key === 'Escape') { setAdding(false); setNewText('') }
                         }}
                         onBlur={() => { if (!newText.trim()) setAdding(false) }}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-accent/50"
+                        className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-accent/50"
                         placeholder="New task... (Enter to add)"
                     />
                 ) : (
                     <button
                         onClick={() => setAdding(true)}
-                        className="w-full py-2 flex items-center justify-center gap-2 text-sm text-white/40 hover:text-white hover:bg-white/5 rounded-lg transition-all border border-dashed border-white/10 hover:border-white/20"
+                        className="w-full py-2 flex items-center justify-center gap-2 text-[13px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)] rounded-lg transition-all border border-dashed border-[var(--border-subtle)] hover:border-[var(--border)]"
                     >
                         <Plus size={14} /> Add Task
                     </button>

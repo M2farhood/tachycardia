@@ -26,7 +26,7 @@ const ConfirmDialog = ({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-            <div className="glass-panel rounded-3xl shadow-2xl max-w-sm w-full animate-slide-up">
+            <div className="surface rounded-2xl shadow-2xl max-w-sm w-full animate-slide-up">
                 <div className="p-6">
                     {/* Icon */}
                     {isDangerous && (
@@ -36,26 +36,26 @@ const ConfirmDialog = ({
                     )}
 
                     {/* Title */}
-                    <h3 className="text-xl font-bold text-center text-white mb-2">
+                    <h3 className="text-xl font-bold text-center text-[var(--text-primary)] mb-2">
                         {title}
                     </h3>
 
                     {/* Message */}
-                    <p className="text-white/50 text-center text-sm mb-5">
+                    <p className="text-[var(--text-secondary)] text-center text-[13px] mb-5">
                         {message}
                     </p>
 
                     {/* Typing requirement */}
                     {requireTyping && (
                         <div className="mb-5">
-                            <p className="text-xs text-white/40 mb-2 text-center">
+                            <p className="text-[11px] text-[var(--text-tertiary)] mb-2 text-center">
                                 Type <span className="font-mono font-bold text-[var(--color-danger)]">{requireTyping}</span> to confirm:
                             </p>
                             <input
                                 type="text"
                                 value={typedValue}
                                 onChange={(e) => setTypedValue(e.target.value)}
-                                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-center text-white focus:outline-none focus:border-[var(--color-danger)]"
+                                className="w-full px-4 py-3 bg-[var(--surface-2)] border border-[var(--border)] rounded-xl text-center text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-danger)]"
                                 placeholder={requireTyping}
                                 autoFocus
                             />
@@ -64,10 +64,10 @@ const ConfirmDialog = ({
                 </div>
 
                 {/* Actions */}
-                <div className="flex border-t border-white/5">
+                <div className="flex border-t border-[var(--border-subtle)]">
                     <button
                         onClick={onClose}
-                        className="flex-1 px-4 py-4 text-white/60 font-medium hover:bg-white/5 transition-colors rounded-bl-3xl"
+                        className="flex-1 px-4 py-4 text-[var(--text-secondary)] font-medium hover:bg-[var(--surface-2)] transition-colors rounded-bl-2xl"
                     >
                         {cancelText}
                     </button>
@@ -79,7 +79,7 @@ const ConfirmDialog = ({
                             }
                         }}
                         disabled={!canConfirm}
-                        className={`flex-1 px-4 py-4 font-medium transition-colors rounded-br-3xl ${isDangerous
+                        className={`flex-1 px-4 py-4 font-medium transition-colors rounded-br-2xl ${isDangerous
                                 ? 'text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 disabled:text-[var(--color-danger)]/30 disabled:cursor-not-allowed'
                                 : 'text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'
                             }`}

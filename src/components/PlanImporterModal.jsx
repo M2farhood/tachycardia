@@ -98,16 +98,16 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
             />
 
             {/* Modal */}
-            <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-3xl glass-panel border border-white/10 flex flex-col">
+            <div className="relative w-full max-w-lg max-h-[85vh] overflow-hidden rounded-2xl surface flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-white/10">
+                <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
                     <div className="flex items-center gap-3">
                         <div className="p-2 rounded-xl bg-[var(--color-accent-dim)]">
                             <FileText size={20} className="text-accent" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-white">Import Study Plan</h2>
-                            <p className="text-xs text-white/50 flex items-center gap-1.5">
+                            <h2 className="text-xl font-semibold text-[var(--text-primary)]">Import Study Plan</h2>
+                            <p className="text-[11px] text-[var(--text-tertiary)] flex items-center gap-1.5">
                                 {isParsing ? (
                                     <><Loader2 size={12} className="animate-spin" /> Analyzing with AI...</>
                                 ) : isParsed ? (
@@ -127,9 +127,9 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                     </div>
                     <button
                         onClick={handleClose}
-                        className="p-2 rounded-full hover:bg-white/10 transition-colors"
+                        className="p-2 rounded-full hover:bg-[var(--surface-2)] transition-colors"
                     >
-                        <X size={20} className="text-white/60" />
+                        <X size={20} className="text-[var(--text-secondary)]" />
                     </button>
                 </div>
 
@@ -152,7 +152,7 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
 
 - Complete Chapter 5 (2h)
 - Review Notes (1h)`}
-                                className="w-full h-56 p-4 rounded-2xl bg-black/30 border border-white/10 text-white placeholder-white/30 resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)] text-sm"
+                                className="w-full h-56 p-4 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)] text-[13px]"
                             />
 
                             {error && (
@@ -162,9 +162,9 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
                                 </div>
                             )}
 
-                            <div className="p-4 rounded-2xl bg-[var(--color-accent-dim)] border border-white/5 space-y-3">
+                            <div className="p-4 rounded-2xl bg-[var(--color-accent-dim)] border border-[var(--border-subtle)] space-y-3">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-xs text-white/60">💡 <b>Generate Plan with AI</b></p>
+                                    <p className="text-[11px] text-[var(--text-secondary)]">💡 <b>Generate Plan with AI</b></p>
                                     <button
                                         onClick={() => {
                                             const prompt = `Create a detailed study plan for [SUBJECT].
@@ -190,7 +190,7 @@ Please generate the plan now.`
                                         Copy Prompt
                                     </button>
                                 </div>
-                                <p className="text-xs text-white/40">
+                                <p className="text-[11px] text-[var(--text-tertiary)]">
                                     Copy this prompt to ChatGPT/Claude to get the perfect format.
                                     <b> Paste your exam blueprint/syllabus</b> into the prompt so the AI assigns the correct weights!
                                 </p>
@@ -201,11 +201,11 @@ Please generate the plan now.`
                         <div className="space-y-4">
                             {/* Tab Selector */}
                             <div>
-                                <label className="block text-xs text-white/50 mb-2">Add to section:</label>
+                                <label className="block text-[11px] text-[var(--text-tertiary)] mb-2">Add to section:</label>
                                 <select
                                     value={selectedTabId}
                                     onChange={(e) => setSelectedTabId(e.target.value)}
-                                    className="w-full p-3 rounded-xl bg-black/30 border border-white/10 text-white focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)]"
+                                    className="w-full p-3 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent-glow)]"
                                 >
                                     {tabs?.map(tab => (
                                         <option key={tab.id} value={tab.id}>
@@ -231,26 +231,26 @@ Please generate the plan now.`
                                         onClick={() => handleToggleTask(task.id)}
                                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${task.selected
                                             ? 'bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)]'
-                                            : 'bg-white/5 border border-white/5 opacity-50'
+                                            : 'bg-[var(--surface-1)] border border-[var(--border-subtle)] opacity-50'
                                             }`}
                                     >
                                         <div className={`mt-0.5 w-5 h-5 rounded-md flex items-center justify-center ${task.selected
                                             ? 'bg-accent text-white'
-                                            : 'bg-white/10'
+                                            : 'bg-[var(--surface-2)]'
                                             }`}>
                                             {task.selected && <Check size={14} />}
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm text-white truncate">{task.name}</p>
+                                            <p className="text-[13px] text-[var(--text-primary)] truncate">{task.name}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 {task.dateFormatted && (
-                                                    <span className="text-xs text-accent">{task.dateFormatted}</span>
+                                                    <span className="text-[11px] text-accent">{task.dateFormatted}</span>
                                                 )}
                                                 {task.durationFormatted && (
-                                                    <span className="text-xs text-white/40">{task.durationFormatted}</span>
+                                                    <span className="text-[11px] text-[var(--text-tertiary)]">{task.durationFormatted}</span>
                                                 )}
                                                 {task.weight && (
-                                                    <span className="text-xs text-accent bg-[var(--color-accent-dim)] px-1.5 py-0.5 rounded">
+                                                    <span className="text-[11px] text-accent bg-[var(--color-accent-dim)] px-1.5 py-0.5 rounded">
                                                         Weight: {task.weight}%
                                                     </span>
                                                 )}
@@ -271,12 +271,12 @@ Please generate the plan now.`
                 </div>
 
                 {/* Footer */}
-                <div className="p-5 border-t border-white/10 flex gap-3">
+                <div className="p-5 border-t border-[var(--border-subtle)] flex gap-3">
                     {!isParsed ? (
                         <>
                             <button
                                 onClick={handleClose}
-                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 text-white/60 font-medium hover:bg-white/10 transition-colors"
+                                className="flex-1 py-3 px-4 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] font-medium hover:bg-[var(--surface-3)] transition-colors"
                             >
                                 Cancel
                             </button>
@@ -296,7 +296,7 @@ Please generate the plan now.`
                         <>
                             <button
                                 onClick={handleBack}
-                                className="flex-1 py-3 px-4 rounded-xl bg-white/5 text-white/60 font-medium hover:bg-white/10 transition-colors"
+                                className="flex-1 py-3 px-4 rounded-xl bg-[var(--surface-2)] text-[var(--text-secondary)] font-medium hover:bg-[var(--surface-3)] transition-colors"
                             >
                                 Back
                             </button>

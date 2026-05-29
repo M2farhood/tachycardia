@@ -272,32 +272,32 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 modal-backdrop animate-fade-in">
-      <div className="glass-panel rounded-3xl shadow-2xl max-w-sm w-full animate-slide-up">
+      <div className="surface rounded-2xl shadow-2xl max-w-sm w-full animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-white/5">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+        <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
+          <h2 className="text-xl font-bold text-[var(--text-primary)] flex items-center gap-2">
             <Printer size={18} />
             Print
           </h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            className="p-2 hover:bg-[var(--surface-2)] rounded-full transition-colors"
           >
-            <X size={18} className="text-white/50" />
+            <X size={18} className="text-[var(--text-tertiary)]" />
           </button>
         </div>
 
         {/* Content */}
         <div className="p-5">
-          <p className="text-sm text-white/50 mb-4">Select sections to print:</p>
+          <p className="text-[13px] text-[var(--text-secondary)] mb-4">Select sections to print:</p>
 
           {/* Select All */}
           <button
             onClick={toggleAll}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white/5 hover:bg-white/10 rounded-xl mb-3 transition-colors"
+            className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] rounded-xl mb-3 transition-colors"
           >
-            <span className="text-white font-medium">All Sections</span>
-            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-accent' : 'border border-white/30'
+            <span className="text-[var(--text-primary)] font-medium">All Sections</span>
+            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-accent' : 'border border-[var(--border)]'
               }`}>
               {printAll && <Check size={14} className="text-white" />}
             </div>
@@ -314,16 +314,16 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
                 <button
                   key={tab.id}
                   onClick={() => toggleTab(tab.id)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/5 rounded-lg transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--surface-1)] rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <span>{tab.emoji || '📖'}</span>
                     <div className="text-left">
-                      <span className="text-white/90 text-sm">{tab.title}</span>
-                      <span className="text-white/40 text-xs ml-2">{completed}/{total}</span>
+                      <span className="text-[var(--text-secondary)] text-[13px]">{tab.title}</span>
+                      <span className="text-[var(--text-tertiary)] text-[11px] ml-2">{completed}/{total}</span>
                     </div>
                   </div>
-                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-accent' : 'border border-white/30'
+                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-accent' : 'border border-[var(--border)]'
                     }`}>
                     {isSelected && <Check size={14} className="text-white" />}
                   </div>
@@ -338,7 +338,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
           <button
             onClick={handlePrint}
             disabled={selectedTabs.size === 0}
-            className="w-full py-3 bg-accent hover:opacity-90 disabled:bg-white/10 disabled:text-white/30 text-white font-medium rounded-xl transition-colors liquid-press"
+            className="w-full py-3 bg-accent hover:opacity-90 disabled:bg-[var(--surface-3)] disabled:text-[var(--text-tertiary)] text-white font-medium rounded-xl transition-colors liquid-press"
           >
             Print {selectedTabs.size > 0 ? `(${selectedTabs.size} section${selectedTabs.size > 1 ? 's' : ''})` : ''}
           </button>

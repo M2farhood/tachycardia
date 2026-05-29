@@ -141,16 +141,16 @@ const CalendarTaskCard = ({
                         <MoreVertical size={14} />
                     </button>
                     {showMenu && (
-                        <div className="absolute right-0 top-full mt-1 z-50 glass-panel border border-white/10 rounded-lg py-1 min-w-[120px] shadow-xl animate-fade-in">
+                        <div className="absolute right-0 top-full mt-1 z-50 surface rounded-lg py-1 min-w-[120px] shadow-xl animate-fade-in">
                             <button
                                 onClick={() => { setShowMenu(false); setIsEditing(true) }}
-                                className="w-full text-left px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-white/5 transition-colors"
+                                className="w-full text-left px-3 py-2 text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
                             >
                                 Edit
                             </button>
                             <button
                                 onClick={() => { setShowMenu(false); onDelete() }}
-                                className="w-full text-left px-3 py-2 text-xs text-red-400 hover:bg-white/5 transition-colors"
+                                className="w-full text-left px-3 py-2 text-[11px] text-red-400 hover:bg-[var(--surface-2)] transition-colors"
                             >
                                 Delete
                             </button>
@@ -163,7 +163,7 @@ const CalendarTaskCard = ({
             {(subtasks.length > 0 || isExpanded) && (
                 <button
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="absolute bottom-2 right-2 p-1 text-white/20 hover:text-white/60 transition-colors"
+                    className="absolute bottom-2 right-2 p-1 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
                 >
                     {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                 </button>
@@ -183,12 +183,12 @@ const CalendarTaskCard = ({
                             >
                                 {sub.completed && <Check size={8} strokeWidth={4} className="text-white" />}
                             </button>
-                            <span className={`text-xs flex-1 ${sub.completed ? 'text-white/30 line-through' : 'text-white/70'}`}>
+                            <span className={`text-[11px] flex-1 ${sub.completed ? 'text-[var(--text-tertiary)] line-through' : 'text-[var(--text-secondary)]'}`}>
                                 {sub.text}
                             </span>
                             <button
                                 onClick={() => onDeleteSubtask(sub.id)}
-                                className="opacity-0 group-hover/sub:opacity-100 p-0.5 text-white/20 hover:text-red-400 transition-all"
+                                className="opacity-0 group-hover/sub:opacity-100 p-0.5 text-[var(--text-tertiary)] hover:text-red-400 transition-all"
                             >
                                 <Trash2 size={10} />
                             </button>
@@ -197,13 +197,13 @@ const CalendarTaskCard = ({
 
                     {/* Add Subtask Input */}
                     <div className="flex items-center gap-2 mt-2 pt-1">
-                        <Plus size={12} className="text-white/30" />
+                        <Plus size={12} className="text-[var(--text-tertiary)]" />
                         <input
                             value={newSubtask}
                             onChange={(e) => setNewSubtask(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleAddSubtask()}
                             placeholder="Add subtask..."
-                            className="bg-transparent text-xs text-white/80 placeholder-white/20 focus:outline-none flex-1 min-w-0"
+                            className="bg-transparent text-[11px] text-[var(--text-secondary)] placeholder-[var(--text-tertiary)] focus:outline-none flex-1 min-w-0"
                         />
                     </div>
                 </div>

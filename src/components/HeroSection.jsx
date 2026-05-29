@@ -23,14 +23,14 @@ const HeroSection = ({
     const offset = circumference - (circumference * percentage) / 100
 
     return (
-        <div className="px-6 py-4 sm:py-6 flex items-center justify-between no-print">
+        <div className="px-6 pt-5 pb-4 sm:pt-6 sm:pb-5 flex items-center justify-between no-print">
             {/* Left side - Title */}
             <div className="flex-1 min-w-0">
-                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
+                <h2 className="text-3xl sm:text-[28px] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
                     {emoji && <span className="mr-2">{emoji}</span>}
                     <span className="inline-editable">{title}</span>
                 </h2>
-                <p className="text-white/40 text-sm mt-1">
+                <p className="text-[var(--text-tertiary)] text-[13px] mt-1">
                     <span className="inline-editable">{subtitle}</span>
                 </p>
             </div>
@@ -41,7 +41,7 @@ const HeroSection = ({
                 onClick={() => setShowGlobal(!showGlobal)}
                 title={showGlobal ? "Showing Total Progress" : "Showing Section Progress"}
             >
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-white/30 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-tertiary)] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
                     {showGlobal ? 'Total' : 'Section'}
                 </div>
 

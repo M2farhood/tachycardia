@@ -1,4 +1,4 @@
-import { Flame, Clock, Hourglass } from 'lucide-react'
+import { Flame } from 'lucide-react'
 
 const formatDuration = (minutes) => {
     const hours = Math.floor(minutes / 60)
@@ -15,43 +15,43 @@ const StatsCards = ({
     const totalDisplay = formatDuration(totalMinutes)
 
     return (
-        <div className="px-6 pb-6 grid grid-cols-2 gap-4 no-print">
-            {/* Streak Card */}
-            <div className="stats-card glass-panel rounded-2xl p-5">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
-                    <Flame size={20} className="text-[var(--text-secondary)]" />
-                </div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-white/40 mb-1">
-                    Streak
-                </p>
-                <p className="text-3xl font-bold text-white">
-                    {studyStreak} <span className="text-xl font-medium text-white/50">Days</span>
-                </p>
-            </div>
-
-            {/* Today's Study Time Card */}
-            <div className="stats-card glass-panel rounded-2xl p-5">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 mb-3">
-                    <Clock size={20} className="text-[var(--text-secondary)]" />
-                </div>
-                <p className="text-[11px] font-medium uppercase tracking-wider text-white/40 mb-1">
-                    Today
-                </p>
-                <p className="text-3xl font-bold text-white">
-                    {timeDisplay}
-                </p>
-            </div>
-
-            {/* All-time Study Time Card (spans full width) */}
-            <div className="stats-card glass-panel rounded-2xl p-5 col-span-2 flex items-center gap-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 shrink-0">
-                    <Hourglass size={20} className="text-[var(--text-secondary)]" />
-                </div>
-                <div className="flex items-baseline justify-between flex-1">
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-white/40">
-                        Total Studied
+        <div className="px-6 pb-4 no-print">
+            {/* Inline metric strip — no card backgrounds, no icon chips */}
+            <div className="flex items-start gap-0 border-t border-[var(--border-subtle)]">
+                {/* Streak */}
+                <div className="flex-1 pt-4 pb-3 pr-4">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)] mb-1 flex items-center gap-1.5">
+                        <Flame size={12} className="text-[var(--color-accent)]" />
+                        Streak
                     </p>
-                    <p className="text-2xl font-bold text-white">
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums leading-none">
+                        {studyStreak}
+                        <span className="text-[13px] font-medium text-[var(--text-tertiary)] ml-1.5">days</span>
+                    </p>
+                </div>
+
+                {/* Vertical hairline */}
+                <div className="w-px self-stretch mt-4 bg-[var(--border-subtle)]" />
+
+                {/* Today */}
+                <div className="flex-1 pt-4 pb-3 px-4">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Today
+                    </p>
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums leading-none">
+                        {timeDisplay}
+                    </p>
+                </div>
+
+                {/* Vertical hairline */}
+                <div className="w-px self-stretch mt-4 bg-[var(--border-subtle)]" />
+
+                {/* Total */}
+                <div className="flex-1 pt-4 pb-3 pl-4">
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)] mb-1">
+                        Total
+                    </p>
+                    <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums leading-none">
                         {totalDisplay}
                     </p>
                 </div>

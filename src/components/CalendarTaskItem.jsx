@@ -84,16 +84,16 @@ const CalendarTaskItem = ({ task, onToggle, onEdit, onDelete }) => {
                 </button>
 
                 {menuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-50 glass-panel rounded-lg py-1 min-w-[120px] animate-fade-in shadow-lg">
+                    <div className="absolute right-0 top-full mt-1 z-50 surface rounded-lg py-1 min-w-[120px] animate-fade-in shadow-lg">
                         <button
                             onClick={() => { setMenuOpen(false); setEditing(true) }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-[var(--color-text-secondary)] hover:bg-white/5 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
                         >
                             <Pencil size={12} /> Edit
                         </button>
                         <button
                             onClick={() => { setMenuOpen(false); onDelete() }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-xs text-red-400 hover:bg-white/5 transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-red-400 hover:bg-[var(--surface-2)] transition-colors"
                         >
                             <Trash2 size={12} /> Delete
                         </button>
