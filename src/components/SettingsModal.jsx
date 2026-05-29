@@ -113,7 +113,7 @@ const SettingsModal = ({
                                     />
                                     <button
                                         onClick={handleNameSave}
-                                        className="px-4 py-2 bg-blue-500 text-white text-base font-medium rounded-xl"
+                                        className="px-4 py-2 bg-accent text-white text-base font-medium rounded-xl"
                                     >
                                         Save
                                     </button>
@@ -240,7 +240,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'dark' })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'dark'
-                                        ? 'bg-blue-500 text-white'
+                                        ? 'bg-accent text-white'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
@@ -250,7 +250,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'light' })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'light'
-                                        ? 'bg-blue-500 text-white'
+                                        ? 'bg-accent text-white'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
@@ -270,7 +270,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 15 })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 15
-                                        ? 'bg-blue-500 text-white'
+                                        ? 'bg-accent text-white'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
@@ -279,7 +279,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 25 })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 25
-                                        ? 'bg-blue-500 text-white'
+                                        ? 'bg-accent text-white'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
@@ -288,7 +288,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 50 })}
                                     className={`flex-1 py-2.5 rounded-xl text-base font-medium transition-all liquid-press ${timerDuration === 50
-                                        ? 'bg-blue-500 text-white'
+                                        ? 'bg-accent text-white'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
@@ -309,12 +309,12 @@ const SettingsModal = ({
                                         countdownVisible: !settings?.countdownVisible
                                     })}
                                     className={`w-full py-2.5 px-3 rounded-xl text-left text-base font-medium transition-all liquid-press flex items-center justify-between ${settings?.countdownVisible
-                                        ? 'bg-blue-500/20 text-blue-200 border border-blue-500/30'
+                                        ? 'bg-accent/20 text-accent border border-accent/30'
                                         : 'bg-white/5 text-white/50 hover:bg-white/10'
                                         }`}
                                 >
                                     <span>Show Countdown</span>
-                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.countdownVisible ? 'bg-blue-500' : 'bg-white/10'
+                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.countdownVisible ? 'bg-accent' : 'bg-white/10'
                                         }`}>
                                         <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings?.countdownVisible ? 'translate-x-4' : 'translate-x-0'
                                             }`} />

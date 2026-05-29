@@ -21,7 +21,18 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
     const [menuTabId, setMenuTabId] = useState(null)
     const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
     const [deleteConfirm, setDeleteConfirm] = useState(null)
+    const [editingTabId, setEditingTabId] = useState(null)
+    const [editValue, setEditValue] = useState('')
     const menuRef = useRef(null)
+    const editInputRef = useRef(null)
+
+    // Focus + select the rename input when inline editing starts
+    useEffect(() => {
+        if (editingTabId && editInputRef.current) {
+            editInputRef.current.focus()
+            editInputRef.current.select()
+        }
+    }, [editingTabId])
 
     // Close menu when clicking outside
     useEffect(() => {
@@ -54,14 +65,26 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
     }
 
     const handleRename = (tab) => {
-        const newName = prompt('Enter section name:', tab.title)
-        if (newName && newName.trim()) {
-            onTabUpdate(tab.id, {
-                title: newName.trim(),
-                emoji: getEmojiForTab(newName.trim())
+        setEditingTabId(tab.id)
+        setEditValue(tab.title)
+        setMenuTabId(null)
+    }
+
+    const commitRename = () => {
+        const name = editValue.trim()
+        if (editingTabId && name) {
+            onTabUpdate(editingTabId, {
+                title: name,
+                emoji: getEmojiForTab(name)
             })
         }
-        setMenuTabId(null)
+        setEditingTabId(null)
+        setEditValue('')
+    }
+
+    const cancelRename = () => {
+        setEditingTabId(null)
+        setEditValue('')
     }
 
     const confirmDelete = () => {
@@ -88,21 +111,39 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
     return (
         <>
             <div className="px-6 no-print">
-                <div className="segment-control w-full overflow-x-auto flex items-center gap-1">
+                <div className="segment-control w-full overflow-x-auto flex items-center gap-1" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', WebkitOverflowScrolling: 'touch' }}>
                     {tabs.map((tab) => {
                         const isActive = tab.id === activeTabId
                         const emoji = tab.emoji || getEmojiForTab(tab.title)
 
                         return (
                             <div key={tab.id} className="relative flex-shrink-0 flex items-center">
-                                <button
-                                    onClick={() => onTabChange(tab.id)}
-                                    onDoubleClick={() => handleRename(tab)}
-                                    className={`segment-btn liquid-press whitespace-nowrap ${isActive ? 'active' : ''}`}
-                                >
-                                    <span>{emoji}</span>
-                                    <span className="hidden sm:inline max-w-[100px] truncate">{tab.title}</span>
-                                </button>
+                                {editingTabId === tab.id ? (
+                                    <span className={`segment-btn whitespace-nowrap ${isActive ? 'active' : ''}`}>
+                                        <span>{emoji}</span>
+                                        <input
+                                            ref={editInputRef}
+                                            value={editValue}
+                                            onChange={(e) => setEditValue(e.target.value)}
+                                            onBlur={commitRename}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') commitRename()
+                                                else if (e.key === 'Escape') cancelRename()
+                                            }}
+                                            className="bg-transparent outline-none text-xs sm:text-sm text-current"
+                                            style={{ width: `${Math.max(editValue.length + 1, 5)}ch` }}
+                                        />
+                                    </span>
+                                ) : (
+                                    <button
+                                        onClick={() => onTabChange(tab.id)}
+                                        onDoubleClick={() => handleRename(tab)}
+                                        className={`segment-btn liquid-press whitespace-nowrap ${isActive ? 'active' : ''}`}
+                                    >
+                                        <span>{emoji}</span>
+                                        <span className="max-w-[80px] sm:max-w-[100px] truncate text-xs sm:text-sm">{tab.title}</span>
+                                    </button>
+                                )}
 
                                 {/* Menu button - only show for active tab */}
                                 {isActive && (
