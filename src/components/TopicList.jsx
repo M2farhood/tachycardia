@@ -298,7 +298,7 @@ const TopicList = ({
                                                     placeholder="0"
                                                     min="0"
                                                     max="100"
-                                                    className="w-14 px-1.5 py-0.5 text-xs bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] rounded text-accent focus:outline-none focus:border-[var(--color-accent)]"
+                                                    className="w-14 px-1.5 py-0.5 text-xs bg-[var(--surface-2)] border border-[var(--border)] rounded text-[var(--text-primary)] focus:outline-none focus:border-[var(--color-accent)]"
                                                     autoFocus
                                                 />
                                                 <span className="text-xs text-accent">%</span>
@@ -310,7 +310,7 @@ const TopicList = ({
                                                     startWeightEdit(topic)
                                                 }}
                                                 className={`text-[11px] font-medium px-1.5 py-0.5 rounded border transition-all flex items-center gap-1 ${topic.weight > 0
-                                                    ? 'text-accent bg-[var(--color-accent-dim)] border-[var(--color-accent-glow)] hover:opacity-90'
+                                                    ? 'text-accent bg-accent/15 border-accent/30 hover:bg-accent/25'
                                                     : 'text-[var(--text-tertiary)] bg-[var(--surface-1)] border-[var(--border-subtle)] hover:bg-[var(--surface-2)] hover:text-[var(--text-secondary)]'
                                                     }`}
                                                 title="Set weight percentage"

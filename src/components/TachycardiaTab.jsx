@@ -54,9 +54,9 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                 </button>
 
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)]">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)]">
                         <Heart size={20} className="text-accent" fill="currentColor" />
-                        <span className="font-semibold text-white">Tachycardia</span>
+                        <span className="font-semibold text-[var(--text-primary)]">Tachycardia</span>
                     </div>
 
                     {messages.length > 0 && (
@@ -97,7 +97,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                                     key={action.id}
                                     onClick={() => sendQuickAction(action.id)}
                                     disabled={isLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] hover:border-[var(--color-accent)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all disabled:opacity-50"
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] hover:border-[var(--color-accent)] text-[var(--text-primary)] transition-all disabled:opacity-50"
                                 >
                                     <action.icon size={16} className="text-accent" />
                                     <span className="text-sm">{action.label}</span>
@@ -116,7 +116,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                         <div
                             className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
                                 ? 'bg-accent text-white'
-                                : 'bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] text-white'
+                                : 'bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)]'
                                 }`}
                         >
                             {message.role === 'assistant' && (
@@ -133,7 +133,7 @@ const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
                 {/* Loading Indicator */}
                 {isLoading && (
                     <div className="flex justify-start">
-                        <div className="bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)] rounded-2xl px-4 py-3">
+                        <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-2xl px-4 py-3">
                             <div className="flex items-center gap-2">
                                 <Heart size={14} className="text-accent" fill="currentColor" />
                                 <span className="text-xs text-accent font-medium">Tachycardia</span>

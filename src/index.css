@@ -8,27 +8,27 @@
 
 /* Design tokens */
 :root {
-  /* Surfaces — OKLCH warm-tinted dark scale */
-  --surface-bg:   oklch(13% 0.012 25);
-  --surface-1:    oklch(17% 0.010 25);
-  --surface-2:    oklch(21% 0.008 25);
-  --surface-3:    oklch(27% 0.006 25);
-  --border:       oklch(27% 0.006 25);
-  --border-subtle: oklch(21% 0.008 25);
+  /* Surfaces — OKLCH cool slate dark scale (tinted toward the accent hue) */
+  --surface-bg:   oklch(14% 0.010 255);
+  --surface-1:    oklch(18% 0.012 255);
+  --surface-2:    oklch(22% 0.012 255);
+  --surface-3:    oklch(27% 0.012 255);
+  --border:       oklch(29% 0.012 255);
+  --border-subtle: oklch(22% 0.012 255);
 
   /* Text */
-  --text-primary:   oklch(96% 0.004 25);
-  --text-secondary: oklch(74% 0.006 25);
-  --text-tertiary:  oklch(60% 0.005 25);
+  --text-primary:   oklch(96% 0.004 255);
+  --text-secondary: oklch(74% 0.008 255);
+  --text-tertiary:  oklch(60% 0.010 255);
 
-  /* Accent — terracotta */
-  --color-accent:     oklch(62% 0.12 35);
-  --color-accent-dim: oklch(62% 0.06 35);
-  --color-accent-glow: oklch(62% 0.12 35 / 0.25);
+  /* Accent — muted slate-blue, used rarely */
+  --color-accent:     oklch(62% 0.11 255);
+  --color-accent-dim: oklch(38% 0.05 255);
+  --color-accent-glow: oklch(62% 0.11 255 / 0.30);
 
   /* Semantic */
-  --color-success: oklch(60% 0.14 150);
-  --color-danger:  oklch(58% 0.18 25);
+  --color-success: oklch(64% 0.13 150);
+  --color-danger:  oklch(62% 0.17 25);
 
   /* Legacy aliases — keeps old variable references working */
   --color-bg-start: var(--surface-bg);
@@ -45,18 +45,21 @@
 
 /* Light Theme - Paper Aesthetic */
 .light-theme {
-  /* New surface tokens for light mode */
-  --surface-bg:    oklch(97% 0.004 25);
-  --surface-1:     oklch(98% 0.004 25);
-  --surface-2:     oklch(94% 0.005 25);
-  --surface-3:     oklch(90% 0.005 25);
-  --border:        oklch(86% 0.005 25);
-  --border-subtle: oklch(91% 0.004 25);
-  --text-primary:   oklch(15% 0.006 25);
-  --text-secondary: oklch(42% 0.005 25);
-  --text-tertiary:  oklch(60% 0.004 25);
-  --color-accent-glow: oklch(62% 0.12 35 / 0.2);
-  --color-success: oklch(48% 0.12 150);
+  /* Cool, clean light surfaces (no longer warm paper) */
+  --surface-bg:    oklch(98% 0.003 255);
+  --surface-1:     oklch(100% 0 0);
+  --surface-2:     oklch(96% 0.004 255);
+  --surface-3:     oklch(93% 0.006 255);
+  --border:        oklch(89% 0.006 255);
+  --border-subtle: oklch(94% 0.004 255);
+  --text-primary:   oklch(28% 0.020 255);
+  --text-secondary: oklch(48% 0.020 255);
+  --text-tertiary:  oklch(60% 0.015 255);
+  --color-accent:      oklch(52% 0.13 255);
+  --color-accent-dim:  oklch(93% 0.03 255);
+  --color-accent-glow: oklch(52% 0.13 255 / 0.22);
+  --color-success: oklch(50% 0.13 150);
+  --color-danger:  oklch(53% 0.18 25);
 
   /* Legacy aliases for light mode */
   --color-bg-start: var(--surface-bg);
@@ -109,8 +112,8 @@
 }
 
 .light-theme .surface {
-  background: oklch(98% 0.004 25);
-  border-color: oklch(88% 0.005 25);
+  background: var(--surface-1);
+  border-color: var(--border);
 }
 
 .light-theme .segment-control {
@@ -147,8 +150,8 @@
 }
 
 .light-theme .floating-bar {
-  background: oklch(98% 0.004 25 / 0.95);
-  border-color: oklch(88% 0.005 25);
+  background: oklch(100% 0 0 / 0.95);
+  border-color: var(--border);
 }
 
 .light-theme ::-webkit-scrollbar-thumb {
@@ -374,7 +377,7 @@ h1, h2, h3 { text-wrap: balance; }
 .floating-bar {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  background: oklch(17% 0.010 25 / 0.92);
+  background: oklch(18% 0.012 255 / 0.92);
   border: 1px solid var(--border);
   box-shadow: 0 -2px 20px oklch(0% 0 0 / 0.4);
   position: relative;

@@ -102,7 +102,7 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                 {/* Header */}
                 <div className="flex items-center justify-between p-5 border-b border-[var(--border-subtle)]">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-[var(--color-accent-dim)]">
+                        <div className="p-2 rounded-xl bg-[var(--surface-2)]">
                             <FileText size={20} className="text-accent" />
                         </div>
                         <div>
@@ -114,7 +114,7 @@ const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {
                                     <>
                                         {parsedTasks.length} tasks found
                                         {parsingMethod === 'ai' && (
-                                            <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-[var(--color-accent-dim)] text-accent text-[10px]">
+                                            <span className="inline-flex items-center gap-1 ml-1 px-1.5 py-0.5 rounded bg-accent/15 text-accent text-[10px]">
                                                 <Sparkles size={10} /> AI
                                             </span>
                                         )}
@@ -162,7 +162,7 @@ Day 2 (Jan 16): Practice Problems - 1.5 hours
                                 </div>
                             )}
 
-                            <div className="p-4 rounded-2xl bg-[var(--color-accent-dim)] border border-[var(--border-subtle)] space-y-3">
+                            <div className="p-4 rounded-2xl bg-[var(--surface-1)] border border-[var(--border-subtle)] space-y-3">
                                 <div className="flex items-center justify-between">
                                     <p className="text-[11px] text-[var(--text-secondary)]">💡 <b>Generate Plan with AI</b></p>
                                     <button
@@ -230,7 +230,7 @@ Please generate the plan now.`
                                         key={task.id}
                                         onClick={() => handleToggleTask(task.id)}
                                         className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer transition-all ${task.selected
-                                            ? 'bg-[var(--color-accent-dim)] border border-[var(--color-accent-glow)]'
+                                            ? 'bg-accent/10 border border-accent/40'
                                             : 'bg-[var(--surface-1)] border border-[var(--border-subtle)] opacity-50'
                                             }`}
                                     >
@@ -250,7 +250,7 @@ Please generate the plan now.`
                                                     <span className="text-[11px] text-[var(--text-tertiary)]">{task.durationFormatted}</span>
                                                 )}
                                                 {task.weight && (
-                                                    <span className="text-[11px] text-accent bg-[var(--color-accent-dim)] px-1.5 py-0.5 rounded">
+                                                    <span className="text-[11px] text-accent bg-accent/15 px-1.5 py-0.5 rounded">
                                                         Weight: {task.weight}%
                                                     </span>
                                                 )}
