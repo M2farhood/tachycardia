@@ -1,0 +1,21 @@
+rules_version = '2';
+
+// Study Tracker — Firestore security rules.
+//
+// Each user owns exactly one document at study_tracker_users/{userId}, where
+// {userId} is their Firebase Auth UID. A signed-in user may read and write ONLY
+// their own document. Everything else is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /study_tracker_users/{userId} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // Deny everything not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

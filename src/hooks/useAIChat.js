@@ -44,7 +44,15 @@ export const useAIChat = (studyData, addTopic) => {
         setError(null)
 
         try {
-            const response = await askTachycardia(text, studyData)
+            // Build multi-turn history: last 12 turns + the new user message.
+            // Skip error bubbles so they don't pollute the model's context.
+            const history = messages
+                .filter(m => !m.isError && (m.role === 'user' || m.role === 'assistant'))
+                .slice(-12)
+                .map(m => ({ role: m.role, content: m.content }))
+
+            const conversation = [...history, { role: 'user', content: text.trim() }]
+            const response = await askTachycardia(conversation, studyData)
 
             // Parse task actions from the response
             const { tasks, cleanMessage } = parseTaskActions(response)
@@ -93,7 +101,7 @@ export const useAIChat = (studyData, addTopic) => {
         } finally {
             setIsLoading(false)
         }
-    }, [studyData, isLoading, addTopic])
+    }, [studyData, isLoading, addTopic, messages])
 
     // Clear chat history
     const clearChat = useCallback(() => {
