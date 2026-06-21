@@ -17,7 +17,8 @@ const formatAMPM = (totalMins) => {
 }
 
 const addMins = (str, amount) => {
-  const total = Math.min(parseTime(str) + amount, 23 * 60 + 59)
+  const total = parseTime(str) + amount
+  if (total >= 24 * 60) return '24:00'
   const h = Math.floor(total / 60)
   const m = total % 60
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
@@ -36,6 +37,17 @@ const roundUpTo30 = (totalMins) => {
   const clamped = Math.min(rounded, 23 * 60 + 30)
   const h = Math.floor(clamped / 60)
   const m = clamped % 60
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
+}
+
+// Like roundUpTo30 but allows midnight (24:00) as a valid end time
+const clampEndToGrid = (str) => {
+  const mins = parseTime(str)
+  if (mins >= 24 * 60) return '24:00'
+  const rounded = Math.ceil(mins / 30) * 30
+  if (rounded >= 24 * 60) return '24:00'
+  const h = Math.floor(rounded / 60)
+  const m = rounded % 60
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
 }
 
@@ -69,6 +81,9 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
   const value = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`
   return { value, label: formatAMPM(mins) }
 })
+
+// Same as TIME_OPTIONS but includes midnight as a valid end time
+const END_TIME_OPTIONS = [...TIME_OPTIONS, { value: '24:00', label: '12:00 AM' }]
 
 const formatDateKey = (d) => d.toISOString().split('T')[0]
 
@@ -117,23 +132,22 @@ function NewBlockForm({ blocks, onCreate, onCancel }) {
   }, [])
 
   const defaultStart = suggestStart(blocks)
-  const clampToGrid = (str) => roundUpTo30(Math.min(parseTime(str), 23 * 60 + 30))
   const [startTime, setStartTime] = useState(defaultStart)
   const [durIdx, setDurIdx] = useState(1) // default 2h
-  const [customEnd, setCustomEnd] = useState(clampToGrid(addMins(defaultStart, 120)))
+  const [customEnd, setCustomEnd] = useState(clampEndToGrid(addMins(defaultStart, 120)))
 
   const isCustom = DURATION_OPTIONS[durIdx].mins === null
-  const endTime = isCustom ? customEnd : clampToGrid(addMins(startTime, DURATION_OPTIONS[durIdx].mins))
+  const endTime = isCustom ? customEnd : clampEndToGrid(addMins(startTime, DURATION_OPTIONS[durIdx].mins))
   const duration = calcDuration(startTime, endTime)
 
   const handleStartChange = (val) => {
     setStartTime(val)
-    if (!isCustom) setCustomEnd(clampToGrid(addMins(val, DURATION_OPTIONS[durIdx].mins)))
+    if (!isCustom) setCustomEnd(clampEndToGrid(addMins(val, DURATION_OPTIONS[durIdx].mins)))
   }
 
   const handleDurChange = (i) => {
     setDurIdx(i)
-    if (DURATION_OPTIONS[i].mins) setCustomEnd(clampToGrid(addMins(startTime, DURATION_OPTIONS[i].mins)))
+    if (DURATION_OPTIONS[i].mins) setCustomEnd(clampEndToGrid(addMins(startTime, DURATION_OPTIONS[i].mins)))
   }
 
   // Live timer preview
@@ -209,7 +223,7 @@ function NewBlockForm({ blocks, onCreate, onCancel }) {
             onChange={(e) => setCustomEnd(e.target.value)}
             className="w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-accent)] transition-colors cursor-pointer"
           >
-            {TIME_OPTIONS.map(opt => (
+            {END_TIME_OPTIONS.map(opt => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>
@@ -626,7 +640,7 @@ export default function BlocksPage({ blocks, onAddBlock, onDeleteBlock, onToggle
             </button>
           </div>
         ) : (
-          <div className="surface rounded-2xl max-w-sm">
+          <div className="surface rounded-2xl w-[280px]">
             <NewBlockForm
               blocks={dayBlocks}
               onCreate={handleCreate}
@@ -656,7 +670,7 @@ export default function BlocksPage({ blocks, onAddBlock, onDeleteBlock, onToggle
 
             {/* Inline add: form or dashed button */}
             {showNewBlock ? (
-              <div className="surface rounded-2xl flex-shrink-0 w-[232px] min-h-[292px]">
+              <div className="surface rounded-2xl flex-shrink-0 w-[280px] min-h-[292px]">
                 <NewBlockForm
                   blocks={dayBlocks}
                   onCreate={handleCreate}
