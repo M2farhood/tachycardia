@@ -148,6 +148,7 @@ export const getInitialState = (templateKey) => {
         updatedAt: now,
         deleted: {},
         calendar: {},
+        blocks: {},
         studyDates: [],
         settings: {
             timerDuration: 25,

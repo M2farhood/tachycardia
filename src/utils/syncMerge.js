@@ -114,6 +114,25 @@ const mergeCalendar = (localCal = {}, cloudCal = {}, tombstones) => {
     return out
 }
 
+// Blocks is { [dateKey]: Block[] }. Each block has {id, startTime, endTime, taskIds, updatedAt}.
+// Merge per-block by id; a newer block wins wholesale (no sub-field merging needed).
+// Empty days are dropped, matching the calendar convention.
+const mergeBlocks = (localBlocks = {}, cloudBlocks = {}, tombstones) => {
+    const keys = new Set([...Object.keys(localBlocks || {}), ...Object.keys(cloudBlocks || {})])
+    const out = {}
+    for (const k of keys) {
+        const merged = mergeById(
+            localBlocks?.[k] || [],
+            cloudBlocks?.[k] || [],
+            tombstones,
+            newerOf,
+            localBlocks?.[k]
+        )
+        if (merged.length) out[k] = merged
+    }
+    return out
+}
+
 /**
  * Merge local and cloud data per-entity.
  * Returns the SAME `localData` reference when the merge produces no real change,
@@ -141,6 +160,7 @@ export const mergeData = (localData, cloudData) => {
             primary.tabs
         ),
         calendar: mergeCalendar(localData.calendar, cloudData.calendar, tombstones),
+        blocks: mergeBlocks(localData.blocks, cloudData.blocks, tombstones),
         // Study days are append-only across devices — union and keep sorted.
         studyDates: [...new Set([...(localData.studyDates || []), ...(cloudData.studyDates || [])])].sort(),
         deleted: tombstones,

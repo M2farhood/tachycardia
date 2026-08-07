@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Settings, Brain } from 'lucide-react'
+import { Brain } from 'lucide-react'
 import SettingsModal from './SettingsModal'
 
 const Header = ({
@@ -63,20 +63,16 @@ const Header = ({
                             <Brain size={18} />
                         </button>
 
+                        {/* User Avatar — tap to open Settings */}
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="p-2.5 rounded-full bg-[var(--surface-1)] liquid-press touch-target"
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full glow-avatar overflow-hidden bg-accent flex items-center justify-center liquid-press touch-target"
                             title="Settings"
                         >
-                            <Settings size={18} className="text-[var(--text-secondary)]" />
-                        </button>
-
-                        {/* User Avatar with glow */}
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full glow-avatar overflow-hidden bg-accent flex items-center justify-center">
                             <span className="text-lg sm:text-xl font-bold text-white">
                                 {userName.charAt(0).toUpperCase()}
                             </span>
-                        </div>
+                        </button>
                     </div>
                 </div>
             </header>

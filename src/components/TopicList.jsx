@@ -1,6 +1,21 @@
 import { useState, useRef } from 'react'
-import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent } from 'lucide-react'
+import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent, ClipboardList, Clock } from 'lucide-react'
 import { generateId } from '../utils/templates'
+
+const DIFFICULTY_CYCLE = [null, 'easy', 'medium', 'hard']
+const DIFFICULTY_COLOR = { easy: '#34d399', medium: '#f59e0b', hard: '#f87171' }
+const DIFFICULTY_LABEL = { easy: 'Easy', medium: 'Medium', hard: 'Hard' }
+
+// Returns days until next spaced-rep review, or null if not due
+const getReviewDue = (topic) => {
+    if (!topic.completed || !topic.completedAt) return null
+    const intervals = [1, 3, 7, 14, 30]
+    const daysSince = (Date.now() - new Date(topic.completedAt).getTime()) / 86_400_000
+    const stage = topic.reviewStage || 0
+    const nextInterval = intervals[Math.min(stage, intervals.length - 1)]
+    const daysLeft = nextInterval - daysSince
+    return daysLeft <= 0 ? 0 : Math.ceil(daysLeft)
+}
 
 const TopicList = ({
     tab,
@@ -13,7 +28,9 @@ const TopicList = ({
     onReorderTopics,
     onSubtaskAdd,
     onSubtaskUpdate,
-    onSubtaskDelete
+    onSubtaskDelete,
+    onSectionComplete,
+    spacedRepetitionEnabled = false,
 }) => {
     const [newTopicName, setNewTopicName] = useState('')
     const [editingId, setEditingId] = useState(null)
@@ -45,7 +62,26 @@ const TopicList = ({
     }
 
     const handleToggleComplete = (topic) => {
-        onTopicUpdate(tab.id, topic.id, { completed: !topic.completed })
+        const completing = !topic.completed
+        onTopicUpdate(tab.id, topic.id, {
+            completed: completing,
+            completedAt: completing ? new Date().toISOString() : null,
+            reviewStage: completing ? (topic.reviewStage || 0) : 0,
+        })
+        // Detect section reaching 100%
+        if (completing && onSectionComplete) {
+            const others = tab.topics.filter(t => t.id !== topic.id)
+            if (others.length > 0 && others.every(t => t.completed)) {
+                setTimeout(onSectionComplete, 200)
+            }
+        }
+    }
+
+    const cycleDifficulty = (topic, e) => {
+        e.stopPropagation()
+        const idx = DIFFICULTY_CYCLE.indexOf(topic.difficulty || null)
+        const next = DIFFICULTY_CYCLE[(idx + 1) % DIFFICULTY_CYCLE.length]
+        onTopicUpdate(tab.id, topic.id, { difficulty: next })
     }
 
     const startEdit = (topic) => {
@@ -164,7 +200,7 @@ const TopicList = ({
             <div className="px-6 py-2">
                 {/* Empty state */}
                 <div className="py-10 px-6 text-center border-t border-[var(--border-subtle)]">
-                    <div className="text-4xl mb-3">📝</div>
+                    <ClipboardList size={36} className="text-[var(--text-tertiary)] mx-auto mb-3 opacity-40" />
                     <p className="text-[var(--text-secondary)] font-medium text-[15px] mb-1">No tasks yet</p>
                     <p className="text-[var(--text-tertiary)] text-[13px] mb-6">Add your first task to get started</p>
                 </div>
@@ -324,6 +360,33 @@ const TopicList = ({
                                                 )}
                                             </button>
                                         )}
+                                        {/* Difficulty dot — tap to cycle, always present as dim dot */}
+                                        <button
+                                            onClick={(e) => cycleDifficulty(topic, e)}
+                                            title={topic.difficulty ? DIFFICULTY_LABEL[topic.difficulty] : 'Set difficulty'}
+                                            className="w-[14px] h-[14px] rounded-full flex-shrink-0 transition-all hover:scale-125 focus:outline-none"
+                                            style={{
+                                                backgroundColor: topic.difficulty
+                                                    ? DIFFICULTY_COLOR[topic.difficulty]
+                                                    : 'var(--border)',
+                                                opacity: topic.difficulty ? 1 : 0.4,
+                                            }}
+                                        />
+                                        {/* Spaced rep review badge */}
+                                        {spacedRepetitionEnabled && topic.completed && (() => {
+                                            const due = getReviewDue(topic)
+                                            if (due === null) return null
+                                            return (
+                                                <span className={`flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border ${
+                                                    due === 0
+                                                        ? 'text-[var(--color-danger)] bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
+                                                        : 'text-[var(--text-tertiary)] bg-[var(--surface-2)] border-[var(--border-subtle)]'
+                                                }`}>
+                                                    <Clock size={9} />
+                                                    {due === 0 ? 'Review' : `${due}d`}
+                                                </span>
+                                            )
+                                        })()}
                                         {topic.category && (
                                             <span className="text-[13px] text-[var(--text-tertiary)] hidden sm:inline">{topic.category}</span>
                                         )}

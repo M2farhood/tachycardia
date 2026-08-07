@@ -89,7 +89,6 @@ const TopicTable = ({
                         )}
 
                         <h2 className="text-xl md:text-2xl font-black text-slate-900">
-                            {tab.emoji && <span className="mr-2">{tab.emoji}</span>}
                             {tab.title}
                         </h2>
                     </div>

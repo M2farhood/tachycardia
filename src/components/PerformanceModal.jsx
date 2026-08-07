@@ -1,7 +1,33 @@
 import { X, Check, Circle, Clock, Calendar } from 'lucide-react'
 
-const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinutes = 0 }) => {
+const buildHeatMap = (studyDates) => {
+    const studied = new Set(studyDates)
+    const today = new Date()
+    const todayKey = today.toISOString().split('T')[0]
+
+    // Start from the Sunday 11 full weeks ago
+    const start = new Date(today)
+    start.setDate(start.getDate() - start.getDay() - 77)
+
+    const weeks = []
+    let week = []
+    const d = new Date(start)
+
+    for (let i = 0; i < 84; i++) {
+        const key = d.toISOString().split('T')[0]
+        week.push({ key, studied: studied.has(key), isToday: key === todayKey, isFuture: d > today })
+        if (week.length === 7) { weeks.push(week); week = [] }
+        d.setDate(d.getDate() + 1)
+    }
+    if (week.length) weeks.push(week)
+    return weeks
+}
+
+const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinutes = 0, studyDates = [] }) => {
     if (!isOpen) return null
+
+    const heatMap = buildHeatMap(studyDates)
+    const studiedTotal = studyDates.length
 
     // Calculate stats
     let totalTopics = 0
@@ -82,6 +108,37 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                     </div>
                 </div>
 
+                {/* Study Heat Map */}
+                <div className="px-5 py-4 border-b border-[var(--border-subtle)]">
+                    <div className="flex items-center justify-between mb-3">
+                        <span className="text-[11px] font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Study Activity</span>
+                        <span className="text-[11px] text-[var(--text-tertiary)]">{studiedTotal} days studied</span>
+                    </div>
+                    <div className="flex gap-[3px]">
+                        {heatMap.map((week, wi) => (
+                            <div key={wi} className="flex flex-col gap-[3px]">
+                                {week.map((day) => (
+                                    <div
+                                        key={day.key}
+                                        title={day.key}
+                                        className="w-[11px] h-[11px] rounded-[2px] transition-colors"
+                                        style={{
+                                            backgroundColor: day.isFuture
+                                                ? 'transparent'
+                                                : day.studied
+                                                    ? 'var(--color-accent)'
+                                                    : 'var(--surface-3)',
+                                            opacity: day.isFuture ? 0 : 1,
+                                            outline: day.isToday ? '1.5px solid var(--color-accent)' : 'none',
+                                            outlineOffset: '1px',
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 {/* All Topics List */}
                 <div className="p-5 overflow-y-auto max-h-[40vh]">
                     {tabs.map(tab => {
@@ -93,7 +150,6 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                 {/* Section Header */}
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                                        <span>{tab.emoji || '📚'}</span>
                                         {tab.title}
                                     </h3>
                                     <span className="text-[11px] text-[var(--text-tertiary)]">{tabCompleted}/{tabTotal}</span>

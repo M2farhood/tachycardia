@@ -225,7 +225,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
       return `
             <div class="section">
               <div class="section-header">
-                <span class="section-title">${tab.emoji || '📖'} ${tab.title}</span>
+                <span class="section-title">${tab.title}</span>
                 <span class="section-progress">${completed}/${total} (${percent}%)</span>
               </div>
               <ul class="topics">
@@ -317,7 +317,6 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
                   className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[var(--surface-1)] rounded-lg transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span>{tab.emoji || '📖'}</span>
                     <div className="text-left">
                       <span className="text-[var(--text-secondary)] text-[13px]">{tab.title}</span>
                       <span className="text-[var(--text-tertiary)] text-[11px] ml-2">{completed}/{total}</span>

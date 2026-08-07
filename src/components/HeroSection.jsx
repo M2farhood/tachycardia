@@ -27,7 +27,6 @@ const HeroSection = ({
             {/* Left side - Title */}
             <div className="flex-1 min-w-0">
                 <h2 className="text-3xl sm:text-[28px] font-bold tracking-tight text-[var(--text-primary)] leading-tight">
-                    {emoji && <span className="mr-2">{emoji}</span>}
                     <span className="inline-editable">{title}</span>
                 </h2>
                 <p className="text-[var(--text-tertiary)] text-[13px] mt-1">

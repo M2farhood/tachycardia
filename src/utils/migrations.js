@@ -15,7 +15,7 @@
  */
 
 // Bump this whenever the data shape changes, and add a matching migration below.
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 6
 
 /**
  * Migrations keyed by the version they PRODUCE.
@@ -107,6 +107,23 @@ const migrations = {
     4: (data) => ({
         ...data,
         studyDates: data.studyDates || [],
+    }),
+
+    // v4 -> v5: day blocks planner. `blocks` holds time blocks per day, each
+    // with a start/end time and a list of task IDs assigned to that block.
+    5: (data) => ({
+        ...data,
+        blocks: data.blocks || {},
+    }),
+
+    // v5 -> v6: block templates + spaced repetition setting
+    6: (data) => ({
+        ...data,
+        blockTemplates: data.blockTemplates || [],
+        settings: {
+            ...data.settings,
+            spacedRepetition: data.settings?.spacedRepetition ?? false,
+        },
     }),
 }
 

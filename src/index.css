@@ -181,21 +181,41 @@ body {
 h1, h2, h3 { text-wrap: balance; }
 .tabular-nums { font-variant-numeric: tabular-nums; }
 
-/* Container for large screens (1920px+) */
+/* Container — fills the viewport, breathes with side padding only */
 .app-container {
-  max-width: 720px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 768px) {
+  .app-container {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
 }
 
 @media (min-width: 1024px) {
   .app-container {
-    max-width: 640px;
+    padding-left: 48px;
+    padding-right: 48px;
   }
 }
 
 @media (min-width: 1440px) {
   .app-container {
-    max-width: 720px;
+    padding-left: 64px;
+    padding-right: 64px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .app-container {
+    max-width: 1600px;
+    padding-left: 80px;
+    padding-right: 80px;
   }
 }
 
@@ -441,6 +461,31 @@ h1, h2, h3 { text-wrap: balance; }
 
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes intro-fade {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Countdown digit roll-up — triggered by key change */
+@keyframes countRoll {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+.animate-count-roll {
+  animation: countRoll 0.18s ease-out;
 }
 
 /* Touch-friendly button sizing */

@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { X, Upload, Download, Trash2, Clock, Printer, User, MoreHorizontal, BarChart2, Sun, Moon, FileText, Cloud, CloudOff, Loader, LogOut, CheckCircle } from 'lucide-react'
+import { X, Upload, Download, Trash2, Clock, Printer, User, MoreHorizontal, BarChart2, Sun, Moon, FileText, Cloud, CloudOff, Loader, LogOut, CheckCircle, ChevronDown, Heart } from 'lucide-react'
 import { exportData, importData, getStorageUsage } from '../utils/exportImport'
 import ConfirmDialog from './ConfirmDialog'
 import PrintModal from './PrintModal'
@@ -34,6 +34,7 @@ const SettingsModal = ({
     const [nameValue, setNameValue] = useState(settings?.userName || '')
     const [showDataMenu, setShowDataMenu] = useState(false)
     const [showPlanImporter, setShowPlanImporter] = useState(false)
+    const [showAdvanced, setShowAdvanced] = useState(false)
     const fileInputRef = useRef(null)
     const storage = getStorageUsage()
 
@@ -297,6 +298,28 @@ const SettingsModal = ({
                             </div>
                         </div>
 
+                        {/* Spaced Repetition */}
+                        <div>
+                            <button
+                                onClick={() => onSettingsChange({ spacedRepetition: !settings?.spacedRepetition })}
+                                className={`w-full py-2.5 px-3 rounded-xl text-left text-[15px] font-medium transition-all liquid-press flex items-center justify-between ${
+                                    settings?.spacedRepetition
+                                        ? 'bg-accent/20 text-accent border border-accent/30'
+                                        : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
+                                }`}
+                            >
+                                <span>Spaced Repetition</span>
+                                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.spacedRepetition ? 'bg-accent' : 'bg-white/10'}`}>
+                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings?.spacedRepetition ? 'translate-x-4' : 'translate-x-0'}`} />
+                                </div>
+                            </button>
+                            {settings?.spacedRepetition && (
+                                <p className="text-[11px] text-[var(--text-tertiary)] mt-1.5 px-1">
+                                    Completed topics show a review reminder after 1, 3, 7, 14 days.
+                                </p>
+                            )}
+                        </div>
+
                         {/* Exam Countdown */}
                         <div>
                             <div className="flex items-center gap-2 mb-2">
@@ -348,76 +371,99 @@ const SettingsModal = ({
                             </div>
                         </div>
 
-                        {/* Performance Button */}
-                        <button
-                            onClick={() => setShowPerformance(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                        >
-                            <BarChart2 size={16} />
-                            View All Performance
-                        </button>
+                        {/* Advanced (collapsible) */}
+                        <div>
+                            <button
+                                onClick={() => setShowAdvanced(v => !v)}
+                                className="w-full flex items-center justify-between px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
+                            >
+                                <span>Advanced</span>
+                                <ChevronDown
+                                    size={15}
+                                    className={`text-[var(--text-tertiary)] transition-transform duration-200 ${showAdvanced ? 'rotate-180' : ''}`}
+                                />
+                            </button>
+                            {showAdvanced && (
+                                <div className="mt-2 space-y-2">
+                                    <button
+                                        onClick={() => setShowPerformance(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
+                                    >
+                                        <BarChart2 size={16} />
+                                        View All Performance
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPrintModal(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
+                                    >
+                                        <Printer size={16} />
+                                        Print / Save as PDF
+                                    </button>
+                                    <button
+                                        onClick={() => setShowPlanImporter(true)}
+                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
+                                    >
+                                        <FileText size={16} />
+                                        Import Study Plan
+                                    </button>
 
-                        {/* Print Button */}
-                        <button
-                            onClick={() => setShowPrintModal(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                        >
-                            <Printer size={16} />
-                            Print / Save as PDF
-                        </button>
-
-                        {/* Import Study Plan Button */}
-                        <button
-                            onClick={() => setShowPlanImporter(true)}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] font-medium rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                        >
-                            <FileText size={16} />
-                            📥 Import Study Plan
-                        </button>
-
-                        {/* Data row: Storage + Export/Import */}
-                        <div className="flex items-center gap-3 py-2">
-                            <div className="flex-1">
-                                <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] mb-1">
-                                    <span>Storage</span>
-                                    <span>{storage.usedFormatted}</span>
-                                </div>
-                                <div className="h-1 bg-[var(--surface-3)] rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full rounded-full ${storage.percent > 80 ? 'bg-[var(--color-danger)]' : 'bg-accent/50'}`}
-                                        style={{ width: `${Math.min(storage.percent, 100)}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="relative">
-                                <button
-                                    onClick={() => setShowDataMenu(!showDataMenu)}
-                                    className="p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-                                    title="Import/Export"
-                                >
-                                    <MoreHorizontal size={16} />
-                                </button>
-
-                                {showDataMenu && (
-                                    <div className="absolute right-0 bottom-full mb-2 surface rounded-xl py-1 min-w-[100px] z-10 animate-fade-in shadow-xl">
-                                        <button
-                                            onClick={handleExport}
-                                            className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
-                                        >
-                                            <Download size={12} />
-                                            Export
-                                        </button>
-                                        <button
-                                            onClick={handleImportClick}
-                                            className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
-                                        >
-                                            <Upload size={12} />
-                                            Import
-                                        </button>
+                                    {/* Storage + Export/Import */}
+                                    <div className="flex items-center gap-3 px-1 py-1">
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] mb-1">
+                                                <span>Storage</span>
+                                                <span>{storage.usedFormatted}</span>
+                                            </div>
+                                            <div className="h-1 bg-[var(--surface-3)] rounded-full overflow-hidden">
+                                                <div
+                                                    className={`h-full rounded-full ${storage.percent > 80 ? 'bg-[var(--color-danger)]' : 'bg-accent/50'}`}
+                                                    style={{ width: `${Math.min(storage.percent, 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setShowDataMenu(!showDataMenu)}
+                                                className="p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                                                title="Import/Export"
+                                            >
+                                                <MoreHorizontal size={16} />
+                                            </button>
+                                            {showDataMenu && (
+                                                <div className="absolute right-0 bottom-full mb-2 surface rounded-xl py-1 min-w-[100px] z-10 animate-fade-in shadow-xl">
+                                                    <button
+                                                        onClick={handleExport}
+                                                        className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
+                                                    >
+                                                        <Download size={12} />
+                                                        Export
+                                                    </button>
+                                                    <button
+                                                        onClick={handleImportClick}
+                                                        className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
+                                                    >
+                                                        <Upload size={12} />
+                                                        Import
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    {importError && (
+                                        <p className="text-xs text-red-400 text-center bg-red-500/10 p-2 rounded-lg">
+                                            {importError}
+                                        </p>
+                                    )}
+
+                                    <button
+                                        onClick={() => setShowClearConfirm(true)}
+                                        className="w-full text-xs text-red-400/50 hover:text-red-400 py-1 transition-colors"
+                                    >
+                                        Clear All Data
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         <input
@@ -427,25 +473,12 @@ const SettingsModal = ({
                             accept=".json"
                             className="hidden"
                         />
-
-                        {importError && (
-                            <p className="text-xs text-red-400 text-center bg-red-500/10 p-2 rounded-lg">
-                                {importError}
-                            </p>
-                        )}
-
-                        <button
-                            onClick={() => setShowClearConfirm(true)}
-                            className="w-full text-xs text-red-400/50 hover:text-red-400 py-1 transition-colors"
-                        >
-                            Clear All Data
-                        </button>
                     </div>
 
                     {/* Footer credit */}
                     <div className="px-5 pb-4 pt-1 border-t border-[var(--border-subtle)]">
-                        <p className="text-[11px] text-[var(--text-tertiary)] text-center">
-                            Made with ❤️ in MUCOM & by Mohammed Farhood
+                        <p className="text-[11px] text-[var(--text-tertiary)] text-center flex items-center justify-center gap-1">
+                            Made with <Heart size={11} className="text-[var(--text-tertiary)]" /> by Mohammed Farhood
                         </p>
                     </div>
                 </div>
@@ -474,6 +507,7 @@ const SettingsModal = ({
                 tabs={data?.tabs || []}
                 todayMinutes={todayMinutes}
                 totalMinutes={totalMinutes}
+                studyDates={data?.studyDates || []}
             />
 
             <PlanImporterModal

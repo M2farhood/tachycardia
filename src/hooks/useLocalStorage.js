@@ -360,6 +360,65 @@ export const useLocalStorage = (initialValue) => {
         }))
     }, [])
 
+    // --- Blocks CRUD ----------------------------------------------------------
+    // Blocks live at data.blocks = { [dateKey]: Block[] }.
+    // Block: { id, startTime, endTime, taskIds: string[], updatedAt }
+
+    const withBlocksDay = (prev, dateKey, updater) => {
+        const list = prev.blocks?.[dateKey] || []
+        const nextList = updater(list)
+        const blocks = { ...(prev.blocks || {}) }
+        if (nextList.length === 0) delete blocks[dateKey]
+        else blocks[dateKey] = nextList
+        return { ...prev, blocks, updatedAt: now() }
+    }
+
+    const addBlock = useCallback((dateKey, { startTime, endTime }) => {
+        setData(prev => withBlocksDay(prev, dateKey, list => [
+            ...list,
+            { id: generateId(), startTime, endTime, taskIds: [], updatedAt: now() }
+        ]))
+    }, [])
+
+    const deleteBlock = useCallback((dateKey, blockId) => {
+        setData(prev => ({
+            ...withBlocksDay(prev, dateKey, list => list.filter(b => b.id !== blockId)),
+            deleted: { ...(prev.deleted || {}), [blockId]: now() }
+        }))
+    }, [])
+
+    // --- Block Templates -------------------------------------------------------
+    const addBlockTemplate = useCallback((name, blocks) => {
+        setData(prev => ({
+            ...prev,
+            updatedAt: now(),
+            blockTemplates: [
+                ...(prev.blockTemplates || []),
+                { id: generateId(), name, blocks, createdAt: now() }
+            ]
+        }))
+    }, [])
+
+    const deleteBlockTemplate = useCallback((templateId) => {
+        setData(prev => ({
+            ...prev,
+            updatedAt: now(),
+            blockTemplates: (prev.blockTemplates || []).filter(t => t.id !== templateId)
+        }))
+    }, [])
+
+    const toggleTaskInBlock = useCallback((dateKey, blockId, taskId) => {
+        setData(prev => withBlocksDay(prev, dateKey, list =>
+            list.map(b => b.id !== blockId ? b : {
+                ...b,
+                updatedAt: now(),
+                taskIds: (b.taskIds || []).includes(taskId)
+                    ? b.taskIds.filter(id => id !== taskId)
+                    : [...(b.taskIds || []), taskId]
+            })
+        ))
+    }, [])
+
     // Clear all data
     const clearAllData = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY)
@@ -395,6 +454,15 @@ export const useLocalStorage = (initialValue) => {
         addCalendarSubtask,
         toggleCalendarSubtask,
         deleteCalendarSubtask,
+        // Blocks
+        blocks: data?.blocks || {},
+        addBlock,
+        deleteBlock,
+        toggleTaskInBlock,
+        // Block templates
+        blockTemplates: data?.blockTemplates || [],
+        addBlockTemplate,
+        deleteBlockTemplate,
         clearAllData
     }
 }

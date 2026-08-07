@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useTimer } from './hooks/useTimer'
 import { useAuth } from './hooks/useAuth'
@@ -13,7 +13,9 @@ import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
 import TachycardiaTab from './components/TachycardiaTab'
 import CalendarPage from './components/CalendarPage'
+import BlocksPage from './components/BlocksPage'
 import FocusMode from './components/FocusMode'
+import Confetti from './components/Confetti'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -45,6 +47,13 @@ function App() {
     addCalendarSubtask,
     toggleCalendarSubtask,
     deleteCalendarSubtask,
+    blocks,
+    addBlock,
+    deleteBlock,
+    toggleTaskInBlock,
+    blockTemplates,
+    addBlockTemplate,
+    deleteBlockTemplate,
     clearAllData
   } = useLocalStorage(null)
 
@@ -64,7 +73,31 @@ function App() {
   const [totalMinutes, setTotalMinutes] = useState(0)
   const [showTachycardia, setShowTachycardia] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [showBlocks, setShowBlocks] = useState(false)
   const [isFocusMode, setIsFocusMode] = useState(false)
+  const [confettiActive, setConfettiActive] = useState(false)
+  const touchStartX = useRef(null)
+
+  const handleSectionComplete = useCallback(() => {
+    setConfettiActive(true)
+    setTimeout(() => setConfettiActive(false), 3500)
+  }, [])
+
+  const handleSwipe = useCallback((dx) => {
+    if (!data?.tabs?.length) return
+    const tabs = data.tabs
+    const idx = tabs.findIndex(t => t.id === activeTabId)
+    if (dx > 0 && idx > 0) setActiveTabId(tabs[idx - 1].id)           // swipe right → prev
+    else if (dx < 0 && idx < tabs.length - 1) setActiveTabId(tabs[idx + 1].id) // swipe left → next
+  }, [data?.tabs, activeTabId])
+
+  const onTouchStart = useCallback((e) => { touchStartX.current = e.touches[0].clientX }, [])
+  const onTouchEnd   = useCallback((e) => {
+    if (touchStartX.current === null) return
+    const dx = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(dx) > 55) handleSwipe(-dx)
+    touchStartX.current = null
+  }, [handleSwipe])
 
   // Load study time from localStorage
   useEffect(() => {
@@ -166,15 +199,32 @@ function App() {
     return count
   }, [data?.studyDates])
 
-  // Calculate global stats
+  // Calculate global stats (now supports weights)
   const globalStats = useMemo(() => {
     if (!data?.tabs) return { completed: 0, total: 0 }
+    
+    // Check if any topic in ANY tab uses weights
+    const hasGlobalWeights = data.tabs.some(tab => tab.topics.some(t => (t.weight || 0) > 0))
+    
     let completed = 0
     let total = 0
-    data.tabs.forEach(tab => {
-      completed += tab.topics.filter(t => t.completed).length
-      total += tab.topics.length
-    })
+    
+    if (hasGlobalWeights) {
+      data.tabs.forEach(tab => {
+        tab.topics.forEach(t => {
+          const w = t.weight || 0
+          total += w
+          if (t.completed) completed += w
+        })
+      })
+      // Prevent 0 total edge case
+      if (total === 0) total = 100
+    } else {
+      data.tabs.forEach(tab => {
+        completed += tab.topics.filter(t => t.completed).length
+        total += tab.topics.length
+      })
+    }
     return { completed, total }
   }, [data?.tabs])
 
@@ -308,11 +358,11 @@ function App() {
   let totalCount = 0
 
   if (currentTab) {
-    const hasWeights = currentTab.topics.some(t => t.weight > 0)
+    const hasWeights = currentTab.topics.some(t => (t.weight || 0) > 0)
 
     if (hasWeights) {
-      // Weighted Mode: Calculate based on weights (assuming total is 100%)
-      totalCount = 100
+      // Weighted Mode: Section total is the sum of its topics' weights
+      totalCount = currentTab.topics.reduce((acc, t) => acc + (t.weight || 0), 0)
       completedCount = currentTab.topics.reduce((acc, t) => {
         return acc + (t.completed ? (t.weight || 0) : 0)
       }, 0)
@@ -356,10 +406,12 @@ function App() {
         onTabAdd={addTab}
         onTabDelete={handleTabDelete}
         onTabUpdate={updateTab}
-        onTachycardiaClick={() => { setShowTachycardia(!showTachycardia); setShowCalendar(false); }}
+        onTachycardiaClick={() => { setShowTachycardia(!showTachycardia); setShowCalendar(false); setShowBlocks(false); }}
         showTachycardia={showTachycardia}
-        onCalendarClick={() => { setShowCalendar(!showCalendar); setShowTachycardia(false); }}
+        onCalendarClick={() => { setShowCalendar(!showCalendar); setShowTachycardia(false); setShowBlocks(false); }}
         showCalendar={showCalendar}
+        onBlocksClick={() => { setShowBlocks(!showBlocks); setShowCalendar(false); setShowTachycardia(false); }}
+        showBlocks={showBlocks}
       />
 
       {isFocusMode && currentTab && (
@@ -385,7 +437,18 @@ function App() {
         />
       )}
 
-      {showCalendar ? (
+      {showBlocks ? (
+        <BlocksPage
+          blocks={blocks}
+          onAddBlock={addBlock}
+          onDeleteBlock={deleteBlock}
+          onToggleTask={toggleTaskInBlock}
+          tabs={data.tabs}
+          blockTemplates={blockTemplates}
+          onAddBlockTemplate={addBlockTemplate}
+          onDeleteBlockTemplate={deleteBlockTemplate}
+        />
+      ) : showCalendar ? (
         <CalendarPage
           isFocusMode={isFocusMode}
           tasks={calendar}
@@ -426,6 +489,7 @@ function App() {
           />
 
           {/* Topic List */}
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
           <TopicList
             tab={currentTab}
             timerSession={data.timerSession}
@@ -438,7 +502,10 @@ function App() {
             onSubtaskAdd={addSubtask}
             onSubtaskUpdate={updateSubtask}
             onSubtaskDelete={deleteSubtask}
+            onSectionComplete={handleSectionComplete}
+            spacedRepetitionEnabled={data.settings.spacedRepetition}
           />
+          </div>
 
           {/* Stats Cards */}
           <StatsCards
@@ -455,6 +522,8 @@ function App() {
         </>
       )}
       </div>{/* end app-container */}
+
+      <Confetti active={confettiActive} />
 
       {/* Floating Timer */}
       <FloatingTimer

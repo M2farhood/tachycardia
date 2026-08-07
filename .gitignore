@@ -30,3 +30,4 @@ dist-ssr
 
 # Personal injection scripts (local only)
 inject-plan.js
+.vercel

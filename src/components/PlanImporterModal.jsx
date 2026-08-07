@@ -209,7 +209,7 @@ Please generate the plan now.`
                                 >
                                     {tabs?.map(tab => (
                                         <option key={tab.id} value={tab.id}>
-                                            {tab.emoji} {tab.title}
+                                            {tab.title}
                                         </option>
                                     ))}
                                 </select>

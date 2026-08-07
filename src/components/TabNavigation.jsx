@@ -124,7 +124,6 @@ const TabNavigation = ({
                                             }
                     `}
                                     >
-                                        {tab.emoji && <span className="mr-1.5">{tab.emoji}</span>}
                                         {tab.title}
                                     </button>
 
@@ -185,7 +184,7 @@ const TabNavigation = ({
                         key={tab.id}
                         className={`text-sm ${activeTabId === tab.id ? 'font-bold' : 'text-slate-500'}`}
                     >
-                        {tab.emoji} {tab.title}
+                        {tab.title}
                     </span>
                 ))}
             </div>

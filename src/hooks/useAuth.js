@@ -90,29 +90,28 @@ export const useAuth = (localData, onDataSync) => {
         }
 
         if (authUser) {
-            // Pull cloud data and merge with local
+            setSyncStatus('syncing')
             const { data: cloudData, error: pullError } = await pullFromCloud(authUser.uid)
 
             if (pullError) {
                 console.warn('Could not pull cloud data:', pullError)
             }
 
+            let syncResult = { success: true }
             if (cloudData && localData && onDataSync) {
-                // Merge cloud data with local data
                 const merged = mergeData(localData, cloudData)
                 onDataSync(merged)
-
-                // Push merged data back to cloud
-                await syncToCloud(authUser.uid, merged)
+                syncResult = await syncToCloud(authUser.uid, merged)
             } else if (!cloudData && localData) {
-                // No cloud data, push local to cloud
-                await syncToCloud(authUser.uid, localData)
+                syncResult = await syncToCloud(authUser.uid, localData)
             } else if (cloudData && !localData && onDataSync) {
-                // No local data, use cloud
                 onDataSync(cloudData)
             }
 
-            setSyncStatus('synced')
+            setSyncStatus(syncResult.success ? 'synced' : 'error')
+            if (!syncResult.success) {
+                console.warn('Initial sync failed:', syncResult.error)
+            }
         }
 
         setIsLoading(false)
