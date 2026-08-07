@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { migrate, needsMigration } from '../utils/migrations'
-import { generateId } from '../utils/templates'
+import { migrate, needsMigration, generateId } from '@study/core'
 
 const STORAGE_KEY = 'study_tracker_data'
 const LEGACY_CALENDAR_KEY = 'study_tracker_calendar'

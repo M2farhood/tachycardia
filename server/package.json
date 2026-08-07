@@ -1,0 +1,16 @@
+{
+  "name": "@study/server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "AI proxy. Keeps the Gemini/Mistral/OpenRouter keys server-side. Deploys independently of the web and iOS apps.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node --watch index.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}

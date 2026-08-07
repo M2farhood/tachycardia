@@ -3,7 +3,7 @@ import { Plus, Edit3 } from 'lucide-react'
 import TopicRow from './TopicRow'
 import ProgressCircle from './ProgressCircle'
 import ConfirmDialog from './ConfirmDialog'
-import { createEmptyTopic } from '../utils/templates'
+import { createEmptyTopic } from '@study/core'
 
 const TopicTable = ({
     tab,

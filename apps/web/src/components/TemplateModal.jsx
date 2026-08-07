@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getInitialState } from '../utils/templates'
+import { getInitialState } from '@study/core'
 
 const TemplateModal = ({ onSelect, onClose }) => {
     const [phase, setPhase] = useState(0) // 0=icon, 1=title, 2=tagline, 3=button

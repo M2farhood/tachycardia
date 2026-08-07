@@ -31,3 +31,21 @@ dist-ssr
 # Personal injection scripts (local only)
 inject-plan.js
 .vercel
+
+# Local reference material — 646MB of third-party repos, never commit
+repositories for design/
+
+# Generated knowledge graph
+graphify-out/
+
+# Expo / React Native
+.expo/
+apps/mobile/ios/
+apps/mobile/android/
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+
+# Local backups
+*.BACKUP-*/

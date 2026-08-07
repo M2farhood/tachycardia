@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, X, MoreVertical, Trash2, Edit3 } from 'lucide-react'
-import { createEmptyTab } from '../utils/templates'
+import { createEmptyTab } from '@study/core'
 import ConfirmDialog from './ConfirmDialog'
 
 const TabNavigation = ({

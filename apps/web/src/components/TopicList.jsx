@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent, ClipboardList, Clock } from 'lucide-react'
-import { generateId } from '../utils/templates'
+import { generateId } from '@study/core'
 
 const DIFFICULTY_CYCLE = [null, 'easy', 'medium', 'hard']
 const DIFFICULTY_COLOR = { easy: '#34d399', medium: '#f59e0b', hard: '#f87171' }

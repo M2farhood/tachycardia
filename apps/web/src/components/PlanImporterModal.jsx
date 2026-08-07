@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, FileText, Check, AlertCircle, Download, Loader2, Sparkles } from 'lucide-react'
-import { parsePlan, tasksToTopics } from '../utils/planParser'
+import { parsePlan, tasksToTopics } from '@study/core'
 import { parsePlanWithAI, isAIAvailable } from '../services/aiService'
 
 const PlanImporterModal = ({ isOpen, onClose, tabs, onImportTasks }) => {

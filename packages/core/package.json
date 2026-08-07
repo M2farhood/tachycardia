@@ -1,0 +1,14 @@
+{
+  "name": "@study/core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Shared data model, migrations and sync logic. Imported by BOTH the web app and the iOS app — they read and write the same Firestore document, so this logic must never diverge between them.",
+  "main": "src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}

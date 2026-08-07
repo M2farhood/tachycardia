@@ -1,4 +1,6 @@
-import { CURRENT_SCHEMA_VERSION } from './migrations'
+// Explicit .js extension: this package must run under plain `node --test`,
+// which (unlike Vite and Metro) does not resolve extensionless imports.
+import { CURRENT_SCHEMA_VERSION } from './migrations.js'
 
 // Pre-defined templates for different study types
 export const templates = {
@@ -149,10 +151,15 @@ export const getInitialState = (templateKey) => {
         deleted: {},
         calendar: {},
         blocks: {},
+        // Added by migration 6. A fresh document already claims schemaVersion 6,
+        // so migrate() short-circuits and would never add these — omitting them
+        // here leaves every new user permanently malformed.
+        blockTemplates: [],
         studyDates: [],
         settings: {
             timerDuration: 25,
             isMuted: false,
+            spacedRepetition: false,
             createdAt: now
         },
         tabs: template.tabs.map(tab => ({

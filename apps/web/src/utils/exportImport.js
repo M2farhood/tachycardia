@@ -1,4 +1,4 @@
-import { migrate } from './migrations'
+import { migrate } from '@study/core'
 
 // Export data as JSON file download
 export const exportData = (data, filename = 'study-tracker-backup.json') => {

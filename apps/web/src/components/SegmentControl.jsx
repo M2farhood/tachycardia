@@ -1,7 +1,7 @@
 import { Plus, MoreVertical, Trash2, Edit2, Heart, CalendarDays, LayoutGrid, Search, X as XIcon } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { createEmptyTab } from '../utils/templates'
+import { createEmptyTab } from '@study/core'
 import ConfirmDialog from './ConfirmDialog'
 
 const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate, onTachycardiaClick, showTachycardia, onCalendarClick, showCalendar, onBlocksClick, showBlocks }) => {

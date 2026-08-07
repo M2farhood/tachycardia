@@ -9,7 +9,7 @@ import {
     serverTimestamp
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../config/firebase'
-import { migrate } from '../utils/migrations'
+import { migrate } from '@study/core'
 
 const COLLECTION_NAME = 'study_tracker_users'
 
@@ -97,7 +97,7 @@ export const subscribeToChanges = (userId, callback) => {
 }
 
 // Per-entity merge lives in a pure, Firebase-free module (so it is unit-testable).
-export { mergeData } from '../utils/syncMerge'
+export { mergeData } from '@study/core'
 
 /**
  * Check if cloud sync is available
