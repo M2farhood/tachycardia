@@ -9,9 +9,27 @@ import {
     serverTimestamp
 } from 'firebase/firestore'
 import { db, isFirebaseConfigured } from '../config/firebase'
-import { migrate } from '../utils/migrations'
+import { migrate, isFutureSchemaError, isFutureSchema } from '../utils/migrations'
 
 const COLLECTION_NAME = 'study_tracker_users'
+
+/**
+ * Migrate a cloud document, tolerating one written by a NEWER client.
+ * Returns { data, futureSchema }. On a future document the RAW data is handed
+ * back (so the app can still display it) with futureSchema = true, which the
+ * caller must turn into read-only mode. See DATA-CONTRACT.md rule 4.
+ */
+const migrateCloudDoc = (raw) => {
+    try {
+        return { data: migrate(raw), futureSchema: false }
+    } catch (error) {
+        if (isFutureSchemaError(error)) {
+            console.warn('Cloud data is from a newer version of the app — entering read-only mode.', error)
+            return { data: raw, futureSchema: true }
+        }
+        throw error
+    }
+}
 
 /**
  * Get the user's document reference
@@ -32,6 +50,13 @@ export const syncToCloud = async (userId, data) => {
         return { success: false, error: 'Firebase not configured' }
     }
 
+    // Last line of defence: never push a document this client does not fully
+    // understand. The UI already blocks this via read-only mode; this guard means
+    // a missed code path degrades into "sync paused", not "newer data clobbered".
+    if (isFutureSchema(data)) {
+        return { success: false, error: 'Data is newer than this version of the app — update to keep syncing.' }
+    }
+
     try {
         const docRef = getUserDocRef(userId)
         await setDoc(docRef, {
@@ -50,11 +75,11 @@ export const syncToCloud = async (userId, data) => {
 /**
  * Pull data from Firestore
  * @param {string} userId - User's UID
- * @returns {Promise<{data: object|null, error: string|null}>}
+ * @returns {Promise<{data: object|null, error: string|null, futureSchema: boolean}>}
  */
 export const pullFromCloud = async (userId) => {
     if (!isFirebaseConfigured() || !db) {
-        return { data: null, error: 'Firebase not configured' }
+        return { data: null, error: 'Firebase not configured', futureSchema: false }
     }
 
     try {
@@ -63,20 +88,22 @@ export const pullFromCloud = async (userId) => {
 
         if (docSnap.exists()) {
             // Cloud data may be from a device on an older schema — upgrade it.
-            return { data: migrate(docSnap.data().data), error: null }
+            // It may also be from a NEWER one — then we display, never write.
+            const { data, futureSchema } = migrateCloudDoc(docSnap.data().data)
+            return { data, error: null, futureSchema }
         }
 
-        return { data: null, error: null } // No data in cloud yet
+        return { data: null, error: null, futureSchema: false } // No data in cloud yet
     } catch (error) {
         console.error('Pull from cloud error:', error)
-        return { data: null, error: error.message }
+        return { data: null, error: error.message, futureSchema: false }
     }
 }
 
 /**
  * Subscribe to real-time changes from Firestore
  * @param {string} userId - User's UID
- * @param {function} callback - Called with updated data
+ * @param {function} callback - Called with (data, updatedAt, { futureSchema })
  * @returns {function} Unsubscribe function
  */
 export const subscribeToChanges = (userId, callback) => {
@@ -89,7 +116,8 @@ export const subscribeToChanges = (userId, callback) => {
     return onSnapshot(docRef, (docSnap) => {
         if (docSnap.exists()) {
             const cloudData = docSnap.data()
-            callback(migrate(cloudData.data), cloudData.updatedAt)
+            const { data, futureSchema } = migrateCloudDoc(cloudData.data)
+            callback(data, cloudData.updatedAt, { futureSchema })
         }
     }, (error) => {
         console.error('Snapshot error:', error)

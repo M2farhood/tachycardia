@@ -1,9 +1,14 @@
-import { useState, useEffect, useCallback } from 'react'
-import { migrate, needsMigration } from '../utils/migrations'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { migrate, needsMigration, isFutureSchemaError } from '../utils/migrations'
 import { generateId } from '../utils/templates'
 
 const STORAGE_KEY = 'study_tracker_data'
 const LEGACY_CALENDAR_KEY = 'study_tracker_calendar'
+// Device-local study-time keys. These stay exactly where they are — they are
+// still written on every timer completion so an older client keeps working —
+// and are backfilled once into the synced `timeLog` field (schema v7).
+const LEGACY_DAILY_TIME_KEY = 'study_tracker_daily_time'
+const LEGACY_TOTAL_TIME_KEY = 'study_tracker_total_time'
 
 // ISO timestamp helper for stamping per-entity updatedAt on every mutation.
 const now = () => new Date().toISOString()
@@ -36,41 +41,128 @@ const importLegacyCalendar = (data) => {
     return { data: { ...data, calendar, updatedAt: now() }, changed: true }
 }
 
-export const useLocalStorage = (initialValue) => {
-    // Initialize state from localStorage or use initial value
-    const [data, setData] = useState(() => {
-        try {
-            const stored = localStorage.getItem(STORAGE_KEY)
-            if (stored) {
-                const parsed = JSON.parse(stored)
-                const migrated = migrate(parsed)
-                // Pull the old standalone calendar key into the main data object.
-                const { data: upgraded, changed: calendarImported } = importLegacyCalendar(migrated)
-                // Persist immediately if the load upgraded the schema or imported
-                // the calendar, so the on-disk copy matches what we're running.
-                if (needsMigration(parsed) || calendarImported) {
-                    try {
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded))
-                        if (calendarImported) localStorage.removeItem(LEGACY_CALENDAR_KEY)
-                    } catch (writeError) {
-                        console.error('Error persisting migrated data:', writeError)
-                    }
-                }
-                return upgraded
-            }
-        } catch (error) {
-            console.error('Error reading from localStorage:', error)
+// One-time backfill of the device-local study-time keys into the synced
+// `timeLog` (schema v7). Runs only when `timeLog` is still empty.
+//
+// `study_tracker_daily_time` = { date, minutes } for ONE day (today), and
+// `study_tracker_total_time` = all-time minutes with no per-day breakdown. The
+// per-day history simply does not exist, so the unattributable remainder is
+// parked on the earliest day the user is known to have studied (falling back to
+// the day before the daily entry). That keeps the all-time total exact — no
+// study time is lost — while being honest that only today's figure is precise.
+// Returns { data, changed }.
+const backfillTimeLog = (data) => {
+    if (!data) return { data, changed: false }
+    const existing = data.timeLog || {}
+    if (Object.keys(existing).length > 0) return { data, changed: false }
+
+    let dailyDate = null
+    let dailySeconds = 0
+    try {
+        const daily = JSON.parse(localStorage.getItem(LEGACY_DAILY_TIME_KEY) || 'null')
+        if (daily && daily.date) {
+            dailyDate = daily.date
+            dailySeconds = Math.max(0, Math.round((Number(daily.minutes) || 0) * 60))
         }
-        return initialValue
-    })
+    } catch {
+        // Unreadable legacy entry — treat as absent.
+    }
+
+    const totalSeconds = Math.max(0, Math.round((parseInt(localStorage.getItem(LEGACY_TOTAL_TIME_KEY), 10) || 0) * 60))
+    if (totalSeconds === 0 && dailySeconds === 0) return { data, changed: false }
+
+    const timeLog = {}
+    if (dailyDate && dailySeconds > 0) timeLog[dailyDate] = dailySeconds
+
+    const remainder = totalSeconds - dailySeconds
+    if (remainder > 0) {
+        const historyDates = (data.studyDates || []).filter((d) => d !== dailyDate).sort()
+        const bucket = historyDates[0] || dailyDate || new Date().toISOString().split('T')[0]
+        timeLog[bucket] = (timeLog[bucket] || 0) + remainder
+    }
+
+    if (Object.keys(timeLog).length === 0) return { data, changed: false }
+    return { data: { ...data, timeLog, updatedAt: now() }, changed: true }
+}
+
+// Read + upgrade the stored document once, at mount.
+// Returns { data, readOnly, isFirstVisit }. `readOnly` is set when the stored
+// document was written by a NEWER version of the app than this one: we still
+// show it, but we must never write it back (see DATA-CONTRACT.md rule 4).
+const readInitialState = (initialValue) => {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return { data: initialValue, readOnly: false, isFirstVisit: true }
+
+    let parsed = null
+    try {
+        parsed = JSON.parse(stored)
+    } catch (error) {
+        console.error('Error reading from localStorage:', error)
+        return { data: initialValue, readOnly: false, isFirstVisit: true }
+    }
+
+    let migrated
+    try {
+        migrated = migrate(parsed)
+    } catch (error) {
+        if (isFutureSchemaError(error)) {
+            console.warn('Stored data is from a newer version of the app — running read-only.', error)
+            return { data: parsed, readOnly: true, isFirstVisit: false }
+        }
+        throw error
+    }
+
+    // Pull the old standalone calendar key into the main data object.
+    const { data: withCalendar, changed: calendarImported } = importLegacyCalendar(migrated)
+    // Pull the device-local study-time keys into the synced timeLog.
+    const { data: upgraded, changed: timeBackfilled } = backfillTimeLog(withCalendar)
+
+    // Persist immediately if the load upgraded the schema or imported anything,
+    // so the on-disk copy matches what we're running.
+    if (needsMigration(parsed) || calendarImported || timeBackfilled) {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(upgraded))
+            if (calendarImported) localStorage.removeItem(LEGACY_CALENDAR_KEY)
+        } catch (writeError) {
+            console.error('Error persisting migrated data:', writeError)
+        }
+    }
+
+    return { data: upgraded, readOnly: false, isFirstVisit: false }
+}
+
+export const useLocalStorage = (initialValue) => {
+    const [boot] = useState(() => readInitialState(initialValue))
+
+    // Initialize state from localStorage or use initial value
+    const [data, setData] = useState(boot.data)
 
     // Flag to track if this is a first-time user
-    const [isFirstVisit, setIsFirstVisit] = useState(() => {
-        return !localStorage.getItem(STORAGE_KEY)
-    })
+    const [isFirstVisit, setIsFirstVisit] = useState(boot.isFirstVisit)
+
+    // Read-only mode: the document we are looking at was written by a newer
+    // client. Show it, never write it — not to localStorage, not to Firestore.
+    const [readOnly, setReadOnly] = useState(boot.readOnly)
+    // Mirror in a ref so guards are correct in the SAME tick that read-only is
+    // entered (a state update would not be visible until the next render).
+    const readOnlyRef = useRef(boot.readOnly)
+
+    const enterReadOnly = useCallback(() => {
+        if (readOnlyRef.current) return
+        readOnlyRef.current = true
+        setReadOnly(true)
+    }, [])
+
+    // Every local mutation goes through this. In read-only mode it is a no-op,
+    // so no edit can reach state and, from there, storage or the cloud.
+    const commit = useCallback((updater) => {
+        if (readOnlyRef.current) return
+        setData(updater)
+    }, [])
 
     // Save to localStorage whenever data changes
     useEffect(() => {
+        if (readOnly) return
         if (data) {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
@@ -82,18 +174,40 @@ export const useLocalStorage = (initialValue) => {
                 }
             }
         }
-    }, [data])
+    }, [data, readOnly])
 
     // Update entire data object. Bumps root updatedAt so an import/restore wins
     // the next cloud merge.
     const updateData = useCallback((newData) => {
+        if (readOnlyRef.current) return
         setData(newData ? { ...newData, updatedAt: now() } : newData)
         setIsFirstVisit(false)
     }, [])
 
+    // Adopt the result of a cloud merge.
+    //
+    // Deliberately does NOT re-stamp `updatedAt` (unlike updateData). Re-stamping
+    // an inbound merge makes it strictly newer than what the other device holds,
+    // so that device merges it, re-stamps in turn, and the two ping-pong writes
+    // to Firestore forever. The merged document keeps whichever `updatedAt`
+    // syncMerge chose. See AGENTS.md / DATA-CONTRACT.md.
+    const adoptCloudData = useCallback((merged) => {
+        if (!merged) return
+        setData(merged)
+        setIsFirstVisit(false)
+        // Mirror to localStorage right away rather than waiting for the save
+        // effect, so a reload immediately after a merge sees the same document.
+        if (readOnlyRef.current) return
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(merged))
+        } catch (error) {
+            console.error('Error saving cloud data to localStorage:', error)
+        }
+    }, [])
+
     // Update specific tab
     const updateTab = useCallback((tabId, updates) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -104,7 +218,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Update specific topic in a tab
     const updateTopic = useCallback((tabId, topicId, updates) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -123,7 +237,7 @@ export const useLocalStorage = (initialValue) => {
     // Add a new topic to a tab. Bumps the tab's updatedAt so the adding device's
     // topic ordering wins the merge.
     const addTopic = useCallback((tabId, newTopic) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -136,7 +250,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Delete a topic from a tab (records a tombstone so the deletion syncs).
     const deleteTopic = useCallback((tabId, topicId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             deleted: { ...(prev.deleted || {}), [topicId]: now() },
@@ -150,7 +264,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Add a new tab
     const addTab = useCallback((newTab) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: [...prev.tabs, { ...newTab, updatedAt: now() }]
@@ -159,7 +273,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Delete a tab (records a tombstone).
     const deleteTab = useCallback((tabId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             deleted: { ...(prev.deleted || {}), [tabId]: now() },
@@ -169,7 +283,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Reorder topics within a tab (bumps the tab so the new order wins the merge).
     const reorderTopics = useCallback((tabId, newTopics) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -180,7 +294,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Update settings
     const updateSettings = useCallback((updates) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             settings: { ...prev.settings, ...updates }
@@ -190,7 +304,7 @@ export const useLocalStorage = (initialValue) => {
     // Update timer session. Intentionally does NOT bump updatedAt: the timer is
     // device-local state and must not win cloud merges or trigger sync churn.
     const updateTimerSession = useCallback((session) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             timerSession: session
         }))
@@ -198,7 +312,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Add a subtask to a topic
     const addSubtask = useCallback((tabId, topicId, newSubtask) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -218,7 +332,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Update a subtask in a topic
     const updateSubtask = useCallback((tabId, topicId, subtaskId, updates) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             tabs: prev.tabs.map(tab =>
@@ -243,7 +357,7 @@ export const useLocalStorage = (initialValue) => {
 
     // Delete a subtask from a topic (records a tombstone).
     const deleteSubtask = useCallback((tabId, topicId, subtaskId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             deleted: { ...(prev.deleted || {}), [subtaskId]: now() },
@@ -265,13 +379,30 @@ export const useLocalStorage = (initialValue) => {
     // Record that the user studied on `dateKey` (YYYY-MM-DD), for the streak.
     // Returns the same data reference if the day is already recorded (no churn).
     const recordStudyDay = useCallback((dateKey) => {
-        setData(prev => {
+        commit(prev => {
             if (!prev) return prev
             const dates = prev.studyDates || []
             if (dates.includes(dateKey)) return prev
             return { ...prev, studyDates: [...dates, dateKey], updatedAt: now() }
         })
     }, [])
+
+    // Add `seconds` of study time to `dateKey` (YYYY-MM-DD) in the synced
+    // timeLog. Additive: the caller still writes the legacy device-local
+    // localStorage keys too, so an older client keeps working unchanged.
+    const recordStudyTime = useCallback((dateKey, seconds) => {
+        const add = Math.max(0, Math.round(Number(seconds) || 0))
+        if (!add) return
+        commit(prev => {
+            if (!prev) return prev
+            const log = prev.timeLog || {}
+            return {
+                ...prev,
+                timeLog: { ...log, [dateKey]: (Number(log[dateKey]) || 0) + add },
+                updatedAt: now(),
+            }
+        })
+    }, [commit])
 
     // --- Calendar CRUD --------------------------------------------------------
     // Calendar lives at data.calendar = { [dateKey]: Task[] }. Each task/subtask
@@ -289,33 +420,33 @@ export const useLocalStorage = (initialValue) => {
     }
 
     const addCalendarTask = useCallback((dateKey, text) => {
-        setData(prev => withCalendarDay(prev, dateKey, list => [
+        commit(prev => withCalendarDay(prev, dateKey, list => [
             ...list,
             { id: generateId(), text, completed: false, subtasks: [], updatedAt: now() }
         ]))
     }, [])
 
     const toggleCalendarTask = useCallback((dateKey, taskId) => {
-        setData(prev => withCalendarDay(prev, dateKey, list =>
+        commit(prev => withCalendarDay(prev, dateKey, list =>
             list.map(t => t.id === taskId ? { ...t, completed: !t.completed, updatedAt: now() } : t)
         ))
     }, [])
 
     const editCalendarTask = useCallback((dateKey, taskId, newText) => {
-        setData(prev => withCalendarDay(prev, dateKey, list =>
+        commit(prev => withCalendarDay(prev, dateKey, list =>
             list.map(t => t.id === taskId ? { ...t, text: newText, updatedAt: now() } : t)
         ))
     }, [])
 
     const deleteCalendarTask = useCallback((dateKey, taskId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...withCalendarDay(prev, dateKey, list => list.filter(t => t.id !== taskId)),
             deleted: { ...(prev.deleted || {}), [taskId]: now() }
         }))
     }, [])
 
     const clearCalendarDay = useCallback((dateKey) => {
-        setData(prev => {
+        commit(prev => {
             const ids = (prev.calendar?.[dateKey] || []).map(t => t.id)
             const calendar = { ...(prev.calendar || {}) }
             delete calendar[dateKey]
@@ -326,7 +457,7 @@ export const useLocalStorage = (initialValue) => {
     }, [])
 
     const addCalendarSubtask = useCallback((dateKey, taskId, text) => {
-        setData(prev => withCalendarDay(prev, dateKey, list =>
+        commit(prev => withCalendarDay(prev, dateKey, list =>
             list.map(t => t.id !== taskId ? t : {
                 ...t,
                 updatedAt: now(),
@@ -336,7 +467,7 @@ export const useLocalStorage = (initialValue) => {
     }, [])
 
     const toggleCalendarSubtask = useCallback((dateKey, taskId, subtaskId) => {
-        setData(prev => withCalendarDay(prev, dateKey, list =>
+        commit(prev => withCalendarDay(prev, dateKey, list =>
             list.map(t => t.id !== taskId ? t : {
                 ...t,
                 updatedAt: now(),
@@ -348,7 +479,7 @@ export const useLocalStorage = (initialValue) => {
     }, [])
 
     const deleteCalendarSubtask = useCallback((dateKey, taskId, subtaskId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...withCalendarDay(prev, dateKey, list =>
                 list.map(t => t.id !== taskId ? t : {
                     ...t,
@@ -374,14 +505,14 @@ export const useLocalStorage = (initialValue) => {
     }
 
     const addBlock = useCallback((dateKey, { startTime, endTime }) => {
-        setData(prev => withBlocksDay(prev, dateKey, list => [
+        commit(prev => withBlocksDay(prev, dateKey, list => [
             ...list,
             { id: generateId(), startTime, endTime, taskIds: [], updatedAt: now() }
         ]))
     }, [])
 
     const deleteBlock = useCallback((dateKey, blockId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...withBlocksDay(prev, dateKey, list => list.filter(b => b.id !== blockId)),
             deleted: { ...(prev.deleted || {}), [blockId]: now() }
         }))
@@ -389,7 +520,7 @@ export const useLocalStorage = (initialValue) => {
 
     // --- Block Templates -------------------------------------------------------
     const addBlockTemplate = useCallback((name, blocks) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             blockTemplates: [
@@ -400,7 +531,7 @@ export const useLocalStorage = (initialValue) => {
     }, [])
 
     const deleteBlockTemplate = useCallback((templateId) => {
-        setData(prev => ({
+        commit(prev => ({
             ...prev,
             updatedAt: now(),
             blockTemplates: (prev.blockTemplates || []).filter(t => t.id !== templateId)
@@ -408,7 +539,7 @@ export const useLocalStorage = (initialValue) => {
     }, [])
 
     const toggleTaskInBlock = useCallback((dateKey, blockId, taskId) => {
-        setData(prev => withBlocksDay(prev, dateKey, list =>
+        commit(prev => withBlocksDay(prev, dateKey, list =>
             list.map(b => b.id !== blockId ? b : {
                 ...b,
                 updatedAt: now(),
@@ -421,6 +552,8 @@ export const useLocalStorage = (initialValue) => {
 
     // Clear all data
     const clearAllData = useCallback(() => {
+        // Read-only mode means "never write" — and deleting is a write.
+        if (readOnlyRef.current) return
         localStorage.removeItem(STORAGE_KEY)
         localStorage.removeItem(LEGACY_CALENDAR_KEY)
         setData(null)
@@ -430,7 +563,10 @@ export const useLocalStorage = (initialValue) => {
     return {
         data,
         isFirstVisit,
+        readOnly,
+        enterReadOnly,
         updateData,
+        adoptCloudData,
         updateTab,
         updateTopic,
         addTopic,
@@ -444,6 +580,9 @@ export const useLocalStorage = (initialValue) => {
         updateSettings,
         updateTimerSession,
         recordStudyDay,
+        // Study time (synced, additive — see migration 7)
+        timeLog: data?.timeLog || {},
+        recordStudyTime,
         // Calendar
         calendar: data?.calendar || {},
         addCalendarTask,

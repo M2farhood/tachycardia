@@ -31,3 +31,9 @@ dist-ssr
 # Personal injection scripts (local only)
 inject-plan.js
 .vercel
+
+# Local reference clones (~646 MB) — never part of this repo. One stray
+# `git add .` used to stage the whole thing. Also keeps it out of the graphify
+# knowledge graph, which honours .gitignore (there is no separate graphify
+# config file in this repo).
+repositories for design/

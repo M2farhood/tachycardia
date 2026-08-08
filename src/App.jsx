@@ -16,6 +16,7 @@ import CalendarPage from './components/CalendarPage'
 import BlocksPage from './components/BlocksPage'
 import FocusMode from './components/FocusMode'
 import Confetti from './components/Confetti'
+import ReadOnlyBanner from './components/ReadOnlyBanner'
 
 // Helper to get today's date string
 const getTodayKey = () => new Date().toISOString().split('T')[0]
@@ -24,7 +25,10 @@ function App() {
   const {
     data,
     isFirstVisit,
+    readOnly,
+    enterReadOnly,
     updateData,
+    adoptCloudData,
     updateTab,
     updateTopic,
     addTopic,
@@ -38,6 +42,8 @@ function App() {
     updateSettings,
     updateTimerSession,
     recordStudyDay,
+    timeLog,
+    recordStudyTime,
     calendar,
     addCalendarTask,
     toggleCalendarTask,
@@ -66,11 +72,13 @@ function App() {
     signIn,
     signOut,
     isFirebaseConfigured
-  } = useAuth(data, updateData)
+  } = useAuth(data, adoptCloudData, { readOnly, onFutureSchema: enterReadOnly })
 
   const [activeTabId, setActiveTabId] = useState(null)
-  const [todayMinutes, setTodayMinutes] = useState(0)
-  const [totalMinutes, setTotalMinutes] = useState(0)
+  // Legacy device-local study time (localStorage only). Kept as the fallback for
+  // documents that predate the synced `timeLog` field (schema v7).
+  const [legacyTodayMinutes, setLegacyTodayMinutes] = useState(0)
+  const [legacyTotalMinutes, setLegacyTotalMinutes] = useState(0)
   const [showTachycardia, setShowTachycardia] = useState(false)
   const [showCalendar, setShowCalendar] = useState(false)
   const [showBlocks, setShowBlocks] = useState(false)
@@ -99,7 +107,7 @@ function App() {
     touchStartX.current = null
   }, [handleSwipe])
 
-  // Load study time from localStorage
+  // Load study time from localStorage (legacy, device-local fallback)
   useEffect(() => {
     // Load today's time
     const storedDaily = localStorage.getItem('study_tracker_daily_time')
@@ -107,14 +115,14 @@ function App() {
       try {
         const parsed = JSON.parse(storedDaily)
         if (parsed.date === getTodayKey()) {
-          setTodayMinutes(parsed.minutes || 0)
+          setLegacyTodayMinutes(parsed.minutes || 0)
         } else {
           // New day, reset daily but keep total
           localStorage.setItem('study_tracker_daily_time', JSON.stringify({ date: getTodayKey(), minutes: 0 }))
-          setTodayMinutes(0)
+          setLegacyTodayMinutes(0)
         }
       } catch {
-        setTodayMinutes(0)
+        setLegacyTodayMinutes(0)
       }
     }
 
@@ -122,12 +130,28 @@ function App() {
     const storedTotal = localStorage.getItem('study_tracker_total_time')
     if (storedTotal) {
       try {
-        setTotalMinutes(parseInt(storedTotal, 10) || 0)
+        setLegacyTotalMinutes(parseInt(storedTotal, 10) || 0)
       } catch {
-        setTotalMinutes(0)
+        setLegacyTotalMinutes(0)
       }
     }
   }, [])
+
+  // Displayed study time: prefer the synced `timeLog` (so the phone and the
+  // laptop agree), fall back to the device-local localStorage keys for
+  // documents that have no timeLog entries yet. Total = sum of all days.
+  const hasTimeLog = useMemo(() => Object.keys(timeLog || {}).length > 0, [timeLog])
+
+  const todayMinutes = useMemo(() => {
+    if (!hasTimeLog) return legacyTodayMinutes
+    return Math.round((Number(timeLog[getTodayKey()]) || 0) / 60)
+  }, [hasTimeLog, timeLog, legacyTodayMinutes])
+
+  const totalMinutes = useMemo(() => {
+    if (!hasTimeLog) return legacyTotalMinutes
+    const seconds = Object.values(timeLog).reduce((acc, s) => acc + (Number(s) || 0), 0)
+    return Math.round(seconds / 60)
+  }, [hasTimeLog, timeLog, legacyTotalMinutes])
 
   // Apply theme from settings
   useEffect(() => {
@@ -147,24 +171,30 @@ function App() {
   const handleTimerComplete = useCallback(() => {
     const duration = data?.settings?.timerDuration || 25
 
-    // Update today's time
-    const newTodayTotal = todayMinutes + duration
-    setTodayMinutes(newTodayTotal)
-    localStorage.setItem('study_tracker_daily_time', JSON.stringify({
-      date: getTodayKey(),
-      minutes: newTodayTotal
-    }))
+    // Synced study time (schema v7). Written ALONGSIDE the legacy keys below,
+    // never instead of them — an older client still reads only those keys.
+    recordStudyTime(getTodayKey(), duration * 60)
 
-    // Update all-time total
-    const newTotal = totalMinutes + duration
-    setTotalMinutes(newTotal)
-    localStorage.setItem('study_tracker_total_time', newTotal.toString())
+    // Legacy device-local keys — still the source of truth for older clients.
+    // Read-only mode means no writes at all, localStorage included.
+    if (!readOnly) {
+      const newTodayTotal = legacyTodayMinutes + duration
+      setLegacyTodayMinutes(newTodayTotal)
+      localStorage.setItem('study_tracker_daily_time', JSON.stringify({
+        date: getTodayKey(),
+        minutes: newTodayTotal
+      }))
+
+      const newTotal = legacyTotalMinutes + duration
+      setLegacyTotalMinutes(newTotal)
+      localStorage.setItem('study_tracker_total_time', newTotal.toString())
+    }
 
     // Record today for the streak (synced; no-op if already recorded today)
     recordStudyDay(getTodayKey())
 
     updateTimerSession(null)
-  }, [updateTimerSession, recordStudyDay, todayMinutes, totalMinutes, data?.settings?.timerDuration])
+  }, [updateTimerSession, recordStudyDay, recordStudyTime, readOnly, legacyTodayMinutes, legacyTotalMinutes, data?.settings?.timerDuration])
 
   // Timer hook
   const { timeLeft, formattedTime, isRunning } = useTimer(
@@ -293,13 +323,14 @@ function App() {
   }, [updateData])
 
   const handleClearAll = useCallback(() => {
+    if (readOnly) return
     clearAllData()
     setActiveTabId(null)
-    setTodayMinutes(0)
-    setTotalMinutes(0)
+    setLegacyTodayMinutes(0)
+    setLegacyTotalMinutes(0)
     localStorage.removeItem('study_tracker_daily_time')
     localStorage.removeItem('study_tracker_total_time')
-  }, [clearAllData])
+  }, [clearAllData, readOnly])
 
   const handleStartSession = useCallback(() => {
     if (!currentTab) return
@@ -376,6 +407,9 @@ function App() {
   return (
     <div className="min-h-screen pb-safe">
       <div className="app-container">
+      {/* Data written by a newer version of the app — displayed, never written */}
+      <ReadOnlyBanner visible={readOnly} />
+
       {/* Header */}
       <Header
         data={data}

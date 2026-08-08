@@ -9,8 +9,36 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     match /study_tracker_users/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+
+      function isOwner() {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      // The stored document wraps the app blob: { data: {...}, updatedAt, lastUpdated },
+      // so the schema version lives at <doc>.data.schemaVersion. Anything missing
+      // it is treated as version 0 (legacy, pre-versioning).
+      function schemaVersionOf(docFields) {
+        return ('data' in docFields && 'schemaVersion' in docFields.data)
+               ? docFields.data.schemaVersion
+               : 0;
+      }
+
+      allow read: if isOwner();
+
+      // First write: there is no existing document, so there is nothing to
+      // compare against. `resource` is null here — never touch it.
+      allow create: if isOwner();
+
+      // Later writes may never LOWER the stored schemaVersion. A client that
+      // does not understand the newer shape would otherwise round-trip the
+      // document and silently drop whatever the newer client added. The app
+      // enforces this too (migrate() throws + read-only mode); this is the
+      // backstop that holds even if an old build slips through.
+      allow update: if isOwner()
+                    && schemaVersionOf(request.resource.data) >= schemaVersionOf(resource.data);
+
+      // Account deletion (Guideline 5.1.1(v)) must remain possible.
+      allow delete: if isOwner();
     }
 
     // Deny everything not explicitly matched above.

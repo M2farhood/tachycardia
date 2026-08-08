@@ -12,10 +12,38 @@
  *
  * To introduce a schema change: bump CURRENT_SCHEMA_VERSION and add a migration
  * keyed by the new version number that transforms v(N-1) data into v(N) data.
+ *
+ * Data from the FUTURE (schemaVersion > CURRENT_SCHEMA_VERSION) is refused, not
+ * guessed at: `migrate` throws a FutureSchemaError. The web app deploys in
+ * seconds while an App Store release takes days, so the two clients WILL be on
+ * different schema versions at some point; the older one must show the data and
+ * stop writing rather than silently round-trip fields it does not understand.
  */
 
 // Bump this whenever the data shape changes, and add a matching migration below.
-export const CURRENT_SCHEMA_VERSION = 6
+export const CURRENT_SCHEMA_VERSION = 7
+
+/**
+ * Thrown by `migrate()` when it is handed data written by a NEWER client.
+ * Callers must detect this by `err.code === 'FUTURE_SCHEMA'` (or `instanceof`),
+ * never by matching the message text.
+ */
+export class FutureSchemaError extends Error {
+    constructor(found, expected = CURRENT_SCHEMA_VERSION) {
+        super(
+            `Data is at schema version ${found}, but this client only understands ${expected}. ` +
+            'Update the app to keep syncing.'
+        )
+        this.name = 'FutureSchemaError'
+        this.code = 'FUTURE_SCHEMA'
+        this.foundVersion = found
+        this.expectedVersion = expected
+    }
+}
+
+/** True if `err` is the future-schema refusal (structural check, never string matching). */
+export const isFutureSchemaError = (err) =>
+    !!err && (err instanceof FutureSchemaError || err.code === 'FUTURE_SCHEMA')
 
 /**
  * Migrations keyed by the version they PRODUCE.
@@ -125,6 +153,19 @@ const migrations = {
             spacedRepetition: data.settings?.spacedRepetition ?? false,
         },
     }),
+
+    // v6 -> v7: study time becomes syncable. `timeLog` is { 'YYYY-MM-DD': seconds }
+    // and the all-time total is simply the sum of its values.
+    //
+    // This step may ONLY add the field. The legacy device-local localStorage keys
+    // (`study_tracker_daily_time` / `study_tracker_total_time`) stay exactly where
+    // they are and keep being written, so an older client loses nothing; the
+    // one-time backfill from those keys happens at load time in useLocalStorage
+    // (a migration is shared with the iOS app and must never touch localStorage).
+    7: (data) => ({
+        ...data,
+        timeLog: data.timeLog || {},
+    }),
 }
 
 /**
@@ -139,16 +180,34 @@ export const getSchemaVersion = (data) => {
 }
 
 /**
+ * True if the data was written by a newer client than this one.
+ * @param {object|null} data
+ * @returns {boolean}
+ */
+export const isFutureSchema = (data) => {
+    if (!data || typeof data !== 'object') return false
+    return getSchemaVersion(data) > CURRENT_SCHEMA_VERSION
+}
+
+/**
  * Upgrade a data object to the current schema version.
  * Safe to call on any input: null/non-objects are returned unchanged.
  * @param {object|null} data
  * @returns {object|null}
+ * @throws {FutureSchemaError} if the data is newer than this client understands.
  */
 export const migrate = (data) => {
     if (!data || typeof data !== 'object') return data
 
     let working = data
     const from = getSchemaVersion(working)
+
+    // Refuse data from the future. Returning it unchanged (the old behaviour)
+    // meant this client would happily re-write a document it does not fully
+    // understand, dropping whatever the newer client added.
+    if (from > CURRENT_SCHEMA_VERSION) {
+        throw new FutureSchemaError(from, CURRENT_SCHEMA_VERSION)
+    }
 
     for (let v = from + 1; v <= CURRENT_SCHEMA_VERSION; v++) {
         const step = migrations[v]

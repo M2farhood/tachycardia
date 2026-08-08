@@ -133,6 +133,26 @@ const mergeBlocks = (localBlocks = {}, cloudBlocks = {}, tombstones) => {
     return out
 }
 
+// timeLog is { 'YYYY-MM-DD': seconds } — study time, added in schema v7.
+//
+// Merge rule: per day, keep the LARGER value.
+// Why not sum? Every device that has ever synced already holds the shared total
+// for a day, so summing would double-count that day on every single merge and
+// the number would run away. Why not last-write-wins on the root updatedAt?
+// Because the device that studied less that day would then erase the other
+// device's minutes. "Largest wins" is monotonic: a day's recorded time can only
+// ever go up, both devices converge on the same number, and the worst case is
+// that two devices studying the same day in parallel report the larger of the
+// two sessions instead of the sum — under-counting, never data loss or runaway.
+const mergeTimeLog = (localLog = {}, cloudLog = {}) => {
+    const out = { ...(localLog || {}) }
+    for (const [day, seconds] of Object.entries(cloudLog || {})) {
+        const incoming = Number(seconds) || 0
+        if (!(day in out) || incoming > (Number(out[day]) || 0)) out[day] = incoming
+    }
+    return out
+}
+
 /**
  * Merge local and cloud data per-entity.
  * Returns the SAME `localData` reference when the merge produces no real change,
@@ -163,6 +183,8 @@ export const mergeData = (localData, cloudData) => {
         blocks: mergeBlocks(localData.blocks, cloudData.blocks, tombstones),
         // Study days are append-only across devices — union and keep sorted.
         studyDates: [...new Set([...(localData.studyDates || []), ...(cloudData.studyDates || [])])].sort(),
+        // Study time per day — largest value per day wins (see mergeTimeLog).
+        timeLog: mergeTimeLog(localData.timeLog, cloudData.timeLog),
         deleted: tombstones,
         // Timer is device-local; never adopt the other device's running timer.
         timerSession: localData.timerSession ?? null,

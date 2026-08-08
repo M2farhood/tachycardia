@@ -1,4 +1,7 @@
-import { CURRENT_SCHEMA_VERSION } from './migrations'
+// NOTE: the `.js` extension is required — this module is loaded verbatim by
+// `node --test` (test/schema.test.js), and Node's ESM resolver has no
+// extension guessing. Vite is happy either way.
+import { CURRENT_SCHEMA_VERSION } from './migrations.js'
 
 // Pre-defined templates for different study types
 export const templates = {
@@ -138,7 +141,14 @@ export const createEmptyTab = () => ({
     updatedAt: new Date().toISOString()
 })
 
-// Get initial app state from a template
+// Get initial app state from a template.
+//
+// This MUST emit every field the migration ladder would produce for
+// CURRENT_SCHEMA_VERSION. A fresh document already claims the current version,
+// so `migrate()` short-circuits and can never repair an omission — a missing
+// field here leaves every new user permanently malformed. `test/schema.test.js`
+// pins this by pushing fresh state through the full ladder from v0 and
+// comparing field sets.
 export const getInitialState = (templateKey) => {
     const template = templates[templateKey]
     const now = new Date().toISOString()
@@ -149,10 +159,16 @@ export const getInitialState = (templateKey) => {
         deleted: {},
         calendar: {},
         blocks: {},
+        // Added by migration 6 (see migrations.js).
+        blockTemplates: [],
         studyDates: [],
+        // Added by migration 7 — { 'YYYY-MM-DD': seconds }.
+        timeLog: {},
         settings: {
             timerDuration: 25,
             isMuted: false,
+            // Added by migration 6.
+            spacedRepetition: false,
             createdAt: now
         },
         tabs: template.tabs.map(tab => ({
