@@ -24,7 +24,11 @@ const taskList = {
     description: 'Tasks to add, in order',
     items: {
         type: 'object',
-        properties: { name: str('Short task name'), category: str('Optional short category label') },
+        properties: {
+            name: str('Short task name'),
+            category: str('Optional short category label'),
+            date: { type: 'string', description: 'Optional day for the task, YYYY-MM-DD (it then also shows in the calendar)' },
+        },
         required: ['name'],
         additionalProperties: false,
     },

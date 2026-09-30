@@ -19,6 +19,9 @@ const CalendarDayColumn = ({
     isToday,
     tasks,
     carryOver = [],
+    // Tasks from the lists that were given this day: [{ tabId, tabTitle, topic }]
+    listItems = [],
+    onToggleListItem,
     onAddTask,
     onToggleTask,
     onEditTask,
@@ -127,6 +130,24 @@ const CalendarDayColumn = ({
 
             {/* Tasks */}
             <div className={`${isPanel ? 'pt-1' : 'flex-1 overflow-y-auto pt-1 custom-scrollbar'}`}>
+                {listItems.map(({ tabId, tabTitle, topic }) => (
+                    <div key={topic.id} className="flex items-start gap-3 py-2 border-b border-[var(--border-subtle)]">
+                        <button
+                            onClick={() => onToggleListItem?.(tabId, topic)}
+                            aria-label={topic.completed ? `Mark ${topic.name} not done` : `Mark ${topic.name} done`}
+                            className={`mt-0.5 w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 ${topic.completed
+                                ? 'bg-[var(--color-accent)] border-[var(--color-accent)] text-[var(--on-accent)]'
+                                : 'border-[var(--text-tertiary)] text-transparent hover:text-[var(--text-tertiary)]'}`}
+                        >
+                            <Check size={12} strokeWidth={3} />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                            <p className={`text-sm leading-snug break-words ${topic.completed ? 'line-through text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>{topic.name}</p>
+                            <p className="text-[11px] text-[var(--color-accent)]">{tabTitle}</p>
+                        </div>
+                    </div>
+                ))}
+
                 {carryOver.length > 0 && (
                     <div className="mb-3">
                         <p className="pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">From earlier</p>
@@ -161,7 +182,7 @@ const CalendarDayColumn = ({
                             onDeleteSubtask={(subId) => onDeleteSubtask && onDeleteSubtask(dateKey, task.id, subId)}
                         />
                     ))
-                ) : carryOver.length === 0 && (
+                ) : carryOver.length === 0 && listItems.length === 0 && (
                     <p className="py-6 text-[13px] text-[var(--text-tertiary)]">Nothing planned.</p>
                 )}
             </div>

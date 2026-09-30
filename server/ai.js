@@ -37,6 +37,7 @@ You can PROPOSE changes with tools. The app shows every proposal to the user as 
 - When they only ask for advice ("what should I do next?"), answer in words and do not call tools.
 - Use ONLY ids that appear in the context. Never invent ids. To put tasks in a brand-new section, use add_section with its tasks.
 - Dates are YYYY-MM-DD, relative to "Today" in the context. Times are 24h HH:MM.
+- A task that belongs to a list AND a day: use add_tasks with that task's "date" (it shows in the list and the calendar). Use schedule_day_task only for things that don't belong to any list.
 - After calling tools, add one short sentence saying what you proposed. Never claim it is already done.
 - delete_task only when they clearly ask to delete or remove.`
 
@@ -85,7 +86,8 @@ function buildContext(ctx) {
         for (const t of tasks) {
             const cat = t.category ? ` (${cut(t.category, 30)})` : ''
             const steps = t.steps ? ` [${cut(t.steps, 10)} steps]` : ''
-            lines.push(`   · [${cut(t.id, 60)}] ${cut(t.name, 120)}${cat}${steps}`)
+            const due = t.due ? ` (due ${cut(t.due, 10)})` : ''
+            lines.push(`   · [${cut(t.id, 60)}] ${cut(t.name, 120)}${cat}${due}${steps}`)
         }
         if ((Number(s.total) || 0) - (Number(s.done) || 0) > tasks.length) lines.push('   · …more not shown')
     }

@@ -93,3 +93,12 @@ test('buildAIContext is compact and id-bearing', () => {
   assert.equal(ctx.sections[0].tasks[0].id, 't1')
   assert.deepEqual(Object.keys(ctx.calendar), ['2030-01-01'])
 })
+
+test('add_tasks can give a task a day (Topic.dueDate)', () => {
+  const data = seed()
+  const next = applyAction(data, call('add_tasks', { sectionId: data.tabs[0].id, tasks: [{ name: 'Rounds', date: '2026-10-03' }, { name: 'No day', date: 'friday' }] }))
+  const [a, b] = next.tabs[0].topics.slice(-2)
+  assert.equal(a.dueDate, '2026-10-03')
+  assert.equal('dueDate' in b, false)
+  assert.equal(buildAIContext(next, '2026-09-30').sections[0].tasks.find((t) => t.name === 'Rounds').due, '2026-10-03')
+})

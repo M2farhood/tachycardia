@@ -256,6 +256,18 @@ function App() {
     return count
   }, [data?.studyDates])
 
+  // Tasks from the lists that have a day (Topic.dueDate) → shown on that day in the calendar.
+  const listTasksByDay = useMemo(() => {
+    const byDay = {}
+    for (const tab of data?.tabs || []) {
+      for (const topic of tab.topics || []) {
+        if (!topic.dueDate) continue
+        ;(byDay[topic.dueDate] ||= []).push({ tabId: tab.id, tabTitle: tab.title, topic })
+      }
+    }
+    return byDay
+  }, [data?.tabs])
+
   // Calculate global stats (now supports weights)
   const globalStats = useMemo(() => {
     if (!data?.tabs) return { completed: 0, total: 0 }
@@ -520,6 +532,13 @@ function App() {
           tasks={calendar}
           weekStart={getSetting(settings, 'weekStart')}
           carryOverTasks={getSetting(settings, 'carryOverTasks')}
+          listTasks={listTasksByDay}
+          onToggleListTask={(tabId, topic) => updateTopic(tabId, topic.id, {
+            // Same rules as ticking it in the list (TopicList.handleToggleComplete).
+            completed: !topic.completed,
+            completedAt: topic.completed ? null : new Date().toISOString(),
+            reviewStage: topic.completed ? 0 : (topic.reviewStage || 0),
+          })}
           onAddTask={addCalendarTask}
           onToggleTask={toggleCalendarTask}
           onEditTask={editCalendarTask}

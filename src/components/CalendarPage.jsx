@@ -43,6 +43,8 @@ const CalendarPage = ({
     isFocusMode = false, // accepted for compatibility; Focus mode lives elsewhere now
     weekStart = 'sat',
     carryOverTasks = false,
+    listTasks = {},
+    onToggleListTask,
     tasks = {},
     onAddTask,
     onToggleTask,
@@ -153,6 +155,8 @@ const CalendarPage = ({
                             {...day}
                             tasks={tasks[day.dateKey]}
                             carryOver={day.isToday ? carryOver : []}
+                            listItems={listTasks[day.dateKey] || []}
+                            onToggleListItem={onToggleListTask}
                             {...dayProps}
                         />
                     ))}
@@ -162,7 +166,7 @@ const CalendarPage = ({
                     <div className="grid grid-cols-7 gap-1 pb-4" role="tablist" aria-label="Days of the week">
                         {weekDays.map(day => {
                             const isSel = day.dateKey === selected.dateKey
-                            const hasTasks = (tasks[day.dateKey] || []).length > 0
+                            const hasTasks = (tasks[day.dateKey] || []).length > 0 || (listTasks[day.dateKey] || []).length > 0
                             return (
                                 <button
                                     key={day.dateKey}
@@ -192,6 +196,8 @@ const CalendarPage = ({
                         {...selected}
                         tasks={tasks[selected.dateKey]}
                         carryOver={selected.isToday ? carryOver : []}
+                        listItems={listTasks[selected.dateKey] || []}
+                        onToggleListItem={onToggleListTask}
                         {...dayProps}
                     />
                 </>

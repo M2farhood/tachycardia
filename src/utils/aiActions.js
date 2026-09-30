@@ -55,6 +55,8 @@ const makeTopic = (task) => ({
     category: clean(task?.category, 60),
     completed: false,
     subtasks: [],
+    // Optional day (Topic.dueDate, added 2026-09-30) — also shows in the calendar.
+    ...(DATE_RE.test(String(task?.date || '')) ? { dueDate: task.date } : {}),
     updatedAt: now(),
 })
 
@@ -292,6 +294,7 @@ export function buildAIContext(data, todayKey) {
                     id: t.id,
                     name: t.name,
                     category: t.category || '',
+                    due: t.dueDate || '',
                     steps: subs.length ? `${subs.filter((s) => s.completed).length}/${subs.length}` : '',
                 }
             }),

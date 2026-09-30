@@ -77,6 +77,9 @@ data corruption.
 - `Topic`: `{id, name, category, completed, completedAt, reviewStage,
   difficulty, weight, timeEstimate, notes, subtasks[], updatedAt}` —
   subtask field is **`name`**
+- `Topic.dueDate` (optional, added 2026-09-30): local `'YYYY-MM-DD'` or absent/`null`. The day the task is
+  planned for; the calendar shows it on that day next to the calendar's own items. Additive only — no
+  migration, readers treat missing as "no day".
 - `CalendarTask`: `{id, text, completed, subtasks[], updatedAt}` — field is
   **`text`**, not `name`
 - `Block`: `{id, startTime: 'HH:MM', endTime: 'HH:MM', taskIds: [topicId],

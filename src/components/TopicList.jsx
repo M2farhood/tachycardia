@@ -1,5 +1,7 @@
 import { useState, useRef } from 'react'
-import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent, Clock } from 'lucide-react'
+import { Plus, Check, Play, Trash2, GripVertical, ChevronRight, ChevronDown, Percent, Clock, CalendarDays, X } from 'lucide-react'
+import DayPicker from './DayPicker'
+import { parseLocalDateKey } from '../utils/dateKeys'
 import { generateId } from '../utils/templates'
 
 const DIFFICULTY_CYCLE = [null, 'easy', 'medium', 'hard']
@@ -34,6 +36,8 @@ const TopicList = ({
     hideCompleted = false,
 }) => {
     const [showDone, setShowDone] = useState(false)
+    // The day chosen in the day circles for the NEXT task (null = no day).
+    const [newDueDate, setNewDueDate] = useState(null)
     const [newTopicName, setNewTopicName] = useState('')
     const [editingId, setEditingId] = useState(null)
     const [expandedId, setExpandedId] = useState(null)
@@ -55,9 +59,12 @@ const TopicList = ({
                 category: '',
                 completed: false,
                 timeEstimate: defaultDuration,
-                subtasks: []
+                subtasks: [],
+                // Added 2026-09-30 (DATA-CONTRACT.md): optional day; also shows in the calendar.
+                ...(newDueDate ? { dueDate: newDueDate } : {})
             })
             setNewTopicName('')
+            setNewDueDate(null)
             // Re-focus input for rapid entry
             setTimeout(() => inputRef.current?.focus(), 50)
         }
@@ -371,7 +378,25 @@ const TopicList = ({
                                     </>
                                 )
                             })()}
-                            {topic.category && (
+                            {topic.dueDate && (() => {
+            const d = parseLocalDateKey(topic.dueDate)
+            const label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
+            return (
+                <span className="group/due inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-secondary)]">
+                    <CalendarDays size={10} />
+                    {label}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onTopicUpdate(tab.id, topic.id, { dueDate: null }) }}
+                        aria-label={`Remove the day from ${topic.name}`}
+                        title="Remove the day"
+                        className="ml-0.5 text-[var(--text-tertiary)] hover:text-[var(--color-danger)]"
+                    >
+                        <X size={10} />
+                    </button>
+                </span>
+            )
+        })()}
+        {topic.category && (
                                 <span className="text-[13px] text-[var(--text-tertiary)] hidden sm:inline">{topic.category}</span>
                             )}
                         </div>
@@ -485,6 +510,7 @@ const TopicList = ({
                     Add
                 </button>
             </div>
+            <DayPicker value={newDueDate} onChange={setNewDueDate} />
 
             <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12">
                 <section aria-label="To do">
