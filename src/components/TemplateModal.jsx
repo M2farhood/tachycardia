@@ -73,7 +73,7 @@ const TemplateModal = ({ onSelect, onClose }) => {
                 >
                     <button
                         onClick={handleStart}
-                        className="mt-1 px-8 py-3 rounded-full bg-accent text-white font-semibold text-[15px] tracking-wide hover:opacity-90 active:scale-95 transition-all liquid-press"
+                        className="mt-1 px-8 py-3 rounded-full bg-accent text-on-accent font-semibold text-[15px] tracking-wide hover:opacity-90 active:scale-95 transition-all liquid-press"
                     >
                         Get Started
                     </button>

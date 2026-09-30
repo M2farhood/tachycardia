@@ -47,7 +47,7 @@ const CalendarTaskItem = ({ task, onToggle, onEdit, onDelete }) => {
                         if (e.key === 'Escape') { setEditing(false); setEditText(task.text) }
                     }}
                     onBlur={handleSave}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-[var(--color-text-primary)] outline-none focus:border-[var(--color-accent)] transition-colors"
+                    className="flex-1 bg-[var(--surface-2)] border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--color-accent)] transition-colors"
                     placeholder="Task name..."
                 />
             </div>
@@ -62,13 +62,13 @@ const CalendarTaskItem = ({ task, onToggle, onEdit, onDelete }) => {
                 className={`custom-checkbox flex-shrink-0 ${task.completed ? 'checked' : ''}`}
                 style={{ width: 20, height: 20, borderWidth: '1.5px' }}
             >
-                {task.completed && <Check size={12} strokeWidth={3} className="text-white" />}
+                {task.completed && <Check size={12} strokeWidth={3} className="text-on-accent" />}
             </button>
 
             {/* Text */}
             <span className={`flex-1 text-sm leading-snug transition-colors ${task.completed
-                    ? 'line-through text-[var(--color-text-tertiary)]'
-                    : 'text-[var(--color-text-primary)]'
+                    ? 'line-through text-[var(--text-tertiary)]'
+                    : 'text-[var(--text-primary)]'
                 }`}>
                 {task.text}
             </span>
@@ -80,7 +80,7 @@ const CalendarTaskItem = ({ task, onToggle, onEdit, onDelete }) => {
                     className="p-1 rounded-md opacity-0 group-hover:opacity-60 hover:!opacity-100 transition-opacity focus:opacity-60"
                     title="Options"
                 >
-                    <MoreVertical size={14} className="text-[var(--color-text-secondary)]" />
+                    <MoreVertical size={14} className="text-[var(--text-secondary)]" />
                 </button>
 
                 {menuOpen && (
@@ -93,7 +93,7 @@ const CalendarTaskItem = ({ task, onToggle, onEdit, onDelete }) => {
                         </button>
                         <button
                             onClick={() => { setMenuOpen(false); onDelete() }}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-red-400 hover:bg-[var(--surface-2)] transition-colors"
+                            className="w-full flex items-center gap-2 px-3 py-2 text-[11px] text-[var(--color-danger)] hover:bg-[var(--surface-2)] transition-colors"
                         >
                             <Trash2 size={12} /> Delete
                         </button>

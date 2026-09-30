@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 
-export const useTimer = (session, onComplete, isMuted = false) => {
+/** soundMode: 'chime' (three notes), 'soft' (one quiet low tone) or 'silent'. isMuted silences everything. */
+export const useTimer = (session, onComplete, isMuted = false, soundMode = 'chime') => {
     const [timeLeft, setTimeLeft] = useState(0)
     const intervalRef = useRef(null)
     const audioContextRef = useRef(null)
@@ -16,7 +17,7 @@ export const useTimer = (session, onComplete, isMuted = false) => {
 
     // Play notification sound
     const playSound = useCallback(() => {
-        if (isMuted) return
+        if (isMuted || soundMode === 'silent') return
 
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext
@@ -43,16 +44,31 @@ export const useTimer = (session, onComplete, isMuted = false) => {
                 osc.stop(startTime + duration)
             }
 
-            // Play a pleasant chime sequence
             const now = ctx.currentTime
-            playTone(523.25, now, 0.2)        // C5
-            playTone(659.25, now + 0.15, 0.2) // E5
-            playTone(783.99, now + 0.3, 0.3)  // G5
+            if (soundMode === 'soft') {
+                // One quiet, low tone
+                const osc = ctx.createOscillator()
+                const gain = ctx.createGain()
+                osc.connect(gain)
+                gain.connect(ctx.destination)
+                osc.type = 'sine'
+                osc.frequency.setValueAtTime(261.63, now) // C4
+                gain.gain.setValueAtTime(0.001, now)
+                gain.gain.linearRampToValueAtTime(0.08, now + 0.15)
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4)
+                osc.start(now)
+                osc.stop(now + 1.5)
+            } else {
+                // Play a pleasant chime sequence
+                playTone(523.25, now, 0.2)        // C5
+                playTone(659.25, now + 0.15, 0.2) // E5
+                playTone(783.99, now + 0.3, 0.3)  // G5
+            }
 
         } catch (error) {
             console.error('Audio playback failed:', error)
         }
-    }, [isMuted])
+    }, [isMuted, soundMode])
 
     // Show browser notification
     const showNotification = useCallback(() => {

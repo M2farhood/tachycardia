@@ -1,8 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Plus, Trash2 } from 'lucide-react'
+import { MoreVertical, Plus, Trash2, Check } from 'lucide-react'
 import CalendarTaskCard from './CalendarTaskCard'
 
+/**
+ * One day of the calendar.
+ *  variant="column" — a hairline-separated column in the 7-up desktop grid.
+ *  variant="panel"  — the single selected day on phones / tablets.
+ * `carryOver` is a display-only list of { dateKey, task } for unfinished
+ * tasks from earlier days (only passed for today).
+ */
 const CalendarDayColumn = ({
+    variant = 'column',
     dateKey,
     dayLabel,
     fullDayLabel,
@@ -10,6 +18,7 @@ const CalendarDayColumn = ({
     month,
     isToday,
     tasks,
+    carryOver = [],
     onAddTask,
     onToggleTask,
     onEditTask,
@@ -20,12 +29,11 @@ const CalendarDayColumn = ({
     onDeleteSubtask
 }) => {
     const [menuOpen, setMenuOpen] = useState(false)
-    const [adding, setAdding] = useState(false)
     const [newText, setNewText] = useState('')
     const menuRef = useRef(null)
     const inputRef = useRef(null)
+    const isPanel = variant === 'panel'
 
-    // Close menu on outside click
     useEffect(() => {
         if (!menuOpen) return
         const close = (e) => {
@@ -35,124 +43,148 @@ const CalendarDayColumn = ({
         return () => document.removeEventListener('mousedown', close)
     }, [menuOpen])
 
-    // Focus input when entering add mode
-    useEffect(() => {
-        if (adding && inputRef.current) inputRef.current.focus()
-    }, [adding])
-
     const handleAdd = () => {
         const trimmed = newText.trim()
-        if (trimmed) {
-            onAddTask(dateKey, trimmed)
-            setNewText('')
-            // Keep adding mode open for rapid entry
-            setTimeout(() => inputRef.current?.focus(), 50)
-            return
-        }
-        setAdding(false)
+        if (!trimmed) return
+        onAddTask(dateKey, trimmed)
+        setNewText('')
+        inputRef.current?.focus()
     }
 
     const dayTasks = tasks || []
+    const doneCount = dayTasks.filter(t => t.completed).length
+    const countLabel = dayTasks.length === 0 ? '' : `${doneCount}/${dayTasks.length}`
 
-    return (
-        <div className={`
-            calendar-day-card min-w-[300px] max-w-[350px] flex-shrink-0 h-full flex flex-col rounded-2xl border transition-all duration-300
-            ${isToday ? 'bg-accent/5 border-accent/30' : 'bg-[#12141a] border-white/5'}
-        `}>
-            {/* Header */}
-            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div className={`
-                        w-10 h-10 rounded-xl flex flex-col items-center justify-center font-bold text-lg
-                        ${isToday ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'bg-[var(--surface-2)] text-[var(--text-secondary)]'}
-                    `}>
-                        {dateNum}
-                    </div>
-                    <div className="flex flex-col">
-                        <span className={`text-[13px] font-medium ${isToday ? 'text-accent' : 'text-[var(--text-primary)]'}`}>
-                            {fullDayLabel}
-                        </span>
-                        <span className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider">{month}</span>
-                    </div>
-                </div>
-
-                {/* Menu */}
-                <div className="relative" ref={menuRef}>
+    const menu = (
+        <div className="relative shrink-0" ref={menuRef}>
+            <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                aria-label="Day options"
+                className="p-2 hover:bg-[var(--surface-2)] rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+            >
+                <MoreVertical size={16} />
+            </button>
+            {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-50 surface rounded-xl py-1 min-w-[140px] shadow-xl animate-fade-in">
                     <button
-                        onClick={() => setMenuOpen(!menuOpen)}
-                        className="p-2 hover:bg-[var(--surface-2)] rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+                        onClick={() => { setMenuOpen(false); inputRef.current?.focus() }}
+                        className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
                     >
-                        <MoreVertical size={16} />
+                        <Plus size={14} /> Add task
                     </button>
-
-                    {menuOpen && (
-                        <div className="absolute right-0 top-full mt-1 z-50 surface rounded-xl py-1 min-w-[140px] shadow-xl animate-fade-in">
-                            <button
-                                onClick={() => { setMenuOpen(false); setAdding(true) }}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
-                            >
-                                <Plus size={14} /> Add task
-                            </button>
-                            {dayTasks.length > 0 && (
-                                <button
-                                    onClick={() => { setMenuOpen(false); onClearDay(dateKey) }}
-                                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-red-400 hover:bg-[var(--surface-2)] transition-colors"
-                                >
-                                    <Trash2 size={14} /> Clear all
-                                </button>
-                            )}
-                        </div>
+                    {dayTasks.length > 0 && (
+                        <button
+                            onClick={() => { setMenuOpen(false); onClearDay(dateKey) }}
+                            className="w-full flex items-center gap-2 px-4 py-2.5 text-[13px] text-[var(--color-danger)] hover:bg-[var(--surface-2)] transition-colors"
+                        >
+                            <Trash2 size={14} /> Clear all
+                        </button>
                     )}
                 </div>
-            </div>
+            )}
+        </div>
+    )
 
-            {/* Tasks Area - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar">
+    return (
+        <section
+            aria-label={fullDayLabel}
+            className={`flex flex-col min-w-0 ${isPanel ? '' : 'h-full px-3 first:pl-0 last:pr-0 border-l border-[var(--border-subtle)] first:border-l-0'}`}
+        >
+            {/* Header */}
+            {isPanel ? (
+                <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+                    <div className="flex items-baseline gap-3 min-w-0">
+                        <span className={`text-3xl font-semibold tabular-nums ${isToday ? 'text-accent' : 'text-[var(--text-primary)]'}`}>{dateNum}</span>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[14px] font-medium text-[var(--text-primary)] truncate">
+                                {fullDayLabel}{isToday && <span className="text-accent"> · Today</span>}
+                            </span>
+                            <span className="text-[12px] text-[var(--text-tertiary)]">
+                                {month}{countLabel && <> · <span dir="ltr">{countLabel}</span> done</>}
+                            </span>
+                        </div>
+                    </div>
+                    {menu}
+                </div>
+            ) : (
+                <div className="flex items-start justify-between pb-3 border-b border-[var(--border)]">
+                    <div className="min-w-0">
+                        <span className={`block text-[11px] font-medium uppercase tracking-wider ${isToday ? 'text-accent' : 'text-[var(--text-tertiary)]'}`}>
+                            {dayLabel}
+                        </span>
+                        <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`inline-flex items-center justify-center min-w-9 h-9 px-1 rounded-full text-xl font-semibold tabular-nums ${isToday ? 'bg-accent text-on-accent' : 'text-[var(--text-primary)]'}`}>
+                                {dateNum}
+                            </span>
+                            {countLabel && (
+                                <span dir="ltr" className="text-[11px] text-[var(--text-tertiary)] tabular-nums">{countLabel}</span>
+                            )}
+                        </div>
+                    </div>
+                    {menu}
+                </div>
+            )}
+
+            {/* Tasks */}
+            <div className={`${isPanel ? 'pt-1' : 'flex-1 overflow-y-auto pt-1 custom-scrollbar'}`}>
+                {carryOver.length > 0 && (
+                    <div className="mb-3">
+                        <p className="pt-2 pb-1 text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)]">From earlier</p>
+                        {carryOver.map(({ dateKey: fromKey, task, label }) => (
+                            <div key={`${fromKey}-${task.id}`} className="flex items-start gap-3 py-2 border-b border-[var(--border-subtle)] last:border-b-0">
+                                <button
+                                    onClick={() => onToggleTask(fromKey, task.id)}
+                                    aria-label="Mark done"
+                                    className="mt-0.5 w-5 h-5 rounded-md border-[1.5px] border-[var(--text-tertiary)] hover:border-[var(--text-secondary)] flex items-center justify-center flex-shrink-0 text-transparent hover:text-[var(--text-tertiary)]"
+                                >
+                                    <Check size={12} strokeWidth={3} />
+                                </button>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm leading-snug text-[var(--text-secondary)] break-words">{task.text}</p>
+                                    <p className="text-[11px] text-[var(--text-tertiary)]">{label}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
                 {dayTasks.length > 0 ? (
                     dayTasks.map(task => (
                         <CalendarTaskCard
                             key={task.id}
                             task={task}
                             onToggle={() => onToggleTask(dateKey, task.id)}
-                            onEdit={(newText) => onEditTask(dateKey, task.id, newText)}
+                            onEdit={(text) => onEditTask(dateKey, task.id, text)}
                             onDelete={() => onDeleteTask(dateKey, task.id)}
                             onAddSubtask={(text) => onAddSubtask && onAddSubtask(dateKey, task.id, text)}
                             onToggleSubtask={(subId) => onToggleSubtask && onToggleSubtask(dateKey, task.id, subId)}
                             onDeleteSubtask={(subId) => onDeleteSubtask && onDeleteSubtask(dateKey, task.id, subId)}
                         />
                     ))
-                ) : !adding && (
-                    <div className="h-full flex flex-col items-center justify-center text-[var(--text-tertiary)]">
-                        <p className="text-[13px] italic">No tasks yet</p>
-                    </div>
+                ) : carryOver.length === 0 && (
+                    <p className="py-6 text-[13px] text-[var(--text-tertiary)]">Nothing planned.</p>
                 )}
             </div>
 
-            {/* Bottom Add Input */}
-            <div className="p-3 border-t border-white/5 bg-black/20 rounded-b-2xl">
-                {adding ? (
+            {/* Add field */}
+            <div className="pt-2 mt-1 border-t border-[var(--border-subtle)]">
+                <div className="flex items-center gap-2">
+                    <Plus size={14} className="text-[var(--text-tertiary)] shrink-0" />
                     <input
                         ref={inputRef}
                         value={newText}
                         onChange={e => setNewText(e.target.value)}
                         onKeyDown={e => {
                             if (e.key === 'Enter') handleAdd()
-                            if (e.key === 'Escape') { setAdding(false); setNewText('') }
+                            if (e.key === 'Escape') setNewText('')
                         }}
-                        onBlur={() => { if (!newText.trim()) setAdding(false) }}
-                        className="w-full bg-[var(--surface-1)] border border-[var(--border)] rounded-lg px-3 py-2 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:border-accent/50"
-                        placeholder="New task... (Enter to add)"
+                        aria-label={`Add a task to ${fullDayLabel}`}
+                        className="w-full min-w-0 bg-transparent py-2 text-[13px] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none"
+                        placeholder="Add a task"
                     />
-                ) : (
-                    <button
-                        onClick={() => setAdding(true)}
-                        className="w-full py-2 flex items-center justify-center gap-2 text-[13px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-1)] rounded-lg transition-all border border-dashed border-[var(--border-subtle)] hover:border-[var(--border)]"
-                    >
-                        <Plus size={14} /> Add Task
-                    </button>
-                )}
+                </div>
             </div>
-        </div>
+        </section>
     )
 }
 

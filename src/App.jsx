@@ -8,7 +8,6 @@ import HeroSection from './components/HeroSection'
 import TopicList from './components/TopicList'
 import StatsCards from './components/StatsCards'
 import FloatingTimer from './components/FloatingTimer'
-import NotesSection from './components/NotesSection'
 import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
 import TachycardiaTab from './components/TachycardiaTab'
@@ -17,9 +16,16 @@ import BlocksPage from './components/BlocksPage'
 import FocusMode from './components/FocusMode'
 import Confetti from './components/Confetti'
 import ReadOnlyBanner from './components/ReadOnlyBanner'
+import EmptySections from './components/EmptySections'
+import { createEmptyTab } from './utils/templates'
+import { getSetting } from './utils/settingsDefaults'
+import { isAIAvailable, isSignedIn, generateSteps } from './services/aiService'
+import { applyAction } from './utils/aiActions'
+import FocusSession from './components/focus/FocusSession'
+import { localDateKey } from './utils/dateKeys'
 
-// Helper to get today's date string
-const getTodayKey = () => new Date().toISOString().split('T')[0]
+// Today's LOCAL date key (never UTC — see src/utils/dateKeys.js)
+const getTodayKey = () => localDateKey()
 
 function App() {
   const {
@@ -79,12 +85,16 @@ function App() {
   // documents that predate the synced `timeLog` field (schema v7).
   const [legacyTodayMinutes, setLegacyTodayMinutes] = useState(0)
   const [legacyTotalMinutes, setLegacyTotalMinutes] = useState(0)
-  const [showTachycardia, setShowTachycardia] = useState(false)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [showBlocks, setShowBlocks] = useState(false)
+  // Which full-page view replaces the dashboard: 'blocks' | 'calendar' | 'tachycardia' | null
+  const [activeView, setActiveView] = useState(null)
   const [isFocusMode, setIsFocusMode] = useState(false)
   const [confettiActive, setConfettiActive] = useState(false)
   const touchStartX = useRef(null)
+  // The full-screen session: { label, steps, phase: 'running'|'done', minimized, totalSeconds, nextUp } | null
+  const [sessionOverlay, setSessionOverlay] = useState(null)
+  // Latest document, so several AI changes applied back-to-back build on each other.
+  const dataRef = useRef(data)
+  useEffect(() => { dataRef.current = data }, [data])
 
   const handleSectionComplete = useCallback(() => {
     setConfettiActive(true)
@@ -169,11 +179,13 @@ function App() {
 
   // Handle timer completion - track study time
   const handleTimerComplete = useCallback(() => {
-    const duration = data?.settings?.timerDuration || 25
+    // The length the session was started with (pauses shrink totalSeconds).
+    const plannedSeconds = data?.timerSession?.plannedSeconds || (data?.settings?.timerDuration || 25) * 60
+    const duration = Math.round(plannedSeconds / 60)
 
     // Synced study time (schema v7). Written ALONGSIDE the legacy keys below,
     // never instead of them — an older client still reads only those keys.
-    recordStudyTime(getTodayKey(), duration * 60)
+    recordStudyTime(getTodayKey(), plannedSeconds)
 
     // Legacy device-local keys — still the source of truth for older clients.
     // Read-only mode means no writes at all, localStorage included.
@@ -193,14 +205,28 @@ function App() {
     // Record today for the streak (synced; no-op if already recorded today)
     recordStudyDay(getTodayKey())
 
+    // Keep the full-screen view open on a calm "done" card with what's next.
+    const session = data?.timerSession
+    const tab = data?.tabs?.find(t => t.id === session?.tabId)
+    const next = tab?.topics.find(t => !t.completed && t.id !== session?.topicId)
+    setSessionOverlay(prev => ({
+      label: prev?.label || tab?.topics.find(t => t.id === session?.topicId)?.name || 'Study session',
+      steps: prev?.steps || null,
+      totalSeconds: plannedSeconds,
+      phase: 'done',
+      minimized: false,
+      nextUp: next?.name || null,
+    }))
+
     updateTimerSession(null)
-  }, [updateTimerSession, recordStudyDay, recordStudyTime, readOnly, legacyTodayMinutes, legacyTotalMinutes, data?.settings?.timerDuration])
+  }, [updateTimerSession, recordStudyDay, recordStudyTime, readOnly, legacyTodayMinutes, legacyTotalMinutes, data?.settings?.timerDuration, data?.timerSession, data?.tabs])
 
   // Timer hook
   const { timeLeft, formattedTime, isRunning } = useTimer(
     data?.timerSession,
     handleTimerComplete,
-    data?.settings?.isMuted
+    data?.settings?.isMuted,
+    getSetting(data?.settings, 'sessionSound')
   )
 
   // Get current tab data
@@ -215,16 +241,14 @@ function App() {
     const dates = data?.studyDates
     if (!dates || dates.length === 0) return 0
     const studied = new Set(dates)
-    const keyOf = (d) => d.toISOString().split('T')[0]
-
-    const now = new Date()
-    let cursor = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
-    if (!studied.has(keyOf(cursor))) cursor.setUTCDate(cursor.getUTCDate() - 1)
+    const cursor = new Date()
+    cursor.setHours(12, 0, 0, 0)
+    if (!studied.has(localDateKey(cursor))) cursor.setDate(cursor.getDate() - 1)
 
     let count = 0
-    while (studied.has(keyOf(cursor))) {
+    while (studied.has(localDateKey(cursor))) {
       count++
-      cursor.setUTCDate(cursor.getUTCDate() - 1)
+      cursor.setDate(cursor.getDate() - 1)
     }
     return count
   }, [data?.studyDates])
@@ -259,11 +283,20 @@ function App() {
   }, [data?.tabs])
 
   // Handler functions
-  const handleTimerStart = useCallback((tabId, topicId) => {
+  // Start any session — from a task's play button, the floating play button,
+  // or Focus mode — and show it full-screen. tabId/topicId may be null (a
+  // plan item or free text), in which case `label` names it.
+  const handleSessionStart = useCallback(({ tabId = null, topicId = null, minutes, label, steps = null }) => {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
     }
+    const seconds = Math.round((minutes || getSetting(data?.settings, 'timerDuration')) * 60)
+    updateTimerSession({ tabId, topicId, startTime: Date.now(), totalSeconds: seconds, plannedSeconds: seconds, isRunning: true })
+    setSessionOverlay({ label: label || 'Study session', steps, phase: 'running', minimized: false, totalSeconds: seconds, nextUp: null })
+    setIsFocusMode(false)
+  }, [data?.settings, updateTimerSession])
 
+  const handleTimerStart = useCallback((tabId, topicId) => {
     const duration = data?.settings?.timerDuration || 25
 
     if (data?.timerSession?.tabId === tabId &&
@@ -277,15 +310,10 @@ function App() {
         totalSeconds: remainingSeconds
       })
     } else {
-      updateTimerSession({
-        tabId,
-        topicId,
-        startTime: Date.now(),
-        totalSeconds: duration * 60,
-        isRunning: true
-      })
+      const topic = data?.tabs?.find(t => t.id === tabId)?.topics.find(t => t.id === topicId)
+      handleSessionStart({ tabId, topicId, minutes: duration, label: topic?.name })
     }
-  }, [data?.settings?.timerDuration, data?.timerSession, updateTimerSession, timeLeft])
+  }, [data?.settings?.timerDuration, data?.timerSession, data?.tabs, updateTimerSession, timeLeft, handleSessionStart])
 
   const handleTimerPauseResume = useCallback(() => {
     if (!data?.timerSession) return
@@ -307,13 +335,36 @@ function App() {
 
   const handleTimerReset = useCallback(() => {
     updateTimerSession(null)
+    setSessionOverlay(null)
   }, [updateTimerSession])
 
-  const handleNotesChange = useCallback((notes) => {
-    if (currentTab) {
-      updateTab(currentTab.id, { notes })
+  // Apply AI-proposed changes (only ever after the owner tapped Apply).
+  // Each call builds on the previous one; one write at the end.
+  const applyAICalls = useCallback(async (calls) => {
+    if (readOnly) return { ok: false, error: 'This data is read-only until you update the app.' }
+    try {
+      let next = dataRef.current
+      for (const call of calls) {
+        next = applyAction(next, {
+          id: call.id,
+          name: call.name || call.function?.name,
+          arguments: call.arguments ?? call.function?.arguments,
+        })
+      }
+      if (next !== dataRef.current) {
+        dataRef.current = next
+        updateData(next)
+      }
+      return { ok: true }
+    } catch (e) {
+      return { ok: false, error: e.message }
     }
-  }, [currentTab, updateTab])
+  }, [readOnly, updateData])
+
+  const handleParkThought = useCallback((text) => {
+    const t = String(text || '').trim()
+    if (t) addCalendarTask(getTodayKey(), `💭 ${t}`)
+  }, [addCalendarTask])
 
   const handleImport = useCallback((importedData) => {
     updateData(importedData)
@@ -350,13 +401,6 @@ function App() {
     }
   }, [deleteTab, activeTabId, data?.tabs])
 
-  // Handle importing tasks from Plan Importer
-  const handleImportTasks = useCallback((tabId, topics) => {
-    topics.forEach(topic => {
-      addTopic(tabId, topic)
-    })
-  }, [addTopic])
-
   // Show template modal for first-time users
   if (isFirstVisit || !data) {
     return (
@@ -367,21 +411,16 @@ function App() {
     )
   }
 
-  // Ensure we have a current tab
-  if (!currentTab) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-white/60">No sections available.</p>
-          <button
-            onClick={() => handleClearAll()}
-            className="mt-4 text-accent hover:underline"
-          >
-            Reset and start over
-          </button>
-        </div>
-      </div>
-    )
+  const settings = data.settings
+  const aiOn = isAIAvailable(settings)
+  const hasTabs = data.tabs.length > 0
+
+  const handleCreateFirstSection = (name) => {
+    const tab = createEmptyTab()
+    tab.title = name
+    tab.emoji = ''
+    addTab(tab)
+    setActiveTabId(tab.id)
   }
 
   // Calculate progress (Weighted vs Standard)
@@ -419,7 +458,6 @@ function App() {
         onImport={handleImport}
         onClearAll={handleClearAll}
         onSettingsChange={updateSettings}
-        onImportTasks={handleImportTasks}
         // Auth props
         user={user}
         isAuthLoading={isAuthLoading}
@@ -430,48 +468,38 @@ function App() {
         isFirebaseConfigured={isFirebaseConfigured}
         isFocusMode={isFocusMode}
         onToggleFocus={() => setIsFocusMode(!isFocusMode)}
+        activeView={activeView}
+        onViewChange={setActiveView}
+        showTachycardia={aiOn}
       />
 
       {/* Segment Control */}
-      <SegmentControl
-        tabs={data.tabs}
-        activeTabId={currentTab.id}
-        onTabChange={(id) => { setActiveTabId(id); setShowTachycardia(false); }}
-        onTabAdd={addTab}
-        onTabDelete={handleTabDelete}
-        onTabUpdate={updateTab}
-        onTachycardiaClick={() => { setShowTachycardia(!showTachycardia); setShowCalendar(false); setShowBlocks(false); }}
-        showTachycardia={showTachycardia}
-        onCalendarClick={() => { setShowCalendar(!showCalendar); setShowTachycardia(false); setShowBlocks(false); }}
-        showCalendar={showCalendar}
-        onBlocksClick={() => { setShowBlocks(!showBlocks); setShowCalendar(false); setShowTachycardia(false); }}
-        showBlocks={showBlocks}
-      />
-
-      {isFocusMode && currentTab && (
-        <FocusMode
-          activeTask={currentTab.topics.find(t => !t.completed)} // Initial active task
-          allTasks={currentTab.topics.filter(t => !t.completed)} // All incomplete tasks for carousel
-          onComplete={(taskId) => {
-            updateTopic(currentTab.id, taskId, { completed: true })
-          }}
-          onExit={() => setIsFocusMode(false)}
-          onStartTimer={(taskId) => handleTimerStart(currentTab.id, taskId)}
-          onAddSubtasks={(taskId, newSubtasks) => {
-            // Add each subtask
-            newSubtasks.forEach(subName => {
-              addSubtask(currentTab.id, taskId, {
-                id: Date.now() + Math.random(), // Simple ID generation
-                name: subName,
-                completed: false
-              })
-            })
-          }}
-          studyData={data}
+      {/* Section tabs — the dashboard's own navigation */}
+      {hasTabs && !activeView && (
+        <SegmentControl
+          tabs={data.tabs}
+          activeTabId={currentTab.id}
+          onTabChange={setActiveTabId}
+          onTabAdd={(tab) => { addTab(tab); setActiveTabId(tab.id) }}
+          onTabDelete={handleTabDelete}
+          onTabUpdate={updateTab}
         />
       )}
 
-      {showBlocks ? (
+      {isFocusMode && (
+        <FocusMode
+          data={data}
+          currentTabId={currentTab?.id || null}
+          settings={settings}
+          onExit={() => setIsFocusMode(false)}
+          onStartSession={handleSessionStart}
+          onApplyActions={applyAICalls}
+          onSignIn={signIn}
+          isSignedIn={!!user && isSignedIn()}
+        />
+      )}
+
+      {activeView === 'blocks' ? (
         <BlocksPage
           blocks={blocks}
           onAddBlock={addBlock}
@@ -482,10 +510,11 @@ function App() {
           onAddBlockTemplate={addBlockTemplate}
           onDeleteBlockTemplate={deleteBlockTemplate}
         />
-      ) : showCalendar ? (
+      ) : activeView === 'calendar' ? (
         <CalendarPage
-          isFocusMode={isFocusMode}
           tasks={calendar}
+          weekStart={getSetting(settings, 'weekStart')}
+          carryOverTasks={getSetting(settings, 'carryOverTasks')}
           onAddTask={addCalendarTask}
           onToggleTask={toggleCalendarTask}
           onEditTask={editCalendarTask}
@@ -495,12 +524,17 @@ function App() {
           onToggleSubtask={toggleCalendarSubtask}
           onDeleteSubtask={deleteCalendarSubtask}
         />
-      ) : showTachycardia ? (
+      ) : activeView === 'tachycardia' && aiOn ? (
         <TachycardiaTab
-          studyData={data}
-          onBack={() => setShowTachycardia(false)}
-          addTopic={addTopic}
+          data={data}
+          settings={settings}
+          onApplyAction={(call) => applyAICalls([call])}
+          onSignIn={signIn}
+          isSignedIn={!!user && isSignedIn()}
+          onBack={() => setActiveView(null)}
         />
+      ) : !hasTabs ? (
+        <EmptySections onCreate={handleCreateFirstSection} />
       ) : (
         <>
           {/* Countdown Widget */}
@@ -513,9 +547,6 @@ function App() {
 
           {/* Hero Section */}
           <HeroSection
-            title={currentTab.title}
-            emoji={currentTab.emoji}
-            subtitle={`Module ${data.tabs.indexOf(currentTab) + 1} of ${data.tabs.length}`}
             completedCount={completedCount}
             totalCount={totalCount}
             globalCompletedCount={globalStats.completed}
@@ -538,6 +569,7 @@ function App() {
             onSubtaskDelete={deleteSubtask}
             onSectionComplete={handleSectionComplete}
             spacedRepetitionEnabled={data.settings.spacedRepetition}
+            hideCompleted={getSetting(settings, 'hideCompleted')}
           />
           </div>
 
@@ -546,34 +578,59 @@ function App() {
             studyStreak={streak}
             todayMinutes={todayMinutes}
             totalMinutes={totalMinutes}
-          />
-
-          {/* Notes Section */}
-          <NotesSection
-            notes={currentTab.notes || ''}
-            onChange={handleNotesChange}
+            dailyGoalMinutes={getSetting(settings, 'dailyGoalMinutes')}
           />
         </>
       )}
       </div>{/* end app-container */}
 
-      <Confetti active={confettiActive} />
+      <Confetti active={confettiActive} disabled={getSetting(settings, 'reduceMotion')} />
 
-      {/* Floating Timer */}
-      <FloatingTimer
-        isActive={!!data.timerSession}
-        isRunning={data.timerSession?.isRunning}
-        formattedTime={formattedTime}
-        timeProgress={data.timerSession ? 1 - (timeLeft / data.timerSession.totalSeconds) : 0}
-        currentTopicName={
-          data.timerSession
-            ? currentTab.topics.find(t => t.id === data.timerSession.topicId)?.name
-            : null
-        }
-        onPauseResume={handleTimerPauseResume}
-        onReset={handleTimerReset}
-        onStart={handleStartSession}
-      />
+      {/* Full-screen session */}
+      {sessionOverlay && !sessionOverlay.minimized && (
+        <FocusSession
+          label={sessionOverlay.label}
+          steps={sessionOverlay.steps}
+          nextUp={sessionOverlay.nextUp}
+          phase={sessionOverlay.phase}
+          timeLeft={sessionOverlay.phase === 'done' ? 0 : timeLeft}
+          totalSeconds={sessionOverlay.totalSeconds}
+          isRunning={!!data.timerSession?.isRunning}
+          settings={settings}
+          onPauseResume={handleTimerPauseResume}
+          onStop={handleTimerReset}
+          onMinimize={() => setSessionOverlay(s => s && { ...s, minimized: true })}
+          onParkThought={handleParkThought}
+          onStuck={aiOn && user ? () => generateSteps(sessionOverlay.label, data) : undefined}
+          onFinish={() => setSessionOverlay(null)}
+        />
+      )}
+
+      {/* Floating Timer — the minimised session, or a quick start */}
+      {!(sessionOverlay && !sessionOverlay.minimized) && (
+        <FloatingTimer
+          isActive={!!data.timerSession}
+          isRunning={data.timerSession?.isRunning}
+          formattedTime={formattedTime}
+          timeProgress={data.timerSession ? 1 - (timeLeft / (data.timerSession.plannedSeconds || data.timerSession.totalSeconds)) : 0}
+          currentTopicName={
+            sessionOverlay?.label ||
+            (data.timerSession
+              ? data.tabs.find(t => t.id === data.timerSession.tabId)?.topics.find(t => t.id === data.timerSession.topicId)?.name
+              : null)
+          }
+          onPauseResume={handleTimerPauseResume}
+          onReset={handleTimerReset}
+          onStart={handleStartSession}
+          onExpand={() => setSessionOverlay(s => s
+            ? { ...s, minimized: false }
+            : {
+              label: data.tabs.find(t => t.id === data.timerSession?.tabId)?.topics.find(t => t.id === data.timerSession?.topicId)?.name || 'Study session',
+              steps: null, phase: 'running', minimized: false, nextUp: null,
+              totalSeconds: data.timerSession?.plannedSeconds || data.timerSession?.totalSeconds || 0,
+            })}
+        />
+      )}
     </div>
   )
 }

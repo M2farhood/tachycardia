@@ -6,8 +6,8 @@ const MAX_DAYS = 120
 // Urgency color based on days remaining
 const urgencyColor = (days) =>
     days <= 7  ? 'var(--color-danger)' :
-    days <= 30 ? '#f59e0b'             :
-                 'var(--color-accent)'
+    days <= 30 ? 'var(--color-accent)' :
+                 'var(--text-tertiary)'
 
 // One time unit: number with roll animation + thin live bar beneath
 function Unit({ value, max, label, color, barTransition }) {

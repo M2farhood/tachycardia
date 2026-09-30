@@ -1,9 +1,10 @@
+import { localDateKey } from '../utils/dateKeys'
 import { X, Check, Circle, Clock, Calendar } from 'lucide-react'
 
 const buildHeatMap = (studyDates) => {
     const studied = new Set(studyDates)
     const today = new Date()
-    const todayKey = today.toISOString().split('T')[0]
+    const todayKey = localDateKey(today)
 
     // Start from the Sunday 11 full weeks ago
     const start = new Date(today)
@@ -14,7 +15,7 @@ const buildHeatMap = (studyDates) => {
     const d = new Date(start)
 
     for (let i = 0; i < 84; i++) {
-        const key = d.toISOString().split('T')[0]
+        const key = localDateKey(d)
         week.push({ key, studied: studied.has(key), isToday: key === todayKey, isFuture: d > today })
         if (week.length === 7) { weeks.push(week); week = [] }
         d.setDate(d.getDate() + 1)
@@ -50,8 +51,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
 
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4"
-            style={{ backgroundColor: 'rgba(0, 0, 0, 0.7)' }}
+            className="modal-backdrop fixed inset-0 z-[60] flex items-center justify-center p-4"
             onClick={onClose}
         >
             <div
@@ -149,7 +149,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                             <div key={tab.id} className="mb-5 last:mb-0">
                                 {/* Section Header */}
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                                    <h3 className="text-sm font-semibold text-[var(--text-primary)] flex items-center gap-2">
                                         {tab.title}
                                     </h3>
                                     <span className="text-[11px] text-[var(--text-tertiary)]">{tabCompleted}/{tabTotal}</span>
@@ -165,7 +165,7 @@ const PerformanceModal = ({ isOpen, onClose, tabs, todayMinutes = 0, totalMinute
                                         >
                                             {topic.completed ? (
                                                 <div className="w-5 h-5 rounded-full bg-[var(--color-success)] flex items-center justify-center flex-shrink-0">
-                                                    <Check size={12} className="text-white" />
+                                                    <Check size={12} className="text-on-accent" />
                                                 </div>
                                             ) : (
                                                 <Circle size={20} className="text-[var(--text-tertiary)] flex-shrink-0" />

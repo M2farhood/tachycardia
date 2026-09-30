@@ -1,198 +1,256 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Trash2, Sparkles, Zap, Heart, Clock, ArrowLeft } from 'lucide-react'
+import { Send, Trash2, Heart, ArrowLeft, Check, X, RefreshCw } from 'lucide-react'
 import { useAIChat } from '../hooks/useAIChat'
+import { isAIAvailable } from '../services/aiService'
+import { describeAction, DISPLAY_TOOLS, DESTRUCTIVE_TOOLS } from '../utils/aiActions'
 
-const TachycardiaTab = ({ studyData, onBack, addTopic }) => {
-    const { messages, isLoading, sendMessage, sendQuickAction, clearChat } = useAIChat(studyData, addTopic)
-    const [input, setInput] = useState('')
-    const messagesEndRef = useRef(null)
-    const inputRef = useRef(null)
+const STARTERS = ['Plan my week', 'What should I do next?', 'Add tasks to a section…']
 
-    // Auto-scroll to bottom
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages, isLoading])
+const smallBtn =
+    'inline-flex items-center justify-center gap-1.5 min-h-9 px-3 rounded-lg text-[13px] font-medium transition-colors'
 
-    // Focus input on mount
-    useEffect(() => {
-        inputRef.current?.focus()
-    }, [])
-
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        if (input.trim() && !isLoading) {
-            sendMessage(input)
-            setInput('')
-        }
-    }
-
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            handleSubmit(e)
-        }
-    }
-
-    // Quick action buttons
-    const quickActions = [
-        { id: 'plan', label: 'Plan my week', icon: Sparkles },
-        { id: 'next', label: "What's next?", icon: Zap },
-        { id: 'motivate', label: 'Motivate me', icon: Heart },
-        { id: 'progress', label: 'My progress', icon: Clock },
-    ]
+const ProposalCard = ({ call, status, data, onApply, onSkip }) => {
+    const [sure, setSure] = useState(false)
+    const state = status?.state || 'skipped'
+    const destructive = DESTRUCTIVE_TOOLS.includes(call.function?.name)
+    const sentence = describeAction(data, call)
 
     return (
-        <div className="flex flex-col h-[calc(100vh-180px)] mx-4 mb-4">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
+        <div className="mt-2 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5">
+            <p className="text-[14px] text-[var(--text-primary)] break-words">{sentence}</p>
+            {state === 'pending' && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                    {destructive ? (
+                        <button
+                            type="button"
+                            onClick={() => (sure ? onApply() : setSure(true))}
+                            className={`${smallBtn} bg-[var(--color-danger)] text-on-accent`}
+                        >
+                            {sure ? 'Sure?' : 'Delete'}
+                        </button>
+                    ) : (
+                        <button type="button" onClick={onApply} className={`${smallBtn} bg-[var(--color-accent)] text-on-accent`}>
+                            Apply
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={onSkip}
+                        className={`${smallBtn} border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]`}
+                    >
+                        Skip
+                    </button>
+                </div>
+            )}
+            {state === 'applied' && (
+                <p className="mt-1.5 text-[13px] text-[var(--color-success)] flex items-center gap-1"><Check size={14} /> Applied</p>
+            )}
+            {state === 'skipped' && (
+                <p className="mt-1.5 text-[13px] text-[var(--text-tertiary)] flex items-center gap-1"><X size={14} /> Skipped</p>
+            )}
+            {state === 'failed' && (
+                <div className="mt-1.5">
+                    <p className="text-[13px] text-[var(--color-danger)]" role="alert">{status.error}</p>
+                    <div className="mt-1.5 flex gap-2">
+                        <button type="button" onClick={onApply} className={`${smallBtn} border border-[var(--border)] text-[var(--text-secondary)]`}>
+                            Try again
+                        </button>
+                        <button type="button" onClick={onSkip} className={`${smallBtn} text-[var(--text-tertiary)]`}>Skip</button>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
+}
+
+const TachycardiaTab = ({ data, settings, onApplyAction, onSignIn, isSignedIn = false, onBack }) => {
+    const { messages, isLoading, error, sendMessage, retry, applyProposal, skipProposal, clearChat } = useAIChat({
+        data,
+        signedIn: isSignedIn,
+        onApplyAction,
+    })
+    const aiOn = isAIAvailable(settings)
+    const [input, setInput] = useState('')
+    const endRef = useRef(null)
+    const inputRef = useRef(null)
+
+    useEffect(() => {
+        endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }, [messages, isLoading, error])
+
+    const submit = (e) => {
+        e?.preventDefault()
+        if (!input.trim() || isLoading) return
+        sendMessage(input)
+        setInput('')
+    }
+
+    const starter = (text) => {
+        if (text.endsWith('…')) {
+            setInput('Add tasks to ')
+            inputRef.current?.focus()
+        } else {
+            sendMessage(text)
+        }
+    }
+
+    return (
+        <div className="flex flex-col h-[calc(100dvh-180px)] min-h-[360px] mx-4 mb-4 min-w-0">
+            <div className="flex items-center justify-between gap-2 mb-3">
                 <button
+                    type="button"
                     onClick={onBack}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] transition-colors"
+                    className="flex items-center gap-2 min-h-10 px-3 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] transition-colors"
                 >
                     <ArrowLeft size={18} className="text-[var(--text-secondary)]" />
                     <span className="text-[13px] text-[var(--text-secondary)]">Back</span>
                 </button>
-
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)]">
-                        <Heart size={20} className="text-accent" fill="currentColor" />
+                <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 px-3 min-h-10 rounded-xl bg-[var(--surface-1)] border border-[var(--border)]">
+                        <Heart size={18} className="text-accent" fill="currentColor" />
                         <span className="font-semibold text-[var(--text-primary)]">Tachycardia</span>
                     </div>
-
                     {messages.length > 0 && (
                         <button
+                            type="button"
                             onClick={clearChat}
-                            className="p-2 rounded-xl bg-[var(--surface-1)] hover:bg-red-500/20 text-[var(--text-tertiary)] hover:text-red-400 transition-all"
-                            title="Clear chat"
+                            className="flex items-center gap-1.5 min-h-10 px-3 rounded-xl bg-[var(--surface-1)] hover:bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors text-[13px]"
+                            aria-label="Clear chat"
                         >
-                            <Trash2 size={18} />
+                            <Trash2 size={16} />
+                            <span className="hidden sm:inline">Clear chat</span>
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto rounded-2xl surface p-4 space-y-4">
-                {/* Welcome Message */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-2xl surface p-3 sm:p-4 space-y-3">
                 {messages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center h-full text-center px-4">
-                        <div className="relative mb-6">
-                            <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center">
-                                <Heart size={40} className="text-white" fill="currentColor" />
-                            </div>
+                    <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                        <div className="w-14 h-14 rounded-full bg-[var(--color-accent)] text-on-accent flex items-center justify-center mb-4">
+                            <Heart size={26} fill="currentColor" />
                         </div>
-
-                        <h2 className="text-2xl font-bold text-white mb-2">
-                            Hey there! I'm Tachycardia 💓
-                        </h2>
-                        <p className="text-[var(--text-secondary)] max-w-sm mb-8">
-                            Your AI study companion. I know your tabs, topics, and progress.
-                            Ask me anything about your studies!
+                        <h2 className="text-xl font-bold text-[var(--text-primary)] mb-1">Hi, I’m Tachycardia</h2>
+                        <p className="text-[14px] text-[var(--text-secondary)] max-w-sm mb-5">
+                            I can plan, add tasks and schedule your days. I only suggest — nothing changes until you tap Apply.
                         </p>
-
-                        {/* Quick Actions */}
-                        <div className="flex flex-wrap gap-2 justify-center">
-                            {quickActions.map(action => (
-                                <button
-                                    key={action.id}
-                                    onClick={() => sendQuickAction(action.id)}
-                                    disabled={isLoading}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] hover:border-[var(--color-accent)] text-[var(--text-primary)] transition-all disabled:opacity-50"
-                                >
-                                    <action.icon size={16} className="text-accent" />
-                                    <span className="text-sm">{action.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                        {aiOn && (
+                            <div className="flex flex-wrap gap-2 justify-center">
+                                {STARTERS.map((s) => (
+                                    <button
+                                        key={s}
+                                        type="button"
+                                        onClick={() => starter(s)}
+                                        disabled={isLoading}
+                                        className="min-h-10 px-4 rounded-xl bg-[var(--surface-1)] border border-[var(--border)] hover:border-[var(--color-accent)] text-[var(--text-primary)] text-[14px] transition-colors disabled:opacity-50"
+                                    >
+                                        {s}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
-                {/* Messages */}
-                {messages.map((message) => (
-                    <div
-                        key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                        <div
-                            className={`max-w-[85%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                                ? 'bg-accent text-white'
-                                : 'bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)]'
+                {messages.map((m) => {
+                    const isUser = m.role === 'user'
+                    const proposals = (m.tool_calls || []).filter((c) => !DISPLAY_TOOLS.includes(c.function?.name))
+                    return (
+                        <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            <div
+                                className={`max-w-[92%] sm:max-w-[85%] min-w-0 rounded-2xl px-4 py-3 ${
+                                    isUser
+                                        ? 'bg-[var(--color-accent)] text-on-accent'
+                                        : 'bg-[var(--surface-1)] border border-[var(--border)] text-[var(--text-primary)]'
                                 }`}
-                        >
-                            {message.role === 'assistant' && (
-                                <div className="flex items-center gap-2 mb-1">
-                                    <Heart size={14} className="text-accent" fill="currentColor" />
-                                    <span className="text-xs text-accent font-medium">Tachycardia</span>
-                                </div>
-                            )}
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                            >
+                                {!isUser && (
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <Heart size={12} className="text-accent" fill="currentColor" />
+                                        <span className="text-xs text-accent font-medium">Tachycardia</span>
+                                    </div>
+                                )}
+                                {m.content && (
+                                    <p className="text-[14px] leading-relaxed whitespace-pre-wrap break-words">{m.content}</p>
+                                )}
+                                {proposals.map((c) => (
+                                    <ProposalCard
+                                        key={c.id}
+                                        call={c}
+                                        status={m.status?.[c.id]}
+                                        data={data}
+                                        onApply={() => applyProposal(m.id, c.id)}
+                                        onSkip={() => skipProposal(m.id, c.id)}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
 
-                {/* Loading Indicator */}
                 {isLoading && (
                     <div className="flex justify-start">
                         <div className="bg-[var(--surface-1)] border border-[var(--border)] rounded-2xl px-4 py-3">
-                            <div className="flex items-center gap-2">
-                                <Heart size={14} className="text-accent" fill="currentColor" />
-                                <span className="text-xs text-accent font-medium">Tachycardia</span>
-                            </div>
-                            <div className="flex items-center gap-1 mt-2">
-                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <div className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: '300ms' }} />
+                            <div className="flex items-center gap-1" aria-label="Tachycardia is thinking">
+                                {[0, 150, 300].map((d) => (
+                                    <div key={d} className="w-2 h-2 rounded-full bg-accent animate-bounce" style={{ animationDelay: `${d}ms` }} />
+                                ))}
                             </div>
                         </div>
                     </div>
                 )}
 
-                <div ref={messagesEndRef} />
+                {error && (
+                    <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-1)] px-4 py-3 text-[14px]" role="alert">
+                        <p className="text-[var(--color-danger)]">{error.message}</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                            {error.code === 'AUTH_REQUIRED' && onSignIn && (
+                                <button type="button" onClick={onSignIn} className={`${smallBtn} bg-[var(--color-accent)] text-on-accent`}>
+                                    Sign in
+                                </button>
+                            )}
+                            {(error.code === 'NETWORK' || error.code === 'OTHER') && (
+                                <button
+                                    type="button"
+                                    onClick={retry}
+                                    className={`${smallBtn} border border-[var(--border)] text-[var(--text-secondary)]`}
+                                >
+                                    <RefreshCw size={14} /> Try again
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <div ref={endRef} />
             </div>
 
-            {/* Quick Actions (when chat has messages) */}
-            {messages.length > 0 && (
-                <div className="flex gap-2 mt-3 overflow-x-auto pb-2 scrollbar-hide">
-                    {quickActions.map(action => (
-                        <button
-                            key={action.id}
-                            onClick={() => sendQuickAction(action.id)}
-                            disabled={isLoading}
-                            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[var(--surface-1)] border border-[var(--border-subtle)] hover:border-[var(--color-accent-glow)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[11px] transition-all disabled:opacity-50"
-                        >
-                            <action.icon size={12} className="text-accent" />
-                            <span>{action.label}</span>
-                        </button>
-                    ))}
-                </div>
-            )}
-
-            {/* Input Area */}
-            <form onSubmit={handleSubmit} className="mt-3">
-                <div className="flex gap-3">
-                    <div className="flex-1 relative">
-                        <textarea
-                            ref={inputRef}
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Ask Tachycardia anything..."
-                            rows={1}
-                            disabled={isLoading}
-                            className="w-full px-4 py-3 pr-12 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)] focus:border-accent/50 text-[var(--text-primary)] placeholder-[var(--text-tertiary)] resize-none focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
-                            style={{ minHeight: '50px', maxHeight: '120px' }}
-                        />
-                    </div>
-
+            {aiOn ? (
+                <form onSubmit={submit} className="mt-3 flex gap-2 items-end">
+                    <textarea
+                        ref={inputRef}
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) submit(e)
+                        }}
+                        placeholder="Ask Tachycardia…"
+                        rows={1}
+                        className="flex-1 min-w-0 px-4 py-3 rounded-2xl bg-[var(--surface-1)] border border-[var(--border)] focus:border-[var(--color-accent)] text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] resize-none focus:outline-none transition-colors"
+                        style={{ minHeight: '50px', maxHeight: '120px' }}
+                    />
                     <button
                         type="submit"
                         disabled={!input.trim() || isLoading}
-                        className="px-5 py-3 rounded-2xl bg-accent text-white font-medium hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
+                        aria-label="Send"
+                        className="w-[50px] h-[50px] shrink-0 rounded-2xl bg-[var(--color-accent)] text-on-accent flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed"
                     >
                         <Send size={18} />
                     </button>
-                </div>
-            </form>
+                </form>
+            ) : (
+                <p className="mt-3 text-[13px] text-[var(--text-tertiary)] text-center">Tachycardia is turned off in Settings.</p>
+            )}
         </div>
     )
 }

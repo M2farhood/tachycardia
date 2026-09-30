@@ -1,18 +1,24 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-const COLORS = ['#4f7fbf', '#34d399', '#f59e0b', '#e2e8f0', '#a78bfa', '#60a5fa']
+// Canvas can't read CSS variables directly, so resolve the theme tokens at launch.
+const TOKENS = ['--color-accent', '--color-success', '--color-danger', '--text-secondary', '--color-accent-dim']
+const readColors = () => {
+    const style = getComputedStyle(document.documentElement)
+    const colors = TOKENS.map(t => style.getPropertyValue(t).trim()).filter(Boolean)
+    return colors.length ? colors : ['gray']
+}
 const COUNT = 55
 
 const rand = (a, b) => Math.random() * (b - a) + a
 
-export default function Confetti({ active }) {
+export default function Confetti({ active, disabled = false }) {
     const canvasRef = useRef(null)
     const rafRef    = useRef(null)
     const particles = useRef([])
 
     useEffect(() => {
-        if (!active) return
+        if (!active || disabled) return
 
         const canvas = canvasRef.current
         if (!canvas) return
@@ -21,6 +27,7 @@ export default function Confetti({ active }) {
         canvas.width  = window.innerWidth
         canvas.height = window.innerHeight
 
+        const COLORS = readColors()
         particles.current = Array.from({ length: COUNT }, () => ({
             x:        rand(canvas.width * 0.2, canvas.width * 0.8),
             y:        rand(-80, -10),
@@ -70,9 +77,9 @@ export default function Confetti({ active }) {
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current)
         }
-    }, [active])
+    }, [active, disabled])
 
-    if (!active) return null
+    if (!active || disabled) return null
 
     return createPortal(
         <canvas

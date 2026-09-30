@@ -9,9 +9,13 @@ const formatDuration = (minutes) => {
 const StatsCards = ({
     studyStreak = 0,
     todayMinutes = 0,
-    totalMinutes = 0
+    totalMinutes = 0,
+    dailyGoalMinutes = 0
 }) => {
     const timeDisplay = formatDuration(todayMinutes)
+    const goalOn = dailyGoalMinutes > 0
+    const goalMet = goalOn && todayMinutes >= dailyGoalMinutes
+    const goalPct = goalOn ? Math.min(100, Math.round((todayMinutes / dailyGoalMinutes) * 100)) : 0
     const totalDisplay = formatDuration(totalMinutes)
 
     return (
@@ -39,8 +43,21 @@ const StatsCards = ({
                         Today
                     </p>
                     <p className="text-3xl font-bold text-[var(--text-primary)] tabular-nums leading-none">
-                        {timeDisplay}
+                        {goalOn ? (
+                            <>
+                                <span className={goalMet ? 'text-[var(--color-success)]' : ''}>{todayMinutes}</span>
+                                <span className="text-[13px] font-medium text-[var(--text-tertiary)] ml-1">/ {dailyGoalMinutes} min</span>
+                            </>
+                        ) : timeDisplay}
                     </p>
+                    {goalOn && (
+                        <div className="mt-2 h-[3px] rounded-full bg-[var(--surface-3)] overflow-hidden" role="progressbar" aria-valuenow={goalPct} aria-valuemin={0} aria-valuemax={100}>
+                            <div
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ width: `${goalPct}%`, background: goalMet ? 'var(--color-success)' : 'var(--color-accent)' }}
+                            />
+                        </div>
+                    )}
                 </div>
 
                 {/* Vertical hairline */}

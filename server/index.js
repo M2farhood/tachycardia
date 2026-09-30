@@ -89,7 +89,9 @@ if (process.env.SERVE_STATIC === 'true') {
         app.use(express.static(distDir, { index: false, maxAge: '1h' }))
         app.get(/^(?!\/api).*/, (req, res) => {
             res.setHeader('Cache-Control', 'no-cache')
-            res.sendFile(join(distDir, 'index.html'))
+            // `root` keeps the path check relative to dist/, so a hidden folder
+            // higher up the path (e.g. a .claude/ worktree) can't 404 the app.
+            res.sendFile('index.html', { root: distDir })
         })
         console.log(`📦 Serving static frontend from ${distDir}`)
     } else {
@@ -101,6 +103,10 @@ if (process.env.SERVE_STATIC === 'true') {
 
 // Four arguments are what marks this as Express's error handler.
 app.use((err, req, res, _next) => {
+    const status = err.status || err.statusCode
+    if (status && status < 500) {
+        return res.status(status).json({ error: status === 404 ? 'Not found' : 'Bad request' })
+    }
     console.error('[api] error:', err.message)
     if (err.code === 'NO_PROVIDER') {
         return res.status(503).json({ error: 'AI is not configured on the server.' })

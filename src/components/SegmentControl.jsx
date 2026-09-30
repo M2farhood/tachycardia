@@ -1,10 +1,10 @@
-import { Plus, MoreVertical, Trash2, Edit2, Heart, CalendarDays, LayoutGrid, Search, X as XIcon } from 'lucide-react'
+import { Plus, MoreVertical, Trash2, Edit2, Search, X as XIcon } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createEmptyTab } from '../utils/templates'
 import ConfirmDialog from './ConfirmDialog'
 
-const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate, onTachycardiaClick, showTachycardia, onCalendarClick, showCalendar, onBlocksClick, showBlocks }) => {
+const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete, onTabUpdate }) => {
     const [menuTabId, setMenuTabId] = useState(null)
     const [showSearch, setShowSearch] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -29,6 +29,14 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
     const [editValue, setEditValue] = useState('')
     const menuRef = useRef(null)
     const editInputRef = useRef(null)
+    const [isAdding, setIsAdding] = useState(false)
+    const [newName, setNewName] = useState('')
+    const addInputRef = useRef(null)
+    const addingRef = useRef(false)
+
+    useEffect(() => {
+        if (isAdding) addInputRef.current?.focus()
+    }, [isAdding])
 
     // Focus + select the rename input when inline editing starts
     useEffect(() => {
@@ -60,12 +68,30 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
         }
     }, [])
 
-    const handleAddSection = () => {
+    const startAdd = () => {
+        addingRef.current = true
+        setNewName('')
+        setIsAdding(true)
+    }
+
+    const commitAdd = () => {
+        if (!addingRef.current) return // already handled (Enter then blur)
+        addingRef.current = false
+        const name = newName.trim()
+        setIsAdding(false)
+        setNewName('')
+        if (!name) return
         const newTab = createEmptyTab()
-        newTab.title = `Section ${tabs.length + 1}`
+        newTab.title = name
         newTab.emoji = ''
         onTabAdd(newTab)
         onTabChange(newTab.id)
+    }
+
+    const cancelAdd = () => {
+        addingRef.current = false
+        setIsAdding(false)
+        setNewName('')
     }
 
     const handleRename = (tab) => {
@@ -111,7 +137,7 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
 
     return (
         <>
-            <div className="px-6 no-print space-y-2">
+            <div className="px-6 no-print">
                 {/* Row 1: Scrollable section tabs */}
                 <div className="segment-control w-full flex items-center gap-2">
                     {showSearch ? (
@@ -184,14 +210,33 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                             )
                         })}
 
-                        {/* Add Section Button */}
-                        <button
-                            onClick={handleAddSection}
-                            className="segment-btn liquid-press flex-shrink-0 !text-[var(--text-tertiary)] hover:!text-[var(--text-secondary)] !px-3"
-                            title="Add Section"
-                        >
-                            <Plus size={16} />
-                        </button>
+                        {/* Add Section: inline name input, nothing is created without a name */}
+                        {isAdding ? (
+                            <span className="segment-btn active whitespace-nowrap flex-shrink-0">
+                                <input
+                                    ref={addInputRef}
+                                    value={newName}
+                                    onChange={(e) => setNewName(e.target.value)}
+                                    onBlur={commitAdd}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') commitAdd()
+                                        else if (e.key === 'Escape') cancelAdd()
+                                    }}
+                                    placeholder="Name this section"
+                                    className="bg-transparent outline-none text-xs sm:text-sm text-current placeholder:text-current placeholder:opacity-60"
+                                    style={{ width: '15ch' }}
+                                />
+                            </span>
+                        ) : (
+                            <button
+                                onClick={startAdd}
+                                className="segment-btn liquid-press flex-shrink-0 !text-[var(--text-tertiary)] hover:!text-[var(--text-secondary)] !px-3"
+                                title="Add Section"
+                                aria-label="Add Section"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        )}
                     </div>
                     )} {/* end search/tabs conditional */}
 
@@ -199,51 +244,11 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                     {searchEnabled && (
                         <button
                             onClick={() => { setShowSearch(v => !v); setSearchQuery('') }}
-                            className={`p-2 rounded-xl flex-shrink-0 transition-all ${showSearch ? 'bg-[var(--color-accent)] text-white' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'}`}
+                            className={`p-2 rounded-xl flex-shrink-0 transition-all ${showSearch ? 'bg-[var(--color-accent)] text-[var(--on-accent)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'}`}
                         >
                             {showSearch ? <XIcon size={15} /> : <Search size={15} />}
                         </button>
                     )}
-                </div>
-
-                {/* Row 2: Utility views — full width, three equal buttons */}
-                <div className="grid grid-cols-3 gap-1.5">
-                    <button
-                        onClick={onBlocksClick}
-                        className={`py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${showBlocks
-                            ? 'bg-[var(--color-accent)] text-white'
-                            : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 border border-white/10'
-                            }`}
-                    >
-                        <LayoutGrid size={15} />
-                        <span className="text-xs font-medium">Blocks</span>
-                    </button>
-
-                    <button
-                        onClick={onCalendarClick}
-                        className={`py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${showCalendar
-                            ? 'bg-[var(--color-accent)] text-white'
-                            : 'bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 border border-white/10'
-                            }`}
-                    >
-                        <CalendarDays size={15} />
-                        <span className="text-xs font-medium">Calendar</span>
-                    </button>
-
-                    <button
-                        onClick={onTachycardiaClick}
-                        className={`py-2 rounded-xl flex items-center justify-center gap-2 transition-all ${showTachycardia
-                            ? 'bg-accent text-white'
-                            : 'bg-[var(--surface-2)] text-[var(--text-secondary)] border border-[var(--border)] hover:bg-[var(--surface-3)]'
-                            }`}
-                    >
-                        <Heart
-                            size={15}
-                            className={showTachycardia ? 'text-white' : ''}
-                            fill={showTachycardia ? 'currentColor' : 'none'}
-                        />
-                        <span className="text-xs font-medium">Tachycardia</span>
-                    </button>
                 </div>
             </div>
 
@@ -265,18 +270,16 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                         <Edit2 size={14} />
                         Rename
                     </button>
-                    {tabs.length > 1 && (
-                        <button
-                            onClick={() => {
-                                setDeleteConfirm(menuTabId)
-                                setMenuTabId(null)
-                            }}
-                            className="w-full px-4 py-2.5 text-left text-base text-red-400 hover:bg-red-500/10 flex items-center gap-3"
-                        >
-                            <Trash2 size={14} />
-                            Delete
-                        </button>
-                    )}
+                    <button
+                        onClick={() => {
+                            setDeleteConfirm(menuTabId)
+                            setMenuTabId(null)
+                        }}
+                        className="w-full px-4 py-2.5 text-left text-base text-[var(--color-danger)] hover:bg-[var(--color-danger)]/10 flex items-center gap-3"
+                    >
+                        <Trash2 size={14} />
+                        Delete
+                    </button>
                 </div>,
                 document.body
             )}

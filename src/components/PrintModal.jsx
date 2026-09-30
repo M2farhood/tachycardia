@@ -299,7 +299,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
             <span className="text-[var(--text-primary)] font-medium">All Sections</span>
             <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${printAll ? 'bg-accent' : 'border border-[var(--border)]'
               }`}>
-              {printAll && <Check size={14} className="text-white" />}
+              {printAll && <Check size={14} className="text-on-accent" />}
             </div>
           </button>
 
@@ -324,7 +324,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
                   </div>
                   <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${isSelected ? 'bg-accent' : 'border border-[var(--border)]'
                     }`}>
-                    {isSelected && <Check size={14} className="text-white" />}
+                    {isSelected && <Check size={14} className="text-on-accent" />}
                   </div>
                 </button>
               )
@@ -337,7 +337,7 @@ const PrintModal = ({ isOpen, onClose, tabs }) => {
           <button
             onClick={handlePrint}
             disabled={selectedTabs.size === 0}
-            className="w-full py-3 bg-accent hover:opacity-90 disabled:bg-[var(--surface-3)] disabled:text-[var(--text-tertiary)] text-white font-medium rounded-xl transition-colors liquid-press"
+            className="w-full py-3 bg-accent hover:opacity-90 disabled:bg-[var(--surface-3)] disabled:text-[var(--text-tertiary)] text-on-accent font-medium rounded-xl transition-colors liquid-press"
           >
             Print {selectedTabs.size > 0 ? `(${selectedTabs.size} section${selectedTabs.size > 1 ? 's' : ''})` : ''}
           </button>

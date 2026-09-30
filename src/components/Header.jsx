@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Brain } from 'lucide-react'
+import { Brain, LayoutGrid, CalendarDays, Heart } from 'lucide-react'
 import SettingsModal from './SettingsModal'
 
 const Header = ({
@@ -10,7 +10,6 @@ const Header = ({
     onImport,
     onClearAll,
     onSettingsChange,
-    onImportTasks,
     // Auth props
     user = null,
     isAuthLoading = false,
@@ -20,7 +19,10 @@ const Header = ({
     onSignOut = () => { },
     isFirebaseConfigured = false,
     isFocusMode = false,
-    onToggleFocus = () => { }
+    onToggleFocus = () => { },
+    activeView = null,
+    onViewChange = () => { },
+    showTachycardia = true
 }) => {
     const [showSettings, setShowSettings] = useState(false)
 
@@ -35,43 +37,64 @@ const Header = ({
         return 'Good Evening'
     }
 
+    const views = [
+        { id: 'blocks', label: 'Blocks', icon: <LayoutGrid size={16} /> },
+        { id: 'calendar', label: 'Calendar', icon: <CalendarDays size={16} /> },
+        ...(showTachycardia ? [{ id: 'tachycardia', label: 'Tachycardia', icon: <Heart size={16} /> }] : []),
+    ]
+
+    // 36px circle visually; the ::after pad brings the touch target to 40px+
+    const circle = (active) =>
+        `relative w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 liquid-press transition-colors after:content-[''] after:absolute after:-inset-[3px] ${active
+            ? 'bg-[var(--color-accent)] text-[var(--on-accent)]'
+            : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+        }`
+
     return (
         <>
-            <header className="px-6 pt-8 pb-3 no-print">
-                <div className="flex items-start justify-between">
+            <header className="px-4 sm:px-6 pt-6 pb-3 no-print">
+                <div className="flex items-center justify-between gap-3">
                     {/* Left side - Greeting */}
-                    <div>
-                        <p className="text-[11px] font-medium uppercase tracking-widest text-[var(--text-tertiary)] mb-1">
-                            Dashboard
-                        </p>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-                            {getGreeting()}, {userName}
-                        </h1>
-                    </div>
+                    <h1 className="min-w-0 flex-1 truncate text-base sm:text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+                        {getGreeting()}, {userName}
+                    </h1>
 
-                    {/* Right side - Avatar & Settings */}
-                    <div className="flex items-center gap-3">
-                        {/* Focus Mode Toggle */}
+                    {/* Right side - view switches, focus, avatar */}
+                    <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                        {views.map(({ id, label, icon }) => {
+                            const active = activeView === id
+                            return (
+                                <button
+                                    key={id}
+                                    onClick={() => onViewChange(active ? null : id)}
+                                    aria-label={label}
+                                    aria-pressed={active}
+                                    title={label}
+                                    className={circle(active)}
+                                >
+                                    {icon}
+                                </button>
+                            )
+                        })}
+
                         <button
                             onClick={onToggleFocus}
-                            className={`p-2.5 rounded-full liquid-press touch-target transition-all ${isFocusMode
-                                ? 'bg-accent text-white shadow-[0_0_20px_var(--color-accent-glow)]'
-                                : 'bg-[var(--surface-1)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                                }`}
-                            title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
+                            aria-label={isFocusMode ? 'Exit Focus Mode' : 'Focus Mode'}
+                            aria-pressed={isFocusMode}
+                            title={isFocusMode ? 'Exit Focus Mode' : 'Focus Mode'}
+                            className={circle(isFocusMode)}
                         >
-                            <Brain size={18} />
+                            <Brain size={16} />
                         </button>
 
                         {/* User Avatar — tap to open Settings */}
                         <button
                             onClick={() => setShowSettings(true)}
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full glow-avatar overflow-hidden bg-accent flex items-center justify-center liquid-press touch-target"
+                            aria-label="Settings"
                             title="Settings"
+                            className={`${circle(false)} !bg-[var(--color-accent)] !text-[var(--on-accent)] text-sm font-bold`}
                         >
-                            <span className="text-lg sm:text-xl font-bold text-white">
-                                {userName.charAt(0).toUpperCase()}
-                            </span>
+                            {userName.charAt(0).toUpperCase()}
                         </button>
                     </div>
                 </div>
@@ -87,7 +110,6 @@ const Header = ({
                 onImport={onImport}
                 onClearAll={onClearAll}
                 onSettingsChange={onSettingsChange}
-                onImportTasks={onImportTasks}
                 // Auth props
                 user={user}
                 isAuthLoading={isAuthLoading}

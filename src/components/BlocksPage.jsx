@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { localDateKey } from '../utils/dateKeys'
 import { Plus, ChevronLeft, ChevronRight, X, Check, LayoutGrid, BookOpen } from 'lucide-react'
 
 // ─── Time helpers ────────────────────────────────────────────────────────────
@@ -85,7 +86,7 @@ const TIME_OPTIONS = Array.from({ length: 48 }, (_, i) => {
 // Same as TIME_OPTIONS but includes midnight as a valid end time
 const END_TIME_OPTIONS = [...TIME_OPTIONS, { value: '24:00', label: '12:00 AM' }]
 
-const formatDateKey = (d) => d.toISOString().split('T')[0]
+const formatDateKey = localDateKey
 
 // ─── Timer helpers ────────────────────────────────────────────────────────────
 
@@ -205,7 +206,7 @@ function NewBlockForm({ blocks, onCreate, onCancel }) {
               onClick={() => handleDurChange(i)}
               className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 durIdx === i
-                  ? 'bg-[var(--color-accent)] text-white'
+                  ? 'bg-[var(--color-accent)] text-on-accent'
                   : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)]'
               }`}
             >
@@ -240,7 +241,7 @@ function NewBlockForm({ blocks, onCreate, onCancel }) {
         <button
           onClick={() => duration && onCreate({ startTime, endTime })}
           disabled={!duration}
-          className="flex-1 py-2 rounded-lg bg-[var(--color-accent)] text-white text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
+          className="flex-1 py-2 rounded-lg bg-[var(--color-accent)] text-on-accent text-sm font-medium disabled:opacity-40 hover:opacity-90 transition-opacity"
         >
           Create
         </button>
@@ -334,7 +335,7 @@ function BlockCard({ block, tabs, isEditing, onEditToggle, onDelete }) {
       {/* Delete button (hover) */}
       <button
         onClick={(e) => { e.stopPropagation(); onDelete() }}
-        className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-[var(--surface-3)] border border-[var(--border)] hidden group-hover:flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--color-danger)] hover:border-red-500/40 transition-all z-20"
+        className="absolute -top-2.5 -right-2.5 w-6 h-6 rounded-full bg-[var(--surface-3)] border border-[var(--border)] flex [@media(hover:hover)]:hidden [@media(hover:hover)]:group-hover:flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--color-danger)] hover:border-[var(--color-danger)] transition-all z-20"
       >
         <X size={10} />
       </button>
@@ -633,7 +634,7 @@ export default function BlocksPage({ blocks, onAddBlock, onDeleteBlock, onToggle
             </div>
             <button
               onClick={() => setShowNewBlock(true)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-accent)] text-white text-sm font-medium hover:opacity-90 transition-opacity liquid-press"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[var(--color-accent)] text-on-accent text-sm font-medium hover:opacity-90 transition-opacity liquid-press"
             >
               <Plus size={15} />
               Add first block

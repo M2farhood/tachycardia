@@ -1,10 +1,76 @@
 import { useState, useRef } from 'react'
-import { X, Upload, Download, Trash2, Clock, Printer, User, MoreHorizontal, BarChart2, Sun, Moon, FileText, Cloud, CloudOff, Loader, LogOut, CheckCircle, ChevronDown, Heart } from 'lucide-react'
-import { exportData, importData, getStorageUsage } from '../utils/exportImport'
+import { X, Upload, Download, Clock, Printer, User, BarChart2, Sun, Moon, Cloud, CloudOff, Loader, LogOut, CheckCircle, ChevronDown, Heart, Minus, Plus } from 'lucide-react'
+import { exportData, importData } from '../utils/exportImport'
+import { getSetting } from '../utils/settingsDefaults'
 import ConfirmDialog from './ConfirmDialog'
 import PrintModal from './PrintModal'
 import PerformanceModal from './PerformanceModal'
-import PlanImporterModal from './PlanImporterModal'
+
+// ---- small building blocks for the Advanced section ----------------------
+const GroupLabel = ({ children }) => (
+    <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)] pt-3 pb-1 border-t border-[var(--border-subtle)]">
+        {children}
+    </p>
+)
+
+const ToggleRow = ({ label, hint, checked, onChange }) => (
+    <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className="w-full flex items-center justify-between gap-3 py-2 text-left min-h-[40px]"
+    >
+        <span className="min-w-0">
+            <span className="block text-[14px] text-[var(--text-primary)]">{label}</span>
+            {hint && <span className="block text-[11px] text-[var(--text-tertiary)]">{hint}</span>}
+        </span>
+        <span className={`w-9 h-5 rounded-full p-0.5 flex-shrink-0 transition-colors ${checked ? 'bg-[var(--color-accent)]' : 'bg-[var(--surface-3)]'}`}>
+            <span className={`block w-4 h-4 rounded-full bg-[var(--on-accent)] shadow-sm transition-transform ${checked ? 'translate-x-4' : 'translate-x-0'}`} />
+        </span>
+    </button>
+)
+
+const PillRow = ({ label, options, value, onChange }) => (
+    <div className="py-2">
+        <p className="text-[14px] text-[var(--text-primary)] mb-1.5">{label}</p>
+        <div className="flex gap-1.5 flex-wrap">
+            {options.map(([v, text]) => (
+                <button
+                    key={String(v)}
+                    type="button"
+                    onClick={() => onChange(v)}
+                    aria-pressed={value === v}
+                    className={`px-3 py-1.5 rounded-full text-[13px] font-medium transition-colors ${value === v
+                        ? 'bg-[var(--color-accent)] text-[var(--on-accent)]'
+                        : 'bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)]'
+                        }`}
+                >
+                    {text}
+                </button>
+            ))}
+        </div>
+    </div>
+)
+
+const StepperRow = ({ label, value, min, max, step = 5, unit, onChange }) => {
+    const clamp = (n) => Math.min(max, Math.max(min, n))
+    const btn = 'w-8 h-8 rounded-full flex items-center justify-center bg-[var(--surface-2)] text-[var(--text-secondary)] hover:bg-[var(--surface-3)] disabled:opacity-30 transition-colors'
+    return (
+        <div className="flex items-center justify-between gap-3 py-2 min-h-[40px]">
+            <span className="text-[14px] text-[var(--text-primary)]">{label}</span>
+            <div className="flex items-center gap-2 flex-shrink-0">
+                <button type="button" className={btn} aria-label={`Decrease ${label}`} disabled={value <= min} onClick={() => onChange(clamp(value - step))}>
+                    <Minus size={14} />
+                </button>
+                <span className="min-w-[56px] text-center text-[14px] font-medium text-[var(--text-primary)] tabular-nums">{value} {unit}</span>
+                <button type="button" className={btn} aria-label={`Increase ${label}`} disabled={value >= max} onClick={() => onChange(clamp(value + step))}>
+                    <Plus size={14} />
+                </button>
+            </div>
+        </div>
+    )
+}
 
 const SettingsModal = ({
     isOpen,
@@ -16,7 +82,6 @@ const SettingsModal = ({
     onImport,
     onClearAll,
     onSettingsChange,
-    onImportTasks,
     // Auth props
     user = null,
     isAuthLoading = false,
@@ -32,22 +97,17 @@ const SettingsModal = ({
     const [showPerformance, setShowPerformance] = useState(false)
     const [editingName, setEditingName] = useState(false)
     const [nameValue, setNameValue] = useState(settings?.userName || '')
-    const [showDataMenu, setShowDataMenu] = useState(false)
-    const [showPlanImporter, setShowPlanImporter] = useState(false)
     const [showAdvanced, setShowAdvanced] = useState(false)
     const fileInputRef = useRef(null)
-    const storage = getStorageUsage()
 
     if (!isOpen) return null
 
     const handleExport = () => {
         exportData(data)
-        setShowDataMenu(false)
     }
 
     const handleImportClick = () => {
         fileInputRef.current?.click()
-        setShowDataMenu(false)
     }
 
     const handleFileChange = async (e) => {
@@ -71,7 +131,7 @@ const SettingsModal = ({
         setEditingName(false)
     }
 
-    const timerDuration = settings?.timerDuration || 25
+    const timerDuration = getSetting(settings, 'timerDuration')
     const userName = settings?.userName || 'Student'
     const theme = settings?.theme || 'dark'
 
@@ -114,7 +174,7 @@ const SettingsModal = ({
                                     />
                                     <button
                                         onClick={handleNameSave}
-                                        className="px-4 py-2 bg-accent text-white text-[15px] font-medium rounded-xl"
+                                        className="px-4 py-2 bg-accent text-on-accent text-[15px] font-medium rounded-xl"
                                     >
                                         Save
                                     </button>
@@ -145,7 +205,7 @@ const SettingsModal = ({
                                     onClick={onSignIn}
                                     disabled={isAuthLoading || !isFirebaseConfigured}
                                     className={`w-full px-4 py-3 rounded-xl text-base font-medium transition-all liquid-press flex items-center justify-center gap-3 ${isFirebaseConfigured
-                                            ? 'bg-gradient-to-r from-blue-500/20 via-red-500/20 to-yellow-500/20 hover:from-blue-500/30 hover:via-red-500/30 hover:to-yellow-500/30 border border-white/10 text-white'
+                                            ? 'bg-gradient-to-r from-blue-500/20 via-red-500/20 to-yellow-500/20 hover:from-blue-500/30 hover:via-red-500/30 hover:to-yellow-500/30 border border-[var(--border)] text-[var(--text-primary)]'
                                             : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] cursor-not-allowed'
                                         }`}
                                 >
@@ -241,7 +301,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'dark' })}
                                     className={`flex-1 py-2.5 rounded-xl text-[15px] font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'dark'
-                                        ? 'bg-accent text-white'
+                                        ? 'bg-accent text-on-accent'
                                         : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
                                         }`}
                                 >
@@ -251,7 +311,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ theme: 'light' })}
                                     className={`flex-1 py-2.5 rounded-xl text-[15px] font-medium transition-all liquid-press flex items-center justify-center gap-2 ${theme === 'light'
-                                        ? 'bg-accent text-white'
+                                        ? 'bg-accent text-on-accent'
                                         : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
                                         }`}
                                 >
@@ -271,7 +331,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 15 })}
                                     className={`flex-1 py-2.5 rounded-xl text-[15px] font-medium transition-all liquid-press ${timerDuration === 15
-                                        ? 'bg-accent text-white'
+                                        ? 'bg-accent text-on-accent'
                                         : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
                                         }`}
                                 >
@@ -280,7 +340,7 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 25 })}
                                     className={`flex-1 py-2.5 rounded-xl text-[15px] font-medium transition-all liquid-press ${timerDuration === 25
-                                        ? 'bg-accent text-white'
+                                        ? 'bg-accent text-on-accent'
                                         : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
                                         }`}
                                 >
@@ -289,35 +349,13 @@ const SettingsModal = ({
                                 <button
                                     onClick={() => onSettingsChange({ timerDuration: 50 })}
                                     className={`flex-1 py-2.5 rounded-xl text-[15px] font-medium transition-all liquid-press ${timerDuration === 50
-                                        ? 'bg-accent text-white'
+                                        ? 'bg-accent text-on-accent'
                                         : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
                                         }`}
                                 >
                                     50 min
                                 </button>
                             </div>
-                        </div>
-
-                        {/* Spaced Repetition */}
-                        <div>
-                            <button
-                                onClick={() => onSettingsChange({ spacedRepetition: !settings?.spacedRepetition })}
-                                className={`w-full py-2.5 px-3 rounded-xl text-left text-[15px] font-medium transition-all liquid-press flex items-center justify-between ${
-                                    settings?.spacedRepetition
-                                        ? 'bg-accent/20 text-accent border border-accent/30'
-                                        : 'bg-[var(--surface-2)] text-[var(--text-tertiary)] hover:bg-[var(--surface-3)]'
-                                }`}
-                            >
-                                <span>Spaced Repetition</span>
-                                <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.spacedRepetition ? 'bg-accent' : 'bg-white/10'}`}>
-                                    <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings?.spacedRepetition ? 'translate-x-4' : 'translate-x-0'}`} />
-                                </div>
-                            </button>
-                            {settings?.spacedRepetition && (
-                                <p className="text-[11px] text-[var(--text-tertiary)] mt-1.5 px-1">
-                                    Completed topics show a review reminder after 1, 3, 7, 14 days.
-                                </p>
-                            )}
                         </div>
 
                         {/* Exam Countdown */}
@@ -337,9 +375,9 @@ const SettingsModal = ({
                                         }`}
                                 >
                                     <span>Show Countdown</span>
-                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.countdownVisible ? 'bg-accent' : 'bg-white/10'
+                                    <div className={`w-10 h-6 rounded-full p-1 transition-colors ${settings?.countdownVisible ? 'bg-accent' : 'bg-[var(--surface-3)]'
                                         }`}>
-                                        <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform ${settings?.countdownVisible ? 'translate-x-4' : 'translate-x-0'
+                                        <div className={`w-4 h-4 rounded-full bg-[var(--on-accent)] shadow-sm transition-transform ${settings?.countdownVisible ? 'translate-x-4' : 'translate-x-0'
                                             }`} />
                                     </div>
                                 </button>
@@ -384,81 +422,132 @@ const SettingsModal = ({
                                 />
                             </button>
                             {showAdvanced && (
-                                <div className="mt-2 space-y-2">
-                                    <button
-                                        onClick={() => setShowPerformance(true)}
-                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                                    >
-                                        <BarChart2 size={16} />
-                                        View All Performance
-                                    </button>
-                                    <button
-                                        onClick={() => setShowPrintModal(true)}
-                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                                    >
-                                        <Printer size={16} />
-                                        Print / Save as PDF
-                                    </button>
-                                    <button
-                                        onClick={() => setShowPlanImporter(true)}
-                                        className="w-full flex items-center gap-3 px-4 py-3 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[15px] rounded-xl transition-colors liquid-press border border-[var(--border)]"
-                                    >
-                                        <FileText size={16} />
-                                        Import Study Plan
-                                    </button>
+                                <div className="mt-2 px-1 space-y-0.5">
+                                    <div className="grid grid-cols-2 gap-2 pb-2">
+                                        <button
+                                            onClick={() => setShowPerformance(true)}
+                                            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[13px] rounded-xl transition-colors liquid-press"
+                                        >
+                                            <BarChart2 size={15} />
+                                            Performance
+                                        </button>
+                                        <button
+                                            onClick={() => setShowPrintModal(true)}
+                                            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[13px] rounded-xl transition-colors liquid-press"
+                                        >
+                                            <Printer size={15} />
+                                            Print / PDF
+                                        </button>
+                                    </div>
 
-                                    {/* Storage + Export/Import */}
-                                    <div className="flex items-center gap-3 px-1 py-1">
-                                        <div className="flex-1">
-                                            <div className="flex items-center justify-between text-[11px] text-[var(--text-tertiary)] mb-1">
-                                                <span>Storage</span>
-                                                <span>{storage.usedFormatted}</span>
-                                            </div>
-                                            <div className="h-1 bg-[var(--surface-3)] rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full rounded-full ${storage.percent > 80 ? 'bg-[var(--color-danger)]' : 'bg-accent/50'}`}
-                                                    style={{ width: `${Math.min(storage.percent, 100)}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="relative">
-                                            <button
-                                                onClick={() => setShowDataMenu(!showDataMenu)}
-                                                className="p-2 rounded-lg bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
-                                                title="Import/Export"
-                                            >
-                                                <MoreHorizontal size={16} />
-                                            </button>
-                                            {showDataMenu && (
-                                                <div className="absolute right-0 bottom-full mb-2 surface rounded-xl py-1 min-w-[100px] z-10 animate-fade-in shadow-xl">
-                                                    <button
-                                                        onClick={handleExport}
-                                                        className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
-                                                    >
-                                                        <Download size={12} />
-                                                        Export
-                                                    </button>
-                                                    <button
-                                                        onClick={handleImportClick}
-                                                        className="w-full px-3 py-2 text-left text-[13px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] flex items-center gap-2"
-                                                    >
-                                                        <Upload size={12} />
-                                                        Import
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                    <GroupLabel>Sessions</GroupLabel>
+                                    <StepperRow
+                                        label="Session length"
+                                        value={timerDuration}
+                                        min={5}
+                                        max={90}
+                                        unit="min"
+                                        onChange={(v) => onSettingsChange({ timerDuration: v })}
+                                    />
+                                    <PillRow
+                                        label="Break after a session"
+                                        value={getSetting(settings, 'breakMinutes')}
+                                        options={[[0, 'Off'], [5, '5 min'], [10, '10 min']]}
+                                        onChange={(v) => onSettingsChange({ breakMinutes: v })}
+                                    />
+                                    <ToggleRow
+                                        label="Keep screen awake"
+                                        checked={getSetting(settings, 'keepAwake')}
+                                        onChange={(v) => onSettingsChange({ keepAwake: v })}
+                                    />
+                                    <PillRow
+                                        label="End-of-session sound"
+                                        value={getSetting(settings, 'sessionSound')}
+                                        options={[['chime', 'Chime'], ['soft', 'Soft'], ['silent', 'Silent']]}
+                                        onChange={(v) => onSettingsChange({ sessionSound: v })}
+                                    />
+                                    <ToggleRow
+                                        label="Body-double check-ins"
+                                        hint="Gentle prompts while in Focus"
+                                        checked={getSetting(settings, 'bodyDouble')}
+                                        onChange={(v) => onSettingsChange({ bodyDouble: v })}
+                                    />
+
+                                    <GroupLabel>Goals</GroupLabel>
+                                    <PillRow
+                                        label="Daily study goal"
+                                        value={getSetting(settings, 'dailyGoalMinutes')}
+                                        options={[[0, 'Off'], [30, '30'], [60, '60'], [90, '90'], [120, '120']]}
+                                        onChange={(v) => onSettingsChange({ dailyGoalMinutes: v })}
+                                    />
+
+                                    <GroupLabel>Lists</GroupLabel>
+                                    <ToggleRow
+                                        label="Hide completed tasks"
+                                        checked={getSetting(settings, 'hideCompleted')}
+                                        onChange={(v) => onSettingsChange({ hideCompleted: v })}
+                                    />
+                                    <ToggleRow
+                                        label="Spaced repetition"
+                                        hint="Done topics come back for review after 1, 3, 7, 14 days"
+                                        checked={getSetting(settings, 'spacedRepetition')}
+                                        onChange={(v) => onSettingsChange({ spacedRepetition: v })}
+                                    />
+
+                                    <GroupLabel>Calendar</GroupLabel>
+                                    <PillRow
+                                        label="Week starts on"
+                                        value={getSetting(settings, 'weekStart')}
+                                        options={[['sat', 'Saturday'], ['sun', 'Sunday'], ['mon', 'Monday']]}
+                                        onChange={(v) => onSettingsChange({ weekStart: v })}
+                                    />
+                                    <ToggleRow
+                                        label="Show unfinished earlier tasks on today"
+                                        checked={getSetting(settings, 'carryOverTasks')}
+                                        onChange={(v) => onSettingsChange({ carryOverTasks: v })}
+                                    />
+
+                                    <GroupLabel>Tachycardia</GroupLabel>
+                                    <ToggleRow
+                                        label="AI assistant"
+                                        checked={getSetting(settings, 'aiEnabled')}
+                                        onChange={(v) => onSettingsChange({ aiEnabled: v })}
+                                    />
+
+                                    <GroupLabel>Comfort</GroupLabel>
+                                    <ToggleRow
+                                        label="Reduce motion"
+                                        checked={getSetting(settings, 'reduceMotion')}
+                                        onChange={(v) => onSettingsChange({ reduceMotion: v })}
+                                    />
+
+                                    <GroupLabel>Backup</GroupLabel>
+                                    <div className="grid grid-cols-2 gap-2 pt-1">
+                                        <button
+                                            onClick={handleExport}
+                                            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[13px] rounded-xl transition-colors"
+                                        >
+                                            <Download size={14} />
+                                            Export
+                                        </button>
+                                        <button
+                                            onClick={handleImportClick}
+                                            className="flex items-center justify-center gap-2 px-3 py-2.5 bg-[var(--surface-2)] hover:bg-[var(--surface-3)] text-[var(--text-secondary)] text-[13px] rounded-xl transition-colors"
+                                        >
+                                            <Upload size={14} />
+                                            Import
+                                        </button>
                                     </div>
 
                                     {importError && (
-                                        <p className="text-xs text-red-400 text-center bg-red-500/10 p-2 rounded-lg">
+                                        <p className="text-xs text-[var(--color-danger)] text-center bg-[var(--color-danger)]/10 p-2 rounded-lg">
                                             {importError}
                                         </p>
                                     )}
 
                                     <button
                                         onClick={() => setShowClearConfirm(true)}
-                                        className="w-full text-xs text-red-400/50 hover:text-red-400 py-1 transition-colors"
+                                        className="w-full text-xs text-[var(--color-danger)]/60 hover:text-[var(--color-danger)] pt-3 pb-1 transition-colors"
                                     >
                                         Clear All Data
                                     </button>
@@ -508,13 +597,6 @@ const SettingsModal = ({
                 todayMinutes={todayMinutes}
                 totalMinutes={totalMinutes}
                 studyDates={data?.studyDates || []}
-            />
-
-            <PlanImporterModal
-                isOpen={showPlanImporter}
-                onClose={() => setShowPlanImporter(false)}
-                tabs={data?.tabs || []}
-                onImportTasks={onImportTasks}
             />
         </>
     )

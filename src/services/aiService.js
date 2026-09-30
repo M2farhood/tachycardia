@@ -87,15 +87,3 @@ export function splitOptions(reply) {
 }
 
 
-// --- TEMPORARY: old names kept only until FocusMode / useAIChat /
-// PlanImporterModal are rewritten in this branch. Remove at integration. ---
-export const generateSubtasks = (taskName, data) => generateSteps(taskName, data)
-export async function askTachycardia(messages, data) {
-    return (await sendChat(messages, data)).reply
-}
-export async function parsePlanWithAI() {
-    throw new AIError('Plan import was removed.', 'REMOVED')
-}
-export function parseTaskActions(response) {
-    return { tasks: [], cleanMessage: response }
-}

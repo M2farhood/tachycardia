@@ -31,7 +31,9 @@ const TopicList = ({
     onSubtaskDelete,
     onSectionComplete,
     spacedRepetitionEnabled = false,
+    hideCompleted = false,
 }) => {
+    const [showDone, setShowDone] = useState(false)
     const [newTopicName, setNewTopicName] = useState('')
     const [editingId, setEditingId] = useState(null)
     const [expandedId, setExpandedId] = useState(null)
@@ -232,11 +234,16 @@ const TopicList = ({
         )
     }
 
+    const doneCount = tab.topics.filter(t => t.completed).length
+    const hiding = hideCompleted && !showDone
+
     return (
         <div className="px-6 py-2">
             {/* Topic Items — hairline-divider list, no card chrome */}
             <div className="border-t border-[var(--border-subtle)]">
                 {tab.topics.map((topic, index) => {
+                    // Keep the original index so drag-reorder still maps to tab.topics
+                    if (hiding && topic.completed && !isActiveTimer(topic.id)) return null
                     const isActive = isActiveTimer(topic.id)
                     const isDragging = draggedIndex === index
                     const isDragOver = dragOverIndex === index && draggedIndex !== index
@@ -278,7 +285,7 @@ const TopicList = ({
                                     onClick={() => handleToggleComplete(topic)}
                                     className={`custom-checkbox flex-shrink-0 ${topic.completed ? 'checked' : ''}`}
                                 >
-                                    {topic.completed && <Check size={16} className="text-white" />}
+                                    {topic.completed && <Check size={16} className="text-on-accent" />}
                                 </button>
 
                                 {/* Topic Content */}
@@ -377,6 +384,7 @@ const TopicList = ({
                                             const due = getReviewDue(topic)
                                             if (due === null) return null
                                             return (
+                                                <>
                                                 <span className={`flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border ${
                                                     due === 0
                                                         ? 'text-[var(--color-danger)] bg-[var(--color-danger)]/10 border-[var(--color-danger)]/20'
@@ -385,6 +393,23 @@ const TopicList = ({
                                                     <Clock size={9} />
                                                     {due === 0 ? 'Review' : `${due}d`}
                                                 </span>
+                                                {due === 0 && (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            onTopicUpdate(tab.id, topic.id, {
+                                                                reviewStage: (topic.reviewStage || 0) + 1,
+                                                                completedAt: new Date().toISOString(),
+                                                            })
+                                                        }}
+                                                        className="flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-2)] transition-colors"
+                                                        title="Mark this review as done"
+                                                    >
+                                                        <Check size={10} />
+                                                        Reviewed
+                                                    </button>
+                                                )}
+                                                </>
                                             )
                                         })()}
                                         {topic.category && (
@@ -472,6 +497,15 @@ const TopicList = ({
                     )
                 })}
             </div>
+
+            {hideCompleted && doneCount > 0 && (
+                <button
+                    onClick={() => setShowDone(v => !v)}
+                    className="mt-2 text-[12px] text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+                >
+                    {showDone ? 'Hide done' : `Show ${doneCount} done`}
+                </button>
+            )}
 
             {/* Add Topic - Always visible and prominent */}
             <div className="pt-3 pb-2">

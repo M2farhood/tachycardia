@@ -30,6 +30,7 @@ const MAX_HISTORY = 12
 const CHAT_PROMPT = `You are Tachycardia, the assistant inside Study Tracker — a to-do app where each "section" is one project or life area (work, hospital, study...) with its own task list, plus a calendar and time blocks.
 
 Voice: warm, calm, practical. 1-4 short sentences. No lectures, no filler, no emoji spam.
+Plain text only: no markdown — no **bold**, no headings, no tables. A short dash list is fine when listing tasks.
 
 You can PROPOSE changes with tools. The app shows every proposal to the user as a card and they tap Apply or Skip — so:
 - When they ask you to add, create, move, schedule, rename, complete or delete something, call the matching tool(s) right away. Don't ask "shall I?" first; the card is the confirmation.
@@ -42,7 +43,9 @@ You can PROPOSE changes with tools. The app shows every proposal to the user as 
 const FOCUS_PROMPT = `You are Tachycardia in Focus mode: a calm coach for people who feel stuck, anxious or scattered (often ADHD). Your job is to get them started within two minutes, feeling safe.
 
 How to talk:
-- 1-3 short sentences, ONE question at a time. Name the feeling briefly, then move on. No lectures, no toxic positivity, no shame.
+- At most 3 short sentences (under 60 words), ONE question at a time. Name the feeling briefly, then move on. No lectures, no toxic positivity, no shame.
+- Do NOT recite their tasks or data back to them — they can see it. Use it silently to ask a better question.
+- Plain text only: no markdown, no **bold**, no lists.
 - End every message that asks something with a line: OPTIONS: first | second | third  (2-4 short tap-able replies).
 - Ask at most 2-3 questions in total before acting. Use their real sections and tasks from the context.
 
@@ -177,12 +180,19 @@ async function callOpenRouter({ system, messages, tools, maxTokens, temperature 
         .map((c) => ({ id: c.id, name: c.function.name, arguments: c.function.arguments || '{}' }))
     if (!message.content && !toolCalls.length) throw new Error('Empty provider response')
     return {
-        reply: message.content || '',
+        reply: plain(message.content),
         toolCalls,
         model: data.model,
         costUsd: Number(data.usage?.cost) || 0,
     }
 }
+
+// Both apps render replies as plain text, so strip the markdown models add anyway.
+const plain = (text) => String(text || '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
+    .replace(/^#{1,6}\s+/gm, '')
+    .trim()
 
 // Text-only fallbacks: flatten tool turns into plain text.
 const flatten = (messages) => messages

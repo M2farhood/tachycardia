@@ -1,34 +1,48 @@
-import { useState, useMemo } from 'react'
-import { ChevronLeft, ChevronRight, Circle, Clock } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import CalendarDayColumn from './CalendarDayColumn'
+import { localDateKey, addDays } from '../utils/dateKeys'
+import { WEEK_START_OFFSETS } from '../utils/settingsDefaults'
 
-// Get the Saturday that starts the week containing `date`
-const getWeekStartSaturday = (date) => {
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] // by JS getDay()
+const FULL_DAY_LABELS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const CARRY_OVER_DAYS = 14
+
+// First day of the week containing `date`, given the JS getDay() of the first column.
+const getWeekStart = (date, firstDay) => {
     const d = new Date(date)
-    const day = d.getDay() // 0=Sun, 6=Sat
-    const offset = (day + 1) % 7
-    d.setDate(d.getDate() - offset)
     d.setHours(0, 0, 0, 0)
-    return d
+    return addDays(d, -((d.getDay() - firstDay + 7) % 7))
 }
 
-const DAY_LABELS = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
-const FULL_DAY_LABELS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
-const formatDateKey = (d) => d.toISOString().split('T')[0]
 const formatWeekRange = (start) => {
-    const end = new Date(start)
-    end.setDate(end.getDate() + 6)
-    const sameMonth = start.getMonth() === end.getMonth()
-    if (sameMonth) {
+    const end = addDays(start, 6)
+    if (start.getMonth() === end.getMonth()) {
         return `${MONTH_NAMES[start.getMonth()]} ${start.getDate()} – ${end.getDate()}`
     }
     return `${MONTH_NAMES[start.getMonth()]} ${start.getDate()} – ${MONTH_NAMES[end.getMonth()]} ${end.getDate()}`
 }
 
+// True at >= 1024px (Tailwind `lg`).
+const useIsDesktop = () => {
+    const query = '(min-width: 1024px)'
+    const [matches, setMatches] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
+    useEffect(() => {
+        const mq = window.matchMedia(query)
+        const onChange = () => setMatches(mq.matches)
+        mq.addEventListener('change', onChange)
+        onChange()
+        return () => mq.removeEventListener('change', onChange)
+    }, [])
+    return matches
+}
+
 const CalendarPage = ({
-    isFocusMode = false,
+    // eslint-disable-next-line no-unused-vars
+    isFocusMode = false, // accepted for compatibility; Focus mode lives elsewhere now
+    weekStart = 'sat',
+    carryOverTasks = false,
     tasks = {},
     onAddTask,
     onToggleTask,
@@ -40,157 +54,148 @@ const CalendarPage = ({
     onDeleteSubtask
 }) => {
     const [weekOffset, setWeekOffset] = useState(0)
+    const [selectedKey, setSelectedKey] = useState(null)
+    const isDesktop = useIsDesktop()
 
-    const today = useMemo(() => {
-        const d = new Date()
-        d.setHours(0, 0, 0, 0)
-        return d
-    }, [])
+    const todayKey = localDateKey()
+    const firstDay = WEEK_START_OFFSETS[weekStart] ?? WEEK_START_OFFSETS.sat
 
-    const todayKey = formatDateKey(today)
+    const weekStartDate = useMemo(() => {
+        const base = getWeekStart(new Date(), firstDay)
+        return addDays(base, weekOffset * 7)
+        // todayKey re-evaluates the base after midnight
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [firstDay, weekOffset, todayKey])
 
-    const weekStart = useMemo(() => {
-        const base = getWeekStartSaturday(today)
-        base.setDate(base.getDate() + weekOffset * 7)
-        return base
-    }, [today, weekOffset])
+    const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => {
+        const d = addDays(weekStartDate, i)
+        const key = localDateKey(d)
+        return {
+            dateKey: key,
+            dayLabel: DAY_LABELS[d.getDay()],
+            fullDayLabel: FULL_DAY_LABELS[d.getDay()],
+            dateNum: d.getDate(),
+            month: MONTH_NAMES[d.getMonth()],
+            isToday: key === todayKey
+        }
+    }), [weekStartDate, todayKey])
 
-    const weekDays = useMemo(() => {
-        return Array.from({ length: 7 }, (_, i) => {
-            const d = new Date(weekStart)
-            d.setDate(d.getDate() + i)
-            return {
-                date: d,
-                dateKey: formatDateKey(d),
-                dayLabel: DAY_LABELS[i],
-                fullDayLabel: FULL_DAY_LABELS[i],
-                dateNum: d.getDate(),
-                month: MONTH_NAMES[d.getMonth()],
-                isToday: formatDateKey(d) === todayKey
-            }
-        })
-    }, [weekStart, todayKey])
+    const selected = weekDays.find(d => d.dateKey === selectedKey)
+        || weekDays.find(d => d.isToday)
+        || weekDays[0]
 
-    if (isFocusMode) {
-        // ... existing Focus Mode logic (unchanged for now) ...
-        const todaysTasks = tasks[todayKey] || []
+    // Unfinished tasks from the previous 14 days — display only.
+    const carryOver = useMemo(() => {
+        if (!carryOverTasks) return []
+        const out = []
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        for (let i = 1; i <= CARRY_OVER_DAYS; i++) {
+            const d = addDays(today, -i)
+            const list = tasks[localDateKey(d)] || []
+            list.filter(t => !t.completed).forEach(task => {
+                out.push({
+                    dateKey: localDateKey(d),
+                    task,
+                    label: `${DAY_LABELS[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`
+                })
+            })
+        }
+        return out
+    }, [carryOverTasks, tasks, todayKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-        return (
-            <div className="flex flex-col items-center min-h-[60vh] animate-fade-in max-w-2xl mx-auto w-full pt-12">
-                <h2 className="text-3xl font-bold text-white mb-12 flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-accent animate-pulse box-shadow-glow"></span>
-                    Today's Timeline
-                </h2>
-
-                <div className="w-full relative pl-8 border-l-2 border-white/10 ml-4 space-y-12 pb-20">
-                    {todaysTasks.length === 0 ? (
-                        <div className="text-[var(--text-tertiary)] italic pl-4">No tasks scheduled for today. Enjoy your freedom!</div>
-                    ) : (
-                        todaysTasks.map((task) => (
-                            <div key={task.id} className="relative group">
-                                {/* Timeline Dot */}
-                                <div className={`absolute -left-[41px] top-1 w-5 h-5 rounded-full border-4 border-[#0a0c10] ${task.completed ? 'bg-green-500' : 'bg-accent'} transition-colors`}></div>
-
-                                <div className={`p-6 rounded-2xl border transition-all ${task.completed
-                                    ? 'bg-white/5 border-transparent opacity-50'
-                                    : 'bg-white/10 border-white/10 hover:border-accent/50 hover:bg-white/15'
-                                    }`}>
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <h3 className={`text-xl font-medium mb-2 ${task.completed ? 'line-through text-[var(--text-tertiary)]' : 'text-[var(--text-primary)]'}`}>
-                                                {task.text}
-                                            </h3>
-                                            <div className="flex items-center gap-4 text-[13px] text-[var(--text-tertiary)]">
-                                                {task.time && (
-                                                    <span className="flex items-center gap-1.5">
-                                                        <Clock size={14} /> {task.time}
-                                                    </span>
-                                                )}
-                                                <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/5">
-                                                    {task.category || 'General'}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <button
-                                            onClick={() => onToggleTask(todayKey, task.id)}
-                                            className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${task.completed
-                                                ? 'bg-green-500 border-green-500 text-black'
-                                                : 'border-white/30 hover:border-white text-transparent'
-                                                }`}
-                                        >
-                                            <Circle size={16} fill="currentColor" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-            </div>
-        )
+    const dayProps = {
+        onAddTask, onToggleTask, onEditTask, onDeleteTask, onClearDay,
+        onAddSubtask, onToggleSubtask, onDeleteSubtask
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-180px)] overflow-hidden">
-            {/* Sticky week header */}
-            <div className="flex items-center justify-between px-6 py-4">
-                <button
-                    onClick={() => setWeekOffset(prev => prev - 1)}
-                    className="p-2 hover:bg-[var(--surface-2)] rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                    title="Previous week"
-                >
-                    <ChevronLeft size={24} />
-                </button>
-
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {formatWeekRange(weekStart)}
-                    </h2>
+        <div className="flex flex-col animate-fade-in px-4 sm:px-6 pb-8 max-w-[1600px] mx-auto w-full">
+            {/* Week header */}
+            <div className="flex items-center justify-between gap-2 py-4">
+                <h2 dir="ltr" className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+                    {formatWeekRange(weekStartDate)}
+                </h2>
+                <div className="flex items-center gap-1">
                     {weekOffset !== 0 && (
                         <button
-                            onClick={() => setWeekOffset(0)}
-                            className="text-sm text-accent hover:opacity-80 hover:underline mt-1"
+                            onClick={() => { setWeekOffset(0); setSelectedKey(null) }}
+                            className="px-3 h-9 mr-1 rounded-full text-[13px] font-medium text-accent border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
                         >
-                            Back to this week
+                            Today
                         </button>
                     )}
+                    <button
+                        onClick={() => setWeekOffset(prev => prev - 1)}
+                        className="w-9 h-9 flex items-center justify-center hover:bg-[var(--surface-2)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                        aria-label="Previous week"
+                        title="Previous week"
+                    >
+                        <ChevronLeft size={20} />
+                    </button>
+                    <button
+                        onClick={() => setWeekOffset(prev => prev + 1)}
+                        className="w-9 h-9 flex items-center justify-center hover:bg-[var(--surface-2)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+                        aria-label="Next week"
+                        title="Next week"
+                    >
+                        <ChevronRight size={20} />
+                    </button>
                 </div>
-
-                <button
-                    onClick={() => setWeekOffset(prev => prev + 1)}
-                    className="p-2 hover:bg-[var(--surface-2)] rounded-full text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
-                    title="Next week"
-                >
-                    <ChevronRight size={24} />
-                </button>
             </div>
 
-            {/* Horizontal Scroll Area */}
-            <div className="flex-1 overflow-x-auto overflow-y-hidden px-6 pb-6 custom-scrollbar">
-                <div className="flex h-full gap-4 min-w-max">
+            {isDesktop ? (
+                <div className="grid grid-cols-7 min-h-[calc(100vh-240px)] border-t border-[var(--border-subtle)] pt-4">
                     {weekDays.map(day => (
                         <CalendarDayColumn
                             key={day.dateKey}
-                            dateKey={day.dateKey}
-                            dayLabel={day.dayLabel}
-                            fullDayLabel={day.fullDayLabel}
-                            dateNum={day.dateNum}
-                            month={day.month}
-                            isToday={day.isToday}
+                            variant="column"
+                            {...day}
                             tasks={tasks[day.dateKey]}
-                            onAddTask={onAddTask}
-                            onToggleTask={onToggleTask}
-                            onEditTask={onEditTask}
-                            onDeleteTask={onDeleteTask}
-                            onClearDay={onClearDay}
-                            onAddSubtask={onAddSubtask}
-                            onToggleSubtask={onToggleSubtask}
-                            onDeleteSubtask={onDeleteSubtask}
+                            carryOver={day.isToday ? carryOver : []}
+                            {...dayProps}
                         />
                     ))}
                 </div>
-            </div>
+            ) : (
+                <>
+                    <div className="grid grid-cols-7 gap-1 pb-4" role="tablist" aria-label="Days of the week">
+                        {weekDays.map(day => {
+                            const isSel = day.dateKey === selected.dateKey
+                            const hasTasks = (tasks[day.dateKey] || []).length > 0
+                            return (
+                                <button
+                                    key={day.dateKey}
+                                    role="tab"
+                                    aria-selected={isSel}
+                                    onClick={() => setSelectedKey(day.dateKey)}
+                                    className={`flex flex-col items-center gap-1 py-2 rounded-xl border transition-colors min-w-0 ${isSel
+                                        ? 'bg-[var(--surface-2)] border-[var(--border)]'
+                                        : 'border-transparent hover:bg-[var(--surface-1)]'}`}
+                                >
+                                    <span className={`text-[11px] font-medium ${day.isToday ? 'text-accent' : 'text-[var(--text-tertiary)]'}`}>
+                                        {day.dayLabel.charAt(0)}
+                                    </span>
+                                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-[15px] font-semibold tabular-nums ${day.isToday
+                                        ? 'bg-accent text-on-accent'
+                                        : 'text-[var(--text-primary)]'}`}>
+                                        {day.dateNum}
+                                    </span>
+                                    <span className={`w-1 h-1 rounded-full ${hasTasks ? 'bg-accent' : 'bg-transparent'}`} />
+                                </button>
+                            )
+                        })}
+                    </div>
+                    <CalendarDayColumn
+                        key={selected.dateKey}
+                        variant="panel"
+                        {...selected}
+                        tasks={tasks[selected.dateKey]}
+                        carryOver={selected.isToday ? carryOver : []}
+                        {...dayProps}
+                    />
+                </>
+            )}
         </div>
     )
 }
