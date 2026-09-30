@@ -23,6 +23,7 @@ import { isAIAvailable, isSignedIn, generateSteps } from './services/aiService'
 import { applyAction } from './utils/aiActions'
 import FocusSession from './components/focus/FocusSession'
 import { localDateKey } from './utils/dateKeys'
+import { useAIConsent } from './hooks/useAIConsent'
 
 // Today's LOCAL date key (never UTC — see src/utils/dateKeys.js)
 const getTodayKey = () => localDateKey()
@@ -94,6 +95,8 @@ function App() {
   // The full-screen session: { label, steps, phase: 'running'|'done', minimized, totalSeconds, nextUp } | null
   const [sessionOverlay, setSessionOverlay] = useState(null)
   const [showSignIn, setShowSignIn] = useState(false)
+  // "Stuck?" asks the AI → only after the one-time consent (given in Tachycardia or Focus).
+  const aiConsented = useAIConsent()
   const openSignIn = useCallback(() => setShowSignIn(true), [])
   // Latest document, so several AI changes applied back-to-back build on each other.
   const dataRef = useRef(data)
@@ -623,7 +626,7 @@ function App() {
           onStop={handleTimerReset}
           onMinimize={() => setSessionOverlay(s => s && { ...s, minimized: true })}
           onParkThought={handleParkThought}
-          onStuck={aiOn && user ? () => generateSteps(sessionOverlay.label, data) : undefined}
+          onStuck={aiOn && user && aiConsented ? () => generateSteps(sessionOverlay.label, data) : undefined}
           onFinish={() => setSessionOverlay(null)}
         />
       )}

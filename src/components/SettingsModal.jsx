@@ -660,6 +660,7 @@ const SettingsModal = ({
                     {/* Footer credit */}
                     <div className="px-5 pb-4 pt-1 border-t border-[var(--border-subtle)]">
                         <p className="text-[11px] text-[var(--text-tertiary)] text-center flex items-center justify-center gap-1">
+                            <a href="/privacy" target="_blank" rel="noreferrer" className="mr-3 underline underline-offset-2 hover:text-[var(--text-secondary)]">Privacy policy</a>
                             Made with <Heart size={11} className="text-[var(--text-tertiary)]" /> by Mohammed Farhood
                         </p>
                     </div>

@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import { useAIConsent } from '../hooks/useAIConsent'
+import AIConsentCard from './AIConsentCard'
 import { Send, Trash2, Heart, ArrowLeft, Check, X, RefreshCw } from 'lucide-react'
 import { useAIChat } from '../hooks/useAIChat'
 import { isAIAvailable } from '../services/aiService'
@@ -69,7 +71,10 @@ const TachycardiaTab = ({ data, settings, onApplyAction, onSignIn, isSignedIn = 
         signedIn: isSignedIn,
         onApplyAction,
     })
-    const aiOn = isAIAvailable(settings)
+    const consented = useAIConsent()
+    // Signed in but hasn't agreed yet → show the consent card, send nothing.
+    const needsConsent = isAIAvailable(settings) && isSignedIn && !consented
+    const aiOn = isAIAvailable(settings) && !needsConsent
     const [input, setInput] = useState('')
     const endRef = useRef(null)
     const inputRef = useRef(null)
@@ -125,7 +130,13 @@ const TachycardiaTab = ({ data, settings, onApplyAction, onSignIn, isSignedIn = 
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden rounded-2xl surface p-3 sm:p-4 space-y-3">
-                {messages.length === 0 && (
+                {needsConsent && (
+                    <div className="flex justify-center py-6">
+                        <AIConsentCard onDecline={onBack} />
+                    </div>
+                )}
+
+                {messages.length === 0 && !needsConsent && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-2">
                         <div className="w-14 h-14 rounded-full bg-[var(--color-accent)] text-on-accent flex items-center justify-center mb-4">
                             <Heart size={26} fill="currentColor" />
@@ -249,7 +260,7 @@ const TachycardiaTab = ({ data, settings, onApplyAction, onSignIn, isSignedIn = 
                     </button>
                 </form>
             ) : (
-                <p className="mt-3 text-[13px] text-[var(--text-tertiary)] text-center">Tachycardia is turned off in Settings.</p>
+                !needsConsent && <p className="mt-3 text-[13px] text-[var(--text-tertiary)] text-center">Tachycardia is turned off in Settings.</p>
             )}
         </div>
     )

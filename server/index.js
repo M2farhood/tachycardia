@@ -9,7 +9,7 @@
 
 import 'dotenv/config'
 import express from 'express'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -80,6 +80,30 @@ app.post('/api/ai/steps', ai, asyncRoute(async (req, res) => {
     recordUsage(req.uid, costUsd)
     res.json({ steps })
 }))
+
+// --- Public legal pages (store listings link here) ---------------------------
+// /privacy and /delete-account. The contact line comes from SUPPORT_EMAIL in
+// the server .env so the publisher can set it without a code change.
+
+const PAGES_DIR = join(__dirname, 'pages')
+const escapeHtml = (v) => String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const renderPage = (name) => {
+    const style = readFileSync(join(PAGES_DIR, '_style.html'), 'utf8')
+    const email = (process.env.SUPPORT_EMAIL || '').trim()
+    const contact = email
+        ? `Questions or requests: <a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a>`
+        : 'A support email address will be listed here by the app’s publisher.'
+    return readFileSync(join(PAGES_DIR, `${name}.html`), 'utf8')
+        .replace('{{STYLE}}', style)
+        .replaceAll('{{CONTACT}}', contact)
+        .replaceAll('{{UPDATED}}', '30 September 2026')
+}
+for (const name of ['privacy', 'delete-account']) {
+    app.get(`/${name}`, (req, res) => {
+        res.setHeader('Cache-Control', 'no-cache')
+        res.type('html').send(renderPage(name))
+    })
+}
 
 // --- Static frontend (single-process VPS deploys) --------------------------
 

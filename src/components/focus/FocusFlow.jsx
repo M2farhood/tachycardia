@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useAIConsent } from '../../hooks/useAIConsent'
+import AIConsentCard from '../AIConsentCard'
 import { X, Send, Heart, ArrowRight, Check, RefreshCw, Loader2, Plus } from 'lucide-react'
 import { sendFocus, splitOptions, isAIAvailable } from '../../services/aiService'
 import { normalizeCall } from '../../utils/aiActions'
@@ -64,7 +66,10 @@ const FocusFlow = ({
 }) => {
     const aiOn = isAIAvailable(settings)
     const [authLost, setAuthLost] = useState(false)
-    const canTalk = aiOn && isSignedIn && !authLost
+    const aiConsented = useAIConsent()
+    // Talking to the coach sends data to the AI → one-time consent first.
+    const needsConsent = aiOn && isSignedIn && !authLost && !aiConsented
+    const canTalk = aiOn && isSignedIn && !authLost && aiConsented
     const [mode, setMode] = useState(canTalk ? 'talk' : 'manual')
 
     // ---- conversation ----
@@ -258,6 +263,7 @@ const FocusFlow = ({
                 <ManualStart
                     tasks={tasks}
                     canTalk={canTalk}
+                    needsConsent={needsConsent}
                     aiOn={aiOn}
                     signedIn={isSignedIn}
                     onSignIn={onSignIn}
@@ -454,7 +460,7 @@ const ResultCard = ({ card, data, onApplyActions, markResult, startSession, onTa
 /* Manual path: one task, one time-box                                 */
 /* ------------------------------------------------------------------ */
 
-const ManualStart = ({ tasks, canTalk, aiOn, signedIn, onSignIn, onTalk, onStart }) => {
+const ManualStart = ({ tasks, canTalk, needsConsent, aiOn, signedIn, onSignIn, onTalk, onStart }) => {
     const [idx, setIdx] = useState(0)
     const [freeText, setFreeText] = useState(tasks.length === 0)
     const [typed, setTyped] = useState('')
@@ -489,6 +495,7 @@ const ManualStart = ({ tasks, canTalk, aiOn, signedIn, onSignIn, onTalk, onStart
                         {onSignIn && <button type="button" className={ghostBtn} onClick={onSignIn}>Sign in</button>}
                     </div>
                 )}
+                {needsConsent && <AIConsentCard compact />}
                 {canTalk && (
                     <button type="button" onClick={onTalk} className="self-start text-[13px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] underline underline-offset-2">
                         Talk it through with Tachycardia instead
