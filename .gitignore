@@ -37,3 +37,6 @@ inject-plan.js
 # knowledge graph, which honours .gitignore (there is no separate graphify
 # config file in this repo).
 repositories for design/
+
+# AI usage counters written by the API server (server/guard.js)
+server/data/

@@ -1,120 +1,105 @@
 /**
  * AI Service - Tachycardia 💓 (client)
  * --------------------------------------------------------------------------
- * Keys NO LONGER live here. This is a thin client that calls our own backend
- * (see /server), which holds the provider keys and runs the cascade. The only
- * client-side AI config is VITE_AI_ENABLED — a non-secret boolean that lets the
- * UI show/hide AI features synchronously without exposing any key.
+ * No keys here. A thin client for our own backend (/server), which holds the
+ * provider key, checks the Firebase sign-in, and enforces the daily caps.
  *
- * Same exported names as before so callers don't change:
- *   askTachycardia, generateSubtasks, parsePlanWithAI, parseTaskActions, isAIAvailable
+ * The AI only ever *proposes* changes (tool calls). Applying one is the app's
+ * job — see src/utils/aiActions.js — and only happens after the owner taps
+ * Apply.
  */
 
-// Base URL for the API. Empty => same-origin relative '/api' (the default for
-// single-process VPS / nginx deploys). Override for a separate API host.
+import { auth } from '../config/firebase'
+import { buildAIContext } from '../utils/aiActions'
+
+// Empty => same-origin '/api' (the VPS / nginx setup). Override for a separate API host.
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
-// AI is considered available unless explicitly disabled. The real provider
-// keys are validated server-side; this only gates the UI.
+// Build-time kill switch. The owner's own on/off lives in settings.aiEnabled.
 const AI_ENABLED = import.meta.env.VITE_AI_ENABLED !== 'false'
 
+export class AIError extends Error {
+    constructor(message, code) {
+        super(message)
+        this.name = 'AIError'
+        this.code = code
+    }
+}
+
+const localDateKey = (d = new Date()) => {
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 async function postJSON(path, body) {
-    const response = await fetch(`${API_BASE}${path}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-    })
+    const headers = { 'Content-Type': 'application/json' }
+    const user = auth?.currentUser
+    if (user) headers.Authorization = `Bearer ${await user.getIdToken()}`
 
-    if (!response.ok) {
-        const data = await response.json().catch(() => ({}))
-        throw new Error(data.error || `Request failed: ${response.status}`)
-    }
-
-    return response.json()
-}
-
-/**
- * Whether AI features should be shown. Synchronous + safe (no secrets).
- */
-export function isAIAvailable() {
-    return AI_ENABLED
-}
-
-/**
- * Chat with Tachycardia (multi-turn).
- * @param {Array<{role:'user'|'assistant', content:string}>} messages - conversation history
- * @param {object} studyData - current study data for context
- * @returns {Promise<string>} the assistant's reply text
- */
-export async function askTachycardia(messages, studyData) {
-    const { reply } = await postJSON('/api/ai/chat', { messages, studyData })
-    return reply
-}
-
-/**
- * Generate 3-5 actionable subtasks for a task.
- * @returns {Promise<string[]>}
- */
-export async function generateSubtasks(taskName, studyData) {
-    if (!isAIAvailable()) {
-        throw new Error('AI is not enabled.')
-    }
-    const { subtasks } = await postJSON('/api/ai/subtasks', { taskName, studyData })
-    return Array.isArray(subtasks) ? subtasks : ['Start with a small step']
-}
-
-/**
- * AI-powered study plan parsing. Returns task objects in the app's UI shape.
- */
-export async function parsePlanWithAI(planText) {
-    const { tasks } = await postJSON('/api/ai/parse-plan', { planText })
-    if (!Array.isArray(tasks)) throw new Error('AI returned an invalid response')
-
-    // Transform raw parsed tasks into the importer's expected UI shape.
-    return tasks.map((task, index) => ({
-        id: `import-${Date.now()}-${index}`,
-        name: task.name || 'Untitled Task',
-        category: task.category || null,
-        date: task.date ? new Date(task.date) : null,
-        dateFormatted: task.date ? formatDateShort(task.date) : null,
-        duration: task.duration || null,
-        durationFormatted: task.duration ? `${task.duration}h` : null,
-        weight: task.weight || null,
-        selected: true,
-    }))
-}
-
-/**
- * Helper: Format date string to short form (e.g. "Jan 15").
- */
-function formatDateShort(dateStr) {
+    let response
     try {
-        const date = new Date(dateStr)
-        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-        return `${months[date.getMonth()]} ${date.getDate()}`
+        response = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: JSON.stringify(body) })
     } catch {
-        return null
+        throw new AIError("Can't reach Tachycardia — check your connection.", 'NETWORK')
     }
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new AIError(data.error || `Request failed: ${response.status}`, data.code)
+    return data
+}
+
+/** Whether AI features should be shown at all (build flag + owner setting). */
+export function isAIAvailable(settings) {
+    return AI_ENABLED && settings?.aiEnabled !== false
+}
+
+/** Whether a signed-in user exists right now (the server requires one). */
+export function isSignedIn() {
+    return !!auth?.currentUser
 }
 
 /**
- * Parse [ADD_TASK:tabId:name:category] tokens out of an AI reply.
- * Pure string parsing — stays on the client.
- * @returns {{tasks: Array<{tabId, name, category}>, cleanMessage: string}}
+ * Chat turn. `messages` are OpenAI-style turns, including assistant tool_calls
+ * and `tool` results. Returns { reply, toolCalls: [{id, name, arguments}] }.
  */
+export async function sendChat(messages, data) {
+    return postJSON('/api/ai/chat', { messages, context: buildAIContext(data, localDateKey()) })
+}
+
+/** Focus-mode coach turn. Same shape as sendChat. */
+export async function sendFocus(messages, data) {
+    return postJSON('/api/ai/focus', { messages, context: buildAIContext(data, localDateKey()) })
+}
+
+/** 3-5 tiny next steps for a task. Returns string[]. */
+export async function generateSteps(taskName, data) {
+    const { steps } = await postJSON('/api/ai/steps', { taskName, context: buildAIContext(data, localDateKey()) })
+    return Array.isArray(steps) ? steps : []
+}
+
+/**
+ * Split a coach reply into its text and the tap-able quick replies from a
+ * trailing "OPTIONS: a | b | c" line.
+ */
+export function splitOptions(reply) {
+    const lines = String(reply || '').split('\n')
+    const idx = lines.findIndex((l) => /^\s*OPTIONS\s*:/i.test(l))
+    if (idx === -1) return { text: reply.trim(), options: [] }
+    const options = lines[idx].replace(/^\s*OPTIONS\s*:/i, '').split('|').map((s) => s.trim()).filter(Boolean).slice(0, 4)
+    const text = lines.filter((_, i) => i !== idx).join('\n').trim()
+    return { text, options }
+}
+
+export { localDateKey }
+
+// --- TEMPORARY: old names kept only until FocusMode / useAIChat /
+// PlanImporterModal are rewritten in this branch. Remove at integration. ---
+export const generateSubtasks = (taskName, data) => generateSteps(taskName, data)
+export async function askTachycardia(messages, data) {
+    return (await sendChat(messages, data)).reply
+}
+export async function parsePlanWithAI() {
+    throw new AIError('Plan import was removed.', 'REMOVED')
+}
 export function parseTaskActions(response) {
-    const taskPattern = /\[ADD_TASK:([^:]+):([^:]+):([^\]]+)\]/g
-    const tasks = []
-    let match
-
-    while ((match = taskPattern.exec(response)) !== null) {
-        tasks.push({
-            tabId: match[1].trim(),
-            name: match[2].trim(),
-            category: match[3].trim(),
-        })
-    }
-
-    const cleanMessage = response.replace(taskPattern, '').trim()
-    return { tasks, cleanMessage }
+    return { tasks: [], cleanMessage: response }
 }

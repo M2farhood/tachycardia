@@ -1,327 +1,304 @@
 /**
  * Server-side AI module — holds ALL provider keys and the cascade.
  * --------------------------------------------------------------------------
- * Keys live only here (process.env, never shipped to the browser). The client
- * calls our own /api/ai/* endpoints; this module talks to the providers.
+ * Keys live only here (process.env, never shipped to a client). The web and
+ * phone apps call our own /api/ai/* endpoints; this module talks to providers.
  *
- * Cascade order (mirrors the old client behaviour): OpenRouter → Mistral →
- * Gemini primary → Gemini backup. The first provider to answer wins.
+ * Primary: OpenRouter with a cheap tool-capable model (DeepSeek V4 Flash,
+ * ≈$0.0003 a message), plus OpenRouter's own fallback list so a provider
+ * outage silently moves to the next model. Mistral/Gemini stay as a last
+ * resort, text-only, if their keys are set.
  *
- * Multi-turn: chat() accepts a `messages` array ([{role, content}, ...]) so the
- * assistant has conversation memory. Tool-calling is stubbed for the future
- * agentic work — `tools` is passed through to OpenRouter only for now.
+ * Cost discipline: small max_tokens, reasoning off, a compact context (ids +
+ * names only, capped), and the last few turns of history only. The daily caps
+ * live in guard.js and are fed the real cost OpenRouter reports.
  */
+
+import { APP_TOOLS, FOCUS_TOOLS, isKnownTool } from './tools.js'
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
 const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const GEMINI_API_KEY_BACKUP = process.env.GEMINI_API_KEY_BACKUP
 
-const OPENROUTER_MODEL = process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-exp:free'
-const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || 'https://study-tracker.app'
-
-// Gemini model names move/retire over time — keep them configurable so a future
-// retirement is a one-line env change, not a code change.
+const OPENROUTER_MODELS = (process.env.OPENROUTER_MODELS || 'deepseek/deepseek-v4-flash,qwen/qwen3.7-flash')
+    .split(',').map((s) => s.trim()).filter(Boolean)
+const OPENROUTER_REFERER = process.env.OPENROUTER_REFERER || 'https://study.t-plusplus.tech'
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
-const GEMINI_MODEL_BACKUP = process.env.GEMINI_MODEL_BACKUP || 'gemini-2.5-flash-lite'
 
-// Tachycardia's personality prompt (unchanged from the original client copy).
-const SYSTEM_PROMPT = `You are Tachycardia 💓, a friendly and encouraging AI study companion inside the Study Tracker app.
+const MAX_HISTORY = 12
 
-Personality:
-- Warm, supportive, and slightly witty
-- Use occasional heart/pulse metaphors ("Let's get your study heart pumping!", "Your progress is accelerating!")
-- Celebrate progress genuinely
-- Give practical, actionable advice
-- Keep responses concise (2-4 sentences usually)
-- Never overwhelming - be helpful without being verbose
+const CHAT_PROMPT = `You are Tachycardia, the assistant inside Study Tracker — a to-do app where each "section" is one project or life area (work, hospital, study...) with its own task list, plus a calendar and time blocks.
 
-Capabilities:
-- Suggest what to study next based on deadlines and progress
-- Help create study schedules
-- Motivate and encourage when users feel stuck
-- Answer questions about study strategies
-- Help organize and prioritize topics
-- Add tasks to the user's to-do lists (ONLY when explicitly asked)
+Voice: warm, calm, practical. 1-4 short sentences. No lectures, no filler, no emoji spam.
 
-Adding Tasks - IMPORTANT RULES:
-- ONLY add tasks when the user EXPLICITLY asks you to add/create a task
-- Words like "add", "create", "put", "schedule" indicate they want a task added
-- Just asking "what should I study?" does NOT mean add a task - just give advice
-- Just asking "what's next?" does NOT mean add a task - just recommend
-- If recommending something, ASK if they want you to add it - don't auto-add
+You can PROPOSE changes with tools. The app shows every proposal to the user as a card and they tap Apply or Skip — so:
+- When they ask you to add, create, move, schedule, rename, complete or delete something, call the matching tool(s) right away. Don't ask "shall I?" first; the card is the confirmation.
+- When they only ask for advice ("what should I do next?"), answer in words and do not call tools.
+- Use ONLY ids that appear in the context. Never invent ids. To put tasks in a brand-new section, use add_section with its tasks.
+- Dates are YYYY-MM-DD, relative to "Today" in the context. Times are 24h HH:MM.
+- After calling tools, add one short sentence saying what you proposed. Never claim it is already done.
+- delete_task only when they clearly ask to delete or remove.`
 
-When user explicitly asks to add tasks, use this format:
-[ADD_TASK:tabId:taskName:category]
+const FOCUS_PROMPT = `You are Tachycardia in Focus mode: a calm coach for people who feel stuck, anxious or scattered (often ADHD). Your job is to get them started within two minutes, feeling safe.
 
-Example - when user says "Add review chapter 5 to my list":
-[ADD_TASK:tab-123:Review Chapter 5:Reading]
+How to talk:
+- 1-3 short sentences, ONE question at a time. Name the feeling briefly, then move on. No lectures, no toxic positivity, no shame.
+- End every message that asks something with a line: OPTIONS: first | second | third  (2-4 short tap-able replies).
+- Ask at most 2-3 questions in total before acting. Use their real sections and tasks from the context.
 
-Guidelines:
-- If user shares their study data, acknowledge it specifically
-- Don't make up information about their tasks - use only what's provided
-- Be encouraging but realistic about study expectations
-- Suggest Pomodoro technique (25 min work, 5 min break) when appropriate
-- NEVER add tasks unless explicitly asked to do so`
+Then act with exactly one tool:
+- Worried about time or a deadline -> show_plan: spread the work over the days before the deadline in small daily chunks (never more than ~2-3 hours a day unless they say so), today's item small and first. Headline = one reassuring sentence about why the plan is enough.
+- Just wants to get moving, overwhelmed, no hard deadline -> give_steps: 3-6 tiny concrete steps; the first takes under 2 minutes and is physical ("Open the document called ..."). sprintMinutes 10-15 unless they ask for more. Frame it as "do as much as you can in the sprint", never "finish it".
+- Already knows the exact task -> start_focus_session with a tiny firstStep.
+Never say you saved anything — the app asks them first.`
 
-const SUBTASK_GENERATION_PROMPT = `You are a helpful study assistant. Breakdown the following task into 3-5 distinct, actionable micro-steps.
-Return ONLY a raw JSON array of strings. No markdown formatting.
-Example: ["Open the textbook", "Read the introduction", "Summarize key points"]`
+const STEPS_PROMPT = `Break the task into 3-5 tiny, concrete next actions for someone who feels stuck. The first must take under 2 minutes. Return ONLY a JSON array of strings, no markdown. Example: ["Open the notes file", "Read the first heading", "Write one sentence summary"]`
 
-const PLAN_PARSING_PROMPT = `You are a study plan parser. Your job is to extract study tasks from freeform text and return structured JSON.
+// ---------------------------------------------------------------------------
+// Context: a compact, id-bearing snapshot of the owner's data
+// ---------------------------------------------------------------------------
 
-RULES:
-1. Extract ALL study tasks/topics mentioned in the text
-2. For hierarchical lists, if a category has a weight but sub-items don't, distribute the weight evenly
-3. Parse dates in any format and convert to ISO format (YYYY-MM-DD)
-4. Parse durations and convert to hours (decimal)
-5. Extract weights/percentages when mentioned
-6. Identify categories/sections and apply them to child tasks
-7. Clean up task names - remove bullet points, numbers, emojis, but keep the essence
-8. Return ONLY valid JSON, no markdown, no explanations
-
-OUTPUT FORMAT (JSON array):
-[
-  {
-    "name": "Topic name (clean, concise)",
-    "category": "Parent category or null",
-    "date": "YYYY-MM-DD or null",
-    "duration": 2.5,
-    "weight": 15
-  }
-]
-
-Now parse this study plan and return ONLY the JSON array:`
+const cut = (s, n) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, n)
 
 /**
- * Serialize study data into a context string appended to the system prompt.
- * (Ported from the old client buildContext.)
+ * `ctx` is what the apps send (see buildAIContext in aiActions.js):
+ * { today, weekday, examDate, sections:[{id,title,done,total,tasks:[{id,name,category,steps}]}],
+ *   calendar:{date:[text]}, blocksToday:[{startTime,endTime,count}] }
+ * Everything is re-capped here — never trust client sizes.
  */
-function buildContext(studyData) {
-    if (!studyData) return ''
+function buildContext(ctx) {
+    if (!ctx || typeof ctx !== 'object') return ''
+    const lines = ['', '--- Current data ---']
+    lines.push(`Today: ${cut(ctx.today, 10) || new Date().toISOString().slice(0, 10)} (${cut(ctx.weekday, 12)})`)
+    if (ctx.examDate) lines.push(`Deadline/countdown: ${cut(ctx.examDate, 16)}`)
 
-    const { tabs = [], settings = {} } = studyData
-    let context = '\n\n--- Current Study Data ---\n'
-    context += `Today: ${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}\n`
-
-    if (settings.examDate) {
-        const examDate = new Date(settings.examDate)
-        const today = new Date()
-        const daysLeft = Math.ceil((examDate - today) / (1000 * 60 * 60 * 24))
-        if (daysLeft > 0) context += `Exam in: ${daysLeft} days\n`
+    let taskBudget = 150
+    const sections = Array.isArray(ctx.sections) ? ctx.sections.slice(0, 30) : []
+    lines.push(sections.length ? 'Sections:' : 'Sections: none yet')
+    for (const s of sections) {
+        lines.push(`- [${cut(s.id, 60)}] ${cut(s.title, 60)} — ${Number(s.done) || 0}/${Number(s.total) || 0} done`)
+        const tasks = Array.isArray(s.tasks) ? s.tasks.slice(0, Math.min(25, taskBudget)) : []
+        taskBudget -= tasks.length
+        for (const t of tasks) {
+            const cat = t.category ? ` (${cut(t.category, 30)})` : ''
+            const steps = t.steps ? ` [${cut(t.steps, 10)} steps]` : ''
+            lines.push(`   · [${cut(t.id, 60)}] ${cut(t.name, 120)}${cat}${steps}`)
+        }
+        if ((Number(s.total) || 0) - (Number(s.done) || 0) > tasks.length) lines.push('   · …more not shown')
     }
 
-    let totalTasks = 0
-    let completedTasks = 0
-
-    tabs.forEach((tab) => {
-        const completed = (tab.topics || []).filter((t) => t.completed).length
-        const total = (tab.topics || []).length
-        totalTasks += total
-        completedTasks += completed
-
-        context += `\n${tab.emoji || ''} ${tab.title} (ID: ${tab.id}): ${completed}/${total} completed\n`
-
-        const incomplete = (tab.topics || []).filter((t) => !t.completed)
-        if (incomplete.length > 0 && incomplete.length <= 5) {
-            incomplete.forEach((topic) => { context += `  - ${topic.name}\n` })
-        } else if (incomplete.length > 5) {
-            incomplete.slice(0, 3).forEach((topic) => { context += `  - ${topic.name}\n` })
-            context += `  ... and ${incomplete.length - 3} more\n`
+    const cal = ctx.calendar && typeof ctx.calendar === 'object' ? Object.entries(ctx.calendar).slice(0, 14) : []
+    if (cal.length) {
+        lines.push('Calendar (upcoming):')
+        for (const [d, items] of cal) {
+            const list = (Array.isArray(items) ? items : []).slice(0, 8).map((x) => cut(x, 80)).join('; ')
+            if (list) lines.push(`- ${cut(d, 10)}: ${list}`)
         }
-    })
-
-    context += `\nOverall Progress: ${completedTasks}/${totalTasks} tasks completed (${totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0}%)\n`
-    context += '--- End of Study Data ---'
-    return context
+    }
+    const blocks = Array.isArray(ctx.blocksToday) ? ctx.blocksToday.slice(0, 12) : []
+    if (blocks.length) {
+        lines.push('Time blocks today: ' + blocks.map((b) => `${cut(b.startTime, 5)}-${cut(b.endTime, 5)}`).join(', '))
+    }
+    lines.push('--- End ---')
+    return lines.join('\n')
 }
 
-const SAFETY_SETTINGS = [
-    { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_NONE' },
-    { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_NONE' },
-]
+// ---------------------------------------------------------------------------
+// Message hygiene — only well-formed chat/tool turns reach the provider
+// ---------------------------------------------------------------------------
 
-/**
- * OpenAI-style providers (OpenRouter, Mistral) take {role, content} messages.
- * Returns { reply, toolCalls }.
- */
-async function callOpenAICompatible({ url, apiKey, model, system, messages, temperature, maxTokens, tools, extraHeaders = {} }) {
+function sanitizeMessages(messages) {
+    const out = []
+    for (const m of (Array.isArray(messages) ? messages : []).slice(-MAX_HISTORY * 2)) {
+        if (!m || typeof m !== 'object') continue
+        if (m.role === 'user') {
+            out.push({ role: 'user', content: cut(m.content, 2000) })
+        } else if (m.role === 'assistant') {
+            const msg = { role: 'assistant', content: cut(m.content, 2000) }
+            const calls = Array.isArray(m.tool_calls) ? m.tool_calls : []
+            const valid = calls
+                .filter((c) => c?.id && isKnownTool(c?.function?.name))
+                .map((c) => ({
+                    id: cut(c.id, 100),
+                    type: 'function',
+                    function: { name: c.function.name, arguments: cut(c.function.arguments, 4000) || '{}' },
+                }))
+            if (valid.length) msg.tool_calls = valid
+            if (msg.content || msg.tool_calls) out.push(msg)
+        } else if (m.role === 'tool' && m.tool_call_id) {
+            out.push({ role: 'tool', tool_call_id: cut(m.tool_call_id, 100), content: cut(m.content, 500) || 'ok' })
+        }
+    }
+    // Keep only the last MAX_HISTORY turns, but never start on an orphan tool result.
+    let trimmed = out.slice(-MAX_HISTORY)
+    while (trimmed.length && trimmed[0].role === 'tool') trimmed = trimmed.slice(1)
+    // A tool result whose assistant call was trimmed away would be rejected by the provider.
+    const callIds = new Set(trimmed.flatMap((m) => (m.tool_calls || []).map((c) => c.id)))
+    return trimmed.filter((m) => m.role !== 'tool' || callIds.has(m.tool_call_id))
+}
+
+// ---------------------------------------------------------------------------
+// Providers
+// ---------------------------------------------------------------------------
+
+async function callOpenRouter({ system, messages, tools, maxTokens, temperature }) {
     const body = {
-        model,
+        model: OPENROUTER_MODELS[0],
+        models: OPENROUTER_MODELS,
         messages: [{ role: 'system', content: system }, ...messages],
         temperature,
         max_tokens: maxTokens,
+        reasoning: { enabled: false },
+        usage: { include: true },
     }
-    if (tools && tools.length) {
+    if (tools?.length) {
         body.tools = tools
         body.tool_choice = 'auto'
     }
 
-    const response = await fetch(url, {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`,
-            ...extraHeaders,
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': OPENROUTER_REFERER,
+            'X-Title': 'Study Tracker - Tachycardia',
         },
         body: JSON.stringify(body),
+        signal: AbortSignal.timeout(45000),
     })
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error?.message || error.message || `Provider error: ${response.status}`)
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok || data.error) {
+        throw new Error(data.error?.message || `OpenRouter error: ${response.status}`)
     }
-
-    const data = await response.json()
-    const message = data.choices?.[0]?.message
-    const reply = message?.content
-    const toolCalls = message?.tool_calls || null
-
-    // A tool-call-only response has no text content — that's still valid.
-    if (!reply && !toolCalls) throw new Error('Empty provider response')
-    return { reply: reply || '', toolCalls }
+    const message = data.choices?.[0]?.message || {}
+    const toolCalls = (message.tool_calls || [])
+        .filter((c) => isKnownTool(c?.function?.name))
+        .map((c) => ({ id: c.id, name: c.function.name, arguments: c.function.arguments || '{}' }))
+    if (!message.content && !toolCalls.length) throw new Error('Empty provider response')
+    return {
+        reply: message.content || '',
+        toolCalls,
+        model: data.model,
+        costUsd: Number(data.usage?.cost) || 0,
+    }
 }
 
-/**
- * Gemini uses a different request shape (contents + systemInstruction).
- * No tool-calling here yet — falls back to plain text.
- */
-async function callGeminiModel({ apiKey, model, system, messages, temperature, maxTokens }) {
-    const contents = messages.map((m) => ({
+// Text-only fallbacks: flatten tool turns into plain text.
+const flatten = (messages) => messages
+    .filter((m) => m.role === 'user' || (m.role === 'assistant' && m.content))
+    .map((m) => ({ role: m.role, content: m.content }))
+
+async function callMistral({ system, messages, maxTokens, temperature }) {
+    const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MISTRAL_API_KEY}` },
+        body: JSON.stringify({
+            model: 'mistral-small-latest',
+            messages: [{ role: 'system', content: system }, ...flatten(messages)],
+            temperature, max_tokens: maxTokens,
+        }),
+        signal: AbortSignal.timeout(45000),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.message || `Mistral error: ${response.status}`)
+    const reply = data.choices?.[0]?.message?.content
+    if (!reply) throw new Error('Empty Mistral response')
+    return { reply, toolCalls: [], model: 'mistral-small', costUsd: 0 }
+}
+
+async function callGemini({ system, messages, maxTokens, temperature }) {
+    const contents = flatten(messages).map((m) => ({
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
     }))
-
     const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents,
                 systemInstruction: { parts: [{ text: system }] },
-                generationConfig: { temperature, topK: 40, topP: 0.95, maxOutputTokens: maxTokens },
-                safetySettings: SAFETY_SETTINGS,
+                generationConfig: { temperature, maxOutputTokens: maxTokens },
             }),
+            signal: AbortSignal.timeout(45000),
         }
     )
-
-    if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error?.message || `Gemini error: ${response.status}`)
-    }
-
-    const data = await response.json()
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(data.error?.message || `Gemini error: ${response.status}`)
     const reply = data.candidates?.[0]?.content?.parts?.[0]?.text
     if (!reply) throw new Error('Empty Gemini response')
-    return { reply, toolCalls: null }
+    return { reply, toolCalls: [], model: GEMINI_MODEL, costUsd: 0 }
 }
 
-/**
- * Run a chat completion through the provider cascade.
- * @returns {Promise<{reply: string, toolCalls: object[]|null, provider: string}>}
- * @throws if every configured provider fails (or none are configured).
- */
-async function runCascade({ system, messages, temperature = 0.7, maxTokens = 1000, tools = null }) {
+async function runCascade(opts) {
     const attempts = []
-
-    if (OPENROUTER_API_KEY) {
-        attempts.push(['openrouter', () => callOpenAICompatible({
-            url: 'https://openrouter.ai/api/v1/chat/completions',
-            apiKey: OPENROUTER_API_KEY,
-            model: OPENROUTER_MODEL,
-            system, messages, temperature, maxTokens, tools,
-            extraHeaders: { 'HTTP-Referer': OPENROUTER_REFERER, 'X-Title': 'Study Tracker - Tachycardia' },
-        })])
-    }
-    if (MISTRAL_API_KEY) {
-        attempts.push(['mistral', () => callOpenAICompatible({
-            url: 'https://api.mistral.ai/v1/chat/completions',
-            apiKey: MISTRAL_API_KEY,
-            model: 'mistral-small-latest',
-            system, messages, temperature, maxTokens: Math.min(maxTokens, 1000),
-        })])
-    }
-    if (GEMINI_API_KEY) {
-        attempts.push(['gemini', () => callGeminiModel({
-            apiKey: GEMINI_API_KEY, model: GEMINI_MODEL,
-            system, messages, temperature, maxTokens: Math.min(maxTokens, 1000),
-        })])
-    }
-    if (GEMINI_API_KEY_BACKUP) {
-        attempts.push(['gemini-backup', () => callGeminiModel({
-            apiKey: GEMINI_API_KEY_BACKUP, model: GEMINI_MODEL_BACKUP,
-            system, messages, temperature, maxTokens: Math.min(maxTokens, 1000),
-        })])
-    }
-
-    if (attempts.length === 0) {
+    if (OPENROUTER_API_KEY) attempts.push(['openrouter', callOpenRouter])
+    if (MISTRAL_API_KEY) attempts.push(['mistral', callMistral])
+    if (GEMINI_API_KEY) attempts.push(['gemini', callGemini])
+    if (!attempts.length) {
         const err = new Error('No AI provider configured')
         err.code = 'NO_PROVIDER'
         throw err
     }
-
     let lastError
-    for (const [name, fn] of attempts) {
+    for (const [name, call] of attempts) {
         try {
-            const result = await fn()
-            return { ...result, provider: name }
+            return { ...(await call(opts)), provider: name }
         } catch (error) {
             lastError = error
             console.warn(`[ai] ${name} failed:`, error.message)
         }
     }
-    throw lastError || new Error('All AI providers failed')
+    throw lastError
 }
 
-/** Strip ```json fences and parse a JSON value out of a model response. */
-function parseJsonFromText(text) {
-    let s = (text || '').trim()
-    if (s.startsWith('```json')) s = s.slice(7)
-    else if (s.startsWith('```')) s = s.slice(3)
-    if (s.endsWith('```')) s = s.slice(0, -3)
-    return JSON.parse(s.trim())
-}
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
-/** Whether any provider key is configured (drives /api/ai/status). */
 export function isConfigured() {
-    return !!(OPENROUTER_API_KEY || MISTRAL_API_KEY || GEMINI_API_KEY || GEMINI_API_KEY_BACKUP)
+    return !!(OPENROUTER_API_KEY || MISTRAL_API_KEY || GEMINI_API_KEY)
 }
 
-/** Chat with Tachycardia. messages = [{role:'user'|'assistant', content}]. */
-export async function chat({ messages, studyData, tools }) {
-    const system = SYSTEM_PROMPT + buildContext(studyData)
-    const { reply, toolCalls, provider } = await runCascade({
-        system, messages, temperature: 0.7, maxTokens: 1000, tools,
+/** Chat with Tachycardia. Returns { reply, toolCalls:[{id,name,arguments}], costUsd, model }. */
+export async function chat({ messages, context }) {
+    return runCascade({
+        system: CHAT_PROMPT + buildContext(context),
+        messages: sanitizeMessages(messages),
+        tools: APP_TOOLS,
+        maxTokens: 700,
+        temperature: 0.4,
     })
-    return { reply, toolCalls, provider }
 }
 
-/** Break a task into 3-5 micro-steps. Returns string[]. */
-export async function generateSubtasks({ taskName, studyData }) {
-    const system = SUBTASK_GENERATION_PROMPT + buildContext(studyData)
-    const { reply } = await runCascade({
-        system,
-        messages: [{ role: 'user', content: `Task: "${taskName}". Break this down.` }],
-        temperature: 0.7,
-        maxTokens: 500,
+/** The Focus-mode coach. Same shape as chat(), with the focus tools. */
+export async function focus({ messages, context }) {
+    return runCascade({
+        system: FOCUS_PROMPT + buildContext(context),
+        messages: sanitizeMessages(messages),
+        tools: FOCUS_TOOLS,
+        maxTokens: 700,
+        temperature: 0.5,
     })
-    const parsed = parseJsonFromText(reply)
-    if (Array.isArray(parsed)) return parsed
-    return ['Start with a small step']
 }
 
-/** Parse freeform study plan text into structured task objects. */
-export async function parsePlan({ planText }) {
-    const { reply } = await runCascade({
-        system: PLAN_PARSING_PROMPT,
-        messages: [{ role: 'user', content: planText }],
-        temperature: 0.1,
-        maxTokens: 4000,
+/** Break a task into 3-5 tiny steps. Returns { steps: string[], costUsd }. */
+export async function generateSteps({ taskName, context }) {
+    const result = await runCascade({
+        system: STEPS_PROMPT + buildContext(context),
+        messages: [{ role: 'user', content: `Task: "${cut(taskName, 200)}"` }],
+        maxTokens: 300,
+        temperature: 0.5,
     })
-    const tasks = parseJsonFromText(reply)
-    if (!Array.isArray(tasks)) throw new Error('AI returned non-array response')
-    return tasks
+    let steps = []
+    try {
+        const text = result.reply.trim().replace(/^```(?:json)?/, '').replace(/```$/, '').trim()
+        const parsed = JSON.parse(text)
+        if (Array.isArray(parsed)) steps = parsed.map((s) => cut(s, 200)).filter(Boolean).slice(0, 6)
+    } catch {
+        steps = result.reply.split('\n').map((s) => s.replace(/^[-*\d.)\s]+/, '').trim()).filter(Boolean).slice(0, 5)
+    }
+    return { steps: steps.length ? steps : ['Open what you need for this task'], costUsd: result.costUsd }
 }

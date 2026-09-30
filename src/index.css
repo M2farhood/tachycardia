@@ -30,6 +30,10 @@
   --color-success: oklch(64% 0.13 150);
   --color-danger:  oklch(62% 0.17 25);
 
+  /* Text/icons that sit ON an accent (or success/danger) fill. Always use
+     this — never text-white — so the light theme can't turn it dark. */
+  --on-accent: oklch(99% 0 0);
+
   /* Legacy aliases — keeps old variable references working */
   --color-bg-start: var(--surface-bg);
   --color-bg-mid:   var(--surface-bg);
@@ -60,6 +64,7 @@
   --color-accent-glow: oklch(52% 0.13 255 / 0.22);
   --color-success: oklch(50% 0.13 150);
   --color-danger:  oklch(53% 0.18 25);
+  --on-accent: oklch(99% 0 0);
 
   /* Legacy aliases for light mode */
   --color-bg-start: var(--surface-bg);
@@ -83,6 +88,21 @@
 
 .light-theme .text-white {
   color: var(--color-text-primary) !important;
+}
+
+.text-on-accent { color: var(--on-accent) !important; }
+
+/* The light theme maps text-white → dark text so white-on-dark leftovers
+   stay readable. That must NOT happen on a coloured fill: an accent button
+   with dark text is exactly the "Add first block" bug. These selectors are
+   more specific than the rule above, so a fill always keeps its light text. */
+.light-theme .bg-accent.text-white,
+.light-theme .bg-accent .text-white,
+.light-theme [class*="bg-[var(--color-accent)]"].text-white,
+.light-theme [class*="bg-[var(--color-accent)]"] .text-white,
+.light-theme [class*="bg-[var(--color-danger)]"].text-white,
+.light-theme [class*="bg-[var(--color-success)]"].text-white {
+  color: var(--on-accent) !important;
 }
 
 .light-theme .text-white\/40,

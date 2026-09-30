@@ -1,10 +1,10 @@
 /**
  * Study Tracker API server
  * --------------------------------------------------------------------------
- * Holds AI provider keys server-side and exposes /api/ai/* to the client, so
- * secrets never ship in the browser bundle. On a VPS this single process can
- * also serve the built frontend (set SERVE_STATIC=true), or you can put nginx
- * in front and run this for /api only.
+ * Holds AI provider keys server-side and exposes /api/ai/* to the web and phone
+ * apps, so secrets never ship in a bundle. Every AI route needs a signed-in
+ * user and respects the daily caps (see guard.js). On the VPS this single
+ * process also serves the built frontend (SERVE_STATIC=true).
  */
 
 import 'dotenv/config'
@@ -13,22 +13,25 @@ import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { chat, generateSubtasks, parsePlan, isConfigured } from './ai.js'
+import { chat, focus, generateSteps, isConfigured } from './ai.js'
+import { requireUser, withinLimits, recordUsage, usageSummary } from './guard.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = process.env.PORT || 8787
 
-app.use(express.json({ limit: '1mb' }))
+app.disable('x-powered-by')
+app.set('trust proxy', 'loopback')
+app.use(express.json({ limit: '200kb' }))
 
 // Optional CORS — only needed if the API is served from a different origin than
-// the frontend (e.g. api.example.com). Same-origin / nginx setups don't need it.
+// the web app. The phone app is native, so it never needs CORS.
 const CORS_ORIGIN = process.env.CORS_ORIGIN
 if (CORS_ORIGIN) {
     app.use((req, res, next) => {
         res.setHeader('Access-Control-Allow-Origin', CORS_ORIGIN)
         res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         if (req.method === 'OPTIONS') return res.sendStatus(204)
         next()
     })
@@ -36,54 +39,56 @@ if (CORS_ORIGIN) {
 
 // --- Health & status -------------------------------------------------------
 
-app.get('/api/health', (req, res) => {
-    res.json({ ok: true })
-})
+app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 app.get('/api/ai/status', (req, res) => {
-    res.json({ isConfigured: isConfigured() })
+    const u = usageSummary()
+    res.json({ isConfigured: isConfigured(), resting: u.costUsd >= u.budgetUsd })
 })
 
 // --- AI endpoints ----------------------------------------------------------
 
-// Wrap an async route so thrown errors hit the error middleware.
 const asyncRoute = (fn) => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next)
+const ai = [requireUser, withinLimits]
 
-app.post('/api/ai/chat', asyncRoute(async (req, res) => {
-    const { messages, studyData, tools } = req.body || {}
+app.post('/api/ai/chat', ai, asyncRoute(async (req, res) => {
+    const { messages, context } = req.body || {}
     if (!Array.isArray(messages) || messages.length === 0) {
         return res.status(400).json({ error: 'messages array is required' })
     }
-    const result = await chat({ messages, studyData, tools })
-    res.json(result)
+    const result = await chat({ messages, context })
+    recordUsage(req.uid, result.costUsd)
+    res.json({ reply: result.reply, toolCalls: result.toolCalls })
 }))
 
-app.post('/api/ai/subtasks', asyncRoute(async (req, res) => {
-    const { taskName, studyData } = req.body || {}
+app.post('/api/ai/focus', ai, asyncRoute(async (req, res) => {
+    const { messages, context } = req.body || {}
+    if (!Array.isArray(messages) || messages.length === 0) {
+        return res.status(400).json({ error: 'messages array is required' })
+    }
+    const result = await focus({ messages, context })
+    recordUsage(req.uid, result.costUsd)
+    res.json({ reply: result.reply, toolCalls: result.toolCalls })
+}))
+
+app.post('/api/ai/steps', ai, asyncRoute(async (req, res) => {
+    const { taskName, context } = req.body || {}
     if (!taskName || typeof taskName !== 'string') {
         return res.status(400).json({ error: 'taskName is required' })
     }
-    const subtasks = await generateSubtasks({ taskName, studyData })
-    res.json({ subtasks })
+    const { steps, costUsd } = await generateSteps({ taskName, context })
+    recordUsage(req.uid, costUsd)
+    res.json({ steps })
 }))
 
-app.post('/api/ai/parse-plan', asyncRoute(async (req, res) => {
-    const { planText } = req.body || {}
-    if (!planText || typeof planText !== 'string') {
-        return res.status(400).json({ error: 'planText is required' })
-    }
-    const tasks = await parsePlan({ planText })
-    res.json({ tasks })
-}))
-
-// --- Static frontend (optional, for single-process VPS deploys) ------------
+// --- Static frontend (single-process VPS deploys) --------------------------
 
 if (process.env.SERVE_STATIC === 'true') {
     const distDir = join(__dirname, '..', 'dist')
     if (existsSync(distDir)) {
-        app.use(express.static(distDir))
-        // SPA fallback: any non-API route returns index.html.
+        app.use(express.static(distDir, { index: false, maxAge: '1h' }))
         app.get(/^(?!\/api).*/, (req, res) => {
+            res.setHeader('Cache-Control', 'no-cache')
             res.sendFile(join(distDir, 'index.html'))
         })
         console.log(`📦 Serving static frontend from ${distDir}`)
@@ -94,15 +99,16 @@ if (process.env.SERVE_STATIC === 'true') {
 
 // --- Error handling --------------------------------------------------------
 
-app.use((err, req, res, next) => {
+// Four arguments are what marks this as Express's error handler.
+app.use((err, req, res, _next) => {
     console.error('[api] error:', err.message)
     if (err.code === 'NO_PROVIDER') {
         return res.status(503).json({ error: 'AI is not configured on the server.' })
     }
-    res.status(502).json({ error: err.message || 'Upstream AI request failed' })
+    res.status(502).json({ error: 'Tachycardia could not answer just now. Try again in a moment.' })
 })
 
-app.listen(PORT, () => {
-    console.log(`💓 Study Tracker API listening on :${PORT}`)
+app.listen(PORT, '127.0.0.1', () => {
+    console.log(`💓 Study Tracker API listening on 127.0.0.1:${PORT}`)
     console.log(`   AI configured: ${isConfigured()}`)
 })
