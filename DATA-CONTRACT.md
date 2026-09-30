@@ -20,6 +20,8 @@ Phase 0).
 | `src/data/migrations.js` | `../study tracker/src/utils/migrations.js` |
 | `src/data/schema.js` | the data-shape part of `../study tracker/src/utils/templates.js` (`getInitialState` + entity constructors) |
 | `src/data/mutations.js` | the pure mutation helpers for calendar/blocks/templates, extracted from `../study tracker/src/hooks/useLocalStorage.js` (468 lines — **extract** during Phase 0/1, don't reimplement) |
+| `src/data/aiActions.js` | `../study tracker/src/utils/aiActions.js` — applies Tachycardia's proposed tool calls as ordinary stamped edits (byte-identical; added 2026-09-30) |
+| `src/data/settingsDefaults.js` | `../study tracker/src/utils/settingsDefaults.js` — defaults for the optional Advanced settings (byte-identical; added 2026-09-30) |
 
 Both repos also carry **the same invariant test file** (seeded from the
 monorepo branch's `packages/core/test/schema.test.js`, 134 lines): the full
@@ -87,6 +89,21 @@ data corruption.
   so summing would double-count on every merge) and never last-write-wins (the
   device that studied less would erase the other's minutes). A day's recorded
   time can therefore only ever go up, and both devices converge.
+
+## Optional settings (added 2026-09-30, no schema change)
+
+`settings` is merged as one object (`syncMerge.js`), so new keys ride along
+untouched on an app that doesn't know them. Every reader goes through
+`getSetting(settings, key)` in `settingsDefaults.js`, so a missing key means
+the default — never `undefined`. They are NOT written into a fresh document
+(`getInitialState` is unchanged), so no migration and no version bump.
+
+## Date keys are LOCAL
+
+`calendar`, `blocks`, `studyDates` and `timeLog` are keyed by the device's
+LOCAL date. Never build a key with `toISOString()` (UTC): until 2026-09-30 the
+web app did, which filed items one day early east of UTC (Iraq, UTC+3). Web:
+`src/utils/dateKeys.js`; phone: `components/calendar/dateUtils.js`.
 
 ## Never synced (deliberate — don't "fix")
 
