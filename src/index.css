@@ -635,3 +635,13 @@ h1, h2, h3 { text-wrap: balance; }
     transition-duration: 0.01ms !important;
   }
 }
+/* Section band (DESIGN.md): the progress fill behind the section title. */
+.section-band-fill {
+  background: color-mix(in oklch, var(--color-accent) 24%, transparent);
+  box-shadow: inset -3px 0 0 var(--color-accent);
+  transition: width 700ms cubic-bezier(.2, .8, .2, 1);
+}
+.section-band-fill[style="width: 0%;"] { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .section-band-fill { transition: none; } }
+/* The task line shows focus through its underline turning accent, not a box. */
+.task-line-input:focus, .task-line-input:focus-visible { outline: none !important; box-shadow: none !important; }

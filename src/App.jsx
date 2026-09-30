@@ -542,62 +542,40 @@ function App() {
         <EmptySections onCreate={handleCreateFirstSection} suggestions={getListSuggestions(settings)} />
       ) : (
         <>
-          {/* Phones/tablets: one column. Desktop: tasks on the left, a
-              right rail with the big progress ring + countdown so wide
-              screens aren't left empty. */}
-          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-4 xl:gap-8">
-            <div className="min-w-0">
-              <div className="px-6 mt-4 no-print empty:mt-0 lg:hidden">
-                <CountdownWidget
-                  isEnabled={data.settings.countdownVisible}
-                  targetDate={data.settings.examDate}
-                />
-              </div>
+          {/* One wide working sheet (DESIGN.md): countdown, the section band
+              (progress lives in the title), the task line, then To do | Done. */}
+          <div className="px-6 mt-4 no-print empty:mt-0">
+            <CountdownWidget
+              isEnabled={data.settings.countdownVisible}
+              targetDate={data.settings.examDate}
+            />
+          </div>
 
-              <div className="lg:hidden">
-                <HeroSection
-                  completedCount={completedCount}
-                  totalCount={totalCount}
-                  globalCompletedCount={globalStats.completed}
-                  globalTotalCount={globalStats.total}
-                />
-              </div>
+          <HeroSection
+            title={currentTab.title}
+            completedCount={completedCount}
+            totalCount={totalCount}
+            globalCompletedCount={globalStats.completed}
+            globalTotalCount={globalStats.total}
+          />
 
-              <div className="lg:pt-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-                <TopicList
-                  tab={currentTab}
-                  timerSession={data.timerSession}
-                  defaultDuration={data.settings.timerDuration}
-                  onTopicUpdate={updateTopic}
-                  onTopicAdd={addTopic}
-                  onTopicDelete={deleteTopic}
-                  onTimerStart={handleTimerStart}
-                  onReorderTopics={reorderTopics}
-                  onSubtaskAdd={addSubtask}
-                  onSubtaskUpdate={updateSubtask}
-                  onSubtaskDelete={deleteSubtask}
-                  onSectionComplete={handleSectionComplete}
-                  spacedRepetitionEnabled={data.settings.spacedRepetition}
-                  hideCompleted={getSetting(settings, 'hideCompleted')}
-                />
-              </div>
-            </div>
-
-            <aside className="hidden lg:block no-print">
-              <div className="sticky top-6 pt-8 flex flex-col gap-8 border-l border-[var(--border-subtle)] pl-8 min-h-[60vh]">
-                <HeroSection
-                  layout="rail"
-                  completedCount={completedCount}
-                  totalCount={totalCount}
-                  globalCompletedCount={globalStats.completed}
-                  globalTotalCount={globalStats.total}
-                />
-                <CountdownWidget
-                  isEnabled={data.settings.countdownVisible}
-                  targetDate={data.settings.examDate}
-                />
-              </div>
-            </aside>
+          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+            <TopicList
+              tab={currentTab}
+              timerSession={data.timerSession}
+              defaultDuration={data.settings.timerDuration}
+              onTopicUpdate={updateTopic}
+              onTopicAdd={addTopic}
+              onTopicDelete={deleteTopic}
+              onTimerStart={handleTimerStart}
+              onReorderTopics={reorderTopics}
+              onSubtaskAdd={addSubtask}
+              onSubtaskUpdate={updateSubtask}
+              onSubtaskDelete={deleteSubtask}
+              onSectionComplete={handleSectionComplete}
+              spacedRepetitionEnabled={data.settings.spacedRepetition}
+              hideCompleted={getSetting(settings, 'hideCompleted')}
+            />
           </div>
         </>
       )}
