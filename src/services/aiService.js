@@ -11,6 +11,7 @@
 
 import { auth } from '../config/firebase'
 import { buildAIContext } from '../utils/aiActions'
+import { localDateKey } from '../utils/dateKeys'
 
 // Empty => same-origin '/api' (the VPS / nginx setup). Override for a separate API host.
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
@@ -26,10 +27,6 @@ export class AIError extends Error {
     }
 }
 
-const localDateKey = (d = new Date()) => {
-    const pad = (n) => String(n).padStart(2, '0')
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-}
 
 async function postJSON(path, body) {
     const headers = { 'Content-Type': 'application/json' }
@@ -89,7 +86,6 @@ export function splitOptions(reply) {
     return { text, options }
 }
 
-export { localDateKey }
 
 // --- TEMPORARY: old names kept only until FocusMode / useAIChat /
 // PlanImporterModal are rewritten in this branch. Remove at integration. ---
