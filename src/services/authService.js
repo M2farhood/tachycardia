@@ -3,6 +3,11 @@
 
 import {
     signInWithPopup,
+    createUserWithEmailAndPassword,
+    signInWithEmailAndPassword,
+    sendEmailVerification,
+    sendPasswordResetEmail,
+    reload,
     signOut as firebaseSignOut,
     onAuthStateChanged
 } from 'firebase/auth'
@@ -46,6 +51,103 @@ export const signInWithGoogle = async () => {
     }
 }
 
+// --- Email + password ------------------------------------------------------
+// Firebase Auth stores and checks the password (salted, hashed, rate-limited
+// server-side). This app never stores, logs or sends a password anywhere else.
+// Error messages are deliberately vague about WHICH part was wrong, so the
+// sign-in form can't be used to find out whether an email has an account.
+
+export const MIN_PASSWORD_LENGTH = 8
+
+const EMAIL_ERRORS = {
+    'auth/invalid-credential': 'Email or password is incorrect.',
+    'auth/wrong-password': 'Email or password is incorrect.',
+    'auth/user-not-found': 'Email or password is incorrect.',
+    'auth/invalid-email': 'That email address doesn\'t look right.',
+    'auth/missing-password': 'Enter your password.',
+    'auth/weak-password': `Use at least ${MIN_PASSWORD_LENGTH} characters.`,
+    'auth/password-does-not-meet-requirements': `Use at least ${MIN_PASSWORD_LENGTH} characters, with letters and numbers.`,
+    // Sign-up with an email that already exists. Saying so is unavoidable at
+    // sign-up, but we point to sign-in rather than confirming anything else.
+    'auth/email-already-in-use': 'Couldn\'t create the account. If you already have one, sign in instead (or reset your password).',
+    'auth/account-exists-with-different-credential': 'This email is linked to Google — use “Continue with Google”.',
+    'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+    'auth/network-request-failed': 'No connection. Check your internet and try again.',
+    'auth/operation-not-allowed': 'Email sign-in is turned off for this app.',
+}
+const emailError = (error) => EMAIL_ERRORS[error?.code] || 'Something went wrong. Please try again.'
+
+const toUser = (u) => u && ({
+    uid: u.uid,
+    email: u.email,
+    displayName: u.displayName,
+    photoURL: u.photoURL,
+    emailVerified: u.emailVerified,
+    provider: u.providerData?.[0]?.providerId || null,
+})
+
+const validEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim())
+
+/** Create an account; sends a verification email. */
+export const signUpWithEmail = async ({ email, password }) => {
+    if (!isFirebaseConfigured() || !auth) return { user: null, error: 'Sign-in is not available right now.' }
+    if (!validEmail(email)) return { user: null, error: EMAIL_ERRORS['auth/invalid-email'] }
+    if (String(password || '').length < MIN_PASSWORD_LENGTH) return { user: null, error: EMAIL_ERRORS['auth/weak-password'] }
+    try {
+        const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password)
+        try { await sendEmailVerification(user) } catch { /* can be resent from Settings */ }
+        return { user: toUser(user), error: null }
+    } catch (error) {
+        return { user: null, error: emailError(error) }
+    }
+}
+
+export const signInWithEmail = async ({ email, password }) => {
+    if (!isFirebaseConfigured() || !auth) return { user: null, error: 'Sign-in is not available right now.' }
+    if (!validEmail(email) || !password) return { user: null, error: EMAIL_ERRORS['auth/invalid-credential'] }
+    try {
+        const { user } = await signInWithEmailAndPassword(auth, email.trim(), password)
+        return { user: toUser(user), error: null }
+    } catch (error) {
+        return { user: null, error: emailError(error) }
+    }
+}
+
+/** Always reports success for a well-formed email — never reveals whether an account exists. */
+export const resetPassword = async (email) => {
+    if (!isFirebaseConfigured() || !auth) return { error: 'Sign-in is not available right now.' }
+    if (!validEmail(email)) return { error: EMAIL_ERRORS['auth/invalid-email'] }
+    try {
+        await sendPasswordResetEmail(auth, email.trim())
+    } catch (error) {
+        if (error?.code === 'auth/too-many-requests' || error?.code === 'auth/network-request-failed') {
+            return { error: emailError(error) }
+        }
+    }
+    return { error: null }
+}
+
+export const resendVerification = async () => {
+    if (!auth?.currentUser) return { error: 'Sign in first.' }
+    try {
+        await sendEmailVerification(auth.currentUser)
+        return { error: null }
+    } catch (error) {
+        return { error: emailError(error) }
+    }
+}
+
+/** Re-read the account (e.g. after they clicked the verification link). */
+export const refreshCurrentUser = async () => {
+    if (!auth?.currentUser) return null
+    try {
+        await reload(auth.currentUser)
+        // A fresh ID token carries the new email_verified claim to the server.
+        await auth.currentUser.getIdToken(true)
+    } catch { /* offline — keep the old state */ }
+    return toUser(auth.currentUser)
+}
+
 /**
  * Sign out the current user
  * @returns {Promise<{error: string|null}>}
@@ -78,12 +180,7 @@ export const onAuthStateChange = (callback) => {
 
     return onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
-            callback({
-                uid: firebaseUser.uid,
-                email: firebaseUser.email,
-                displayName: firebaseUser.displayName,
-                photoURL: firebaseUser.photoURL
-            })
+            callback(toUser(firebaseUser))
         } else {
             callback(null)
         }
@@ -99,11 +196,5 @@ export const getCurrentUser = () => {
         return null
     }
 
-    const user = auth.currentUser
-    return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL
-    }
+    return toUser(auth.currentUser)
 }

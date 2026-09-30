@@ -28,11 +28,24 @@ export const SETTINGS_DEFAULTS = {
     bodyDouble: false, // Focus-mode check-ins
     reduceMotion: false,
     sessionSound: 'chime', // 'chime' | 'soft' | 'silent'
+    listSuggestions: ['Work', 'Study', 'Personal', 'Home'], // quick names on "Start your first list" (added 2026-09-30)
 }
+
+export const MAX_LIST_SUGGESTIONS = 8
 
 export const WEEK_START_OFFSETS = { sat: 6, sun: 0, mon: 1 } // JS getDay() of the first column
 
 export function getSetting(settings, key) {
     const value = settings?.[key]
     return value === undefined || value === null ? SETTINGS_DEFAULTS[key] : value
+}
+
+/** The owner's quick list names — trimmed, de-duplicated, capped. Never throws on odd stored values. */
+export function getListSuggestions(settings) {
+    const raw = getSetting(settings, 'listSuggestions')
+    const seen = new Set()
+    return (Array.isArray(raw) ? raw : [])
+        .map((s) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, 40))
+        .filter((s) => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()))
+        .slice(0, MAX_LIST_SUGGESTIONS)
 }

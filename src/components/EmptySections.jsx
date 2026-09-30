@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
 
-const SUGGESTIONS = ['Work', 'Study', 'Hospital', 'Personal']
-
-const EmptySections = ({ onCreate }) => {
+// `suggestions` are the owner's own quick names (Settings → Advanced → Lists).
+const EmptySections = ({ onCreate, suggestions = [] }) => {
     const [name, setName] = useState('')
     const trimmed = name.trim()
 
@@ -18,7 +17,7 @@ const EmptySections = ({ onCreate }) => {
                     Start your first list
                 </h2>
                 <p className="text-[14px] text-[var(--text-tertiary)] mb-6">
-                    Each list is a project or part of your life — work, hospital, study…
+                    Each list is one project or one part of your life.
                 </p>
 
                 <div className="flex gap-2">
@@ -41,8 +40,8 @@ const EmptySections = ({ onCreate }) => {
                     </button>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-2 mt-4">
-                    {SUGGESTIONS.map(label => (
+                {suggestions.length > 0 && <div className="flex flex-wrap justify-center gap-2 mt-4">
+                    {suggestions.map(label => (
                         <button
                             key={label}
                             onClick={() => setName(label)}
@@ -51,7 +50,7 @@ const EmptySections = ({ onCreate }) => {
                             {label}
                         </button>
                     ))}
-                </div>
+                </div>}
             </div>
         </div>
     )

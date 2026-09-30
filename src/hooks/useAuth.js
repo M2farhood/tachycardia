@@ -4,6 +4,9 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import {
     signInWithGoogle as authSignIn,
+    signInWithEmail as authSignInEmail,
+    signUpWithEmail as authSignUpEmail,
+    refreshCurrentUser,
     signOut as authSignOut,
     onAuthStateChange
 } from '../services/authService'
@@ -122,12 +125,16 @@ export const useAuth = (localData, onDataSync, options = {}) => {
         return () => clearTimeout(timeoutId)
     }, [user, localData, readOnly])
 
-    // Sign in with Google
-    const signIn = useCallback(async () => {
+    // Sign in. method: 'google' | 'email' | 'email-signup' (creds = { email, password }).
+    // Only the credential step differs; the first-sync logic below is shared.
+    const signIn = useCallback(async (method = 'google', creds = null) => {
         setIsLoading(true)
         setError(null)
 
-        const { user: authUser, error: authError } = await authSignIn()
+        const { user: authUser, error: authError } =
+            method === 'email' ? await authSignInEmail(creds || {})
+                : method === 'email-signup' ? await authSignUpEmail(creds || {})
+                    : await authSignIn()
 
         if (authError) {
             setError(authError)
@@ -177,6 +184,13 @@ export const useAuth = (localData, onDataSync, options = {}) => {
         return { success: true, error: null }
     }, [onDataSync])
 
+    // Re-read the account (after clicking the email verification link).
+    const refreshUser = useCallback(async () => {
+        const fresh = await refreshCurrentUser()
+        if (fresh) setUser(fresh)
+        return fresh
+    }, [])
+
     // Sign out
     const signOut = useCallback(async () => {
         setIsLoading(true)
@@ -215,6 +229,7 @@ export const useAuth = (localData, onDataSync, options = {}) => {
         syncStatus,
         error,
         signIn,
+        refreshUser,
         signOut,
         forceSync,
         readOnly,

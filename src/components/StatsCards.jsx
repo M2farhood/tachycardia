@@ -10,7 +10,9 @@ const StatsCards = ({
     studyStreak = 0,
     todayMinutes = 0,
     totalMinutes = 0,
-    dailyGoalMinutes = 0
+    dailyGoalMinutes = 0,
+    // Inside Settings: no page padding, no top rule, smaller numbers.
+    compact = false
 }) => {
     const timeDisplay = formatDuration(todayMinutes)
     const goalOn = dailyGoalMinutes > 0
@@ -19,9 +21,9 @@ const StatsCards = ({
     const totalDisplay = formatDuration(totalMinutes)
 
     return (
-        <div className="px-6 pb-4 no-print">
+        <div className={compact ? 'no-print' : 'px-6 pb-4 no-print'}>
             {/* Inline metric strip — no card backgrounds, no icon chips */}
-            <div className="flex items-start gap-0 border-t border-[var(--border-subtle)]">
+            <div className={`flex items-start gap-0 ${compact ? '[&_.text-3xl]:text-2xl' : 'border-t border-[var(--border-subtle)]'}`}>
                 {/* Streak */}
                 <div className="flex-1 pt-4 pb-3 pr-4">
                     <p className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-tertiary)] mb-1 flex items-center gap-1.5">

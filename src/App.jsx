@@ -6,7 +6,6 @@ import Header from './components/Header'
 import SegmentControl from './components/SegmentControl'
 import HeroSection from './components/HeroSection'
 import TopicList from './components/TopicList'
-import StatsCards from './components/StatsCards'
 import FloatingTimer from './components/FloatingTimer'
 import TemplateModal from './components/TemplateModal'
 import CountdownWidget from './components/CountdownWidget'
@@ -17,8 +16,9 @@ import FocusMode from './components/FocusMode'
 import Confetti from './components/Confetti'
 import ReadOnlyBanner from './components/ReadOnlyBanner'
 import EmptySections from './components/EmptySections'
+import SignInDialog from './components/SignInDialog'
 import { createEmptyTab } from './utils/templates'
-import { getSetting } from './utils/settingsDefaults'
+import { getSetting, getListSuggestions } from './utils/settingsDefaults'
 import { isAIAvailable, isSignedIn, generateSteps } from './services/aiService'
 import { applyAction } from './utils/aiActions'
 import FocusSession from './components/focus/FocusSession'
@@ -76,6 +76,7 @@ function App() {
     isSyncing,
     syncStatus,
     signIn,
+    refreshUser,
     signOut,
     isFirebaseConfigured
   } = useAuth(data, adoptCloudData, { readOnly, onFutureSchema: enterReadOnly })
@@ -92,6 +93,8 @@ function App() {
   const touchStartX = useRef(null)
   // The full-screen session: { label, steps, phase: 'running'|'done', minimized, totalSeconds, nextUp } | null
   const [sessionOverlay, setSessionOverlay] = useState(null)
+  const [showSignIn, setShowSignIn] = useState(false)
+  const openSignIn = useCallback(() => setShowSignIn(true), [])
   // Latest document, so several AI changes applied back-to-back build on each other.
   const dataRef = useRef(data)
   useEffect(() => { dataRef.current = data }, [data])
@@ -455,6 +458,7 @@ function App() {
         settings={data.settings}
         todayMinutes={todayMinutes}
         totalMinutes={totalMinutes}
+        studyStreak={streak}
         onImport={handleImport}
         onClearAll={handleClearAll}
         onSettingsChange={updateSettings}
@@ -463,8 +467,9 @@ function App() {
         isAuthLoading={isAuthLoading}
         isSyncing={isSyncing}
         syncStatus={syncStatus}
-        onSignIn={signIn}
+        onSignIn={openSignIn}
         onSignOut={signOut}
+        onRefreshUser={refreshUser}
         isFirebaseConfigured={isFirebaseConfigured}
         isFocusMode={isFocusMode}
         onToggleFocus={() => setIsFocusMode(!isFocusMode)}
@@ -494,7 +499,7 @@ function App() {
           onExit={() => setIsFocusMode(false)}
           onStartSession={handleSessionStart}
           onApplyActions={applyAICalls}
-          onSignIn={signIn}
+          onSignIn={openSignIn}
           isSignedIn={!!user && isSignedIn()}
         />
       )}
@@ -529,60 +534,80 @@ function App() {
           data={data}
           settings={settings}
           onApplyAction={(call) => applyAICalls([call])}
-          onSignIn={signIn}
+          onSignIn={openSignIn}
           isSignedIn={!!user && isSignedIn()}
           onBack={() => setActiveView(null)}
         />
       ) : !hasTabs ? (
-        <EmptySections onCreate={handleCreateFirstSection} />
+        <EmptySections onCreate={handleCreateFirstSection} suggestions={getListSuggestions(settings)} />
       ) : (
         <>
-          {/* Countdown Widget */}
-          <div className="px-6 mt-4 no-print empty:mt-0">
-            <CountdownWidget
-              isEnabled={data.settings.countdownVisible}
-              targetDate={data.settings.examDate}
-            />
+          {/* Phones/tablets: one column. Desktop: tasks on the left, a
+              right rail with the big progress ring + countdown so wide
+              screens aren't left empty. */}
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-4 xl:gap-8">
+            <div className="min-w-0">
+              <div className="px-6 mt-4 no-print empty:mt-0 lg:hidden">
+                <CountdownWidget
+                  isEnabled={data.settings.countdownVisible}
+                  targetDate={data.settings.examDate}
+                />
+              </div>
+
+              <div className="lg:hidden">
+                <HeroSection
+                  completedCount={completedCount}
+                  totalCount={totalCount}
+                  globalCompletedCount={globalStats.completed}
+                  globalTotalCount={globalStats.total}
+                />
+              </div>
+
+              <div className="lg:pt-4" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+                <TopicList
+                  tab={currentTab}
+                  timerSession={data.timerSession}
+                  defaultDuration={data.settings.timerDuration}
+                  onTopicUpdate={updateTopic}
+                  onTopicAdd={addTopic}
+                  onTopicDelete={deleteTopic}
+                  onTimerStart={handleTimerStart}
+                  onReorderTopics={reorderTopics}
+                  onSubtaskAdd={addSubtask}
+                  onSubtaskUpdate={updateSubtask}
+                  onSubtaskDelete={deleteSubtask}
+                  onSectionComplete={handleSectionComplete}
+                  spacedRepetitionEnabled={data.settings.spacedRepetition}
+                  hideCompleted={getSetting(settings, 'hideCompleted')}
+                />
+              </div>
+            </div>
+
+            <aside className="hidden lg:block no-print">
+              <div className="sticky top-6 pt-8 flex flex-col gap-8 border-l border-[var(--border-subtle)] pl-8 min-h-[60vh]">
+                <HeroSection
+                  layout="rail"
+                  completedCount={completedCount}
+                  totalCount={totalCount}
+                  globalCompletedCount={globalStats.completed}
+                  globalTotalCount={globalStats.total}
+                />
+                <CountdownWidget
+                  isEnabled={data.settings.countdownVisible}
+                  targetDate={data.settings.examDate}
+                />
+              </div>
+            </aside>
           </div>
-
-          {/* Hero Section */}
-          <HeroSection
-            completedCount={completedCount}
-            totalCount={totalCount}
-            globalCompletedCount={globalStats.completed}
-            globalTotalCount={globalStats.total}
-          />
-
-          {/* Topic List */}
-          <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <TopicList
-            tab={currentTab}
-            timerSession={data.timerSession}
-            defaultDuration={data.settings.timerDuration}
-            onTopicUpdate={updateTopic}
-            onTopicAdd={addTopic}
-            onTopicDelete={deleteTopic}
-            onTimerStart={handleTimerStart}
-            onReorderTopics={reorderTopics}
-            onSubtaskAdd={addSubtask}
-            onSubtaskUpdate={updateSubtask}
-            onSubtaskDelete={deleteSubtask}
-            onSectionComplete={handleSectionComplete}
-            spacedRepetitionEnabled={data.settings.spacedRepetition}
-            hideCompleted={getSetting(settings, 'hideCompleted')}
-          />
-          </div>
-
-          {/* Stats Cards */}
-          <StatsCards
-            studyStreak={streak}
-            todayMinutes={todayMinutes}
-            totalMinutes={totalMinutes}
-            dailyGoalMinutes={getSetting(settings, 'dailyGoalMinutes')}
-          />
         </>
       )}
       </div>{/* end app-container */}
+
+      <SignInDialog
+        isOpen={showSignIn}
+        onClose={() => setShowSignIn(false)}
+        onSignIn={signIn}
+      />
 
       <Confetti active={confettiActive} disabled={getSetting(settings, 'reduceMotion')} />
 

@@ -64,6 +64,12 @@ export async function requireUser(req, res, next) {
     if (!m) return res.status(401).json({ error: 'Sign in to talk to Tachycardia.', code: 'AUTH_REQUIRED' })
     try {
         const decoded = await getAuth().verifyIdToken(m[1])
+        // Email+password accounts cost nothing to create, so they must confirm
+        // their address before they can spend the AI budget. Google/Apple
+        // accounts arrive already verified.
+        if (decoded.firebase?.sign_in_provider === 'password' && !decoded.email_verified) {
+            return res.status(403).json({ error: 'Confirm your email to use Tachycardia — open the link we sent you (Settings → Account).', code: 'EMAIL_UNVERIFIED' })
+        }
         req.uid = decoded.uid
         next()
     } catch {

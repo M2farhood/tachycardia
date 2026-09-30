@@ -7,6 +7,7 @@ const Header = ({
     settings,
     todayMinutes = 0,
     totalMinutes = 0,
+    studyStreak = 0,
     onImport,
     onClearAll,
     onSettingsChange,
@@ -17,6 +18,7 @@ const Header = ({
     syncStatus = 'idle',
     onSignIn = () => { },
     onSignOut = () => { },
+    onRefreshUser,
     isFirebaseConfigured = false,
     isFocusMode = false,
     onToggleFocus = () => { },
@@ -107,6 +109,7 @@ const Header = ({
                 settings={settings}
                 todayMinutes={todayMinutes}
                 totalMinutes={totalMinutes}
+                studyStreak={studyStreak}
                 onImport={onImport}
                 onClearAll={onClearAll}
                 onSettingsChange={onSettingsChange}
@@ -117,6 +120,7 @@ const Header = ({
                 syncStatus={syncStatus}
                 onSignIn={onSignIn}
                 onSignOut={onSignOut}
+                onRefreshUser={onRefreshUser}
                 isFirebaseConfigured={isFirebaseConfigured}
             />
         </>
