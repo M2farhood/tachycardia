@@ -274,7 +274,9 @@ export function applyAction(data, rawCall) {
  * tomorrow, not the server's.
  */
 export function buildAIContext(data, todayKey) {
-    const today = todayKey || new Date().toISOString().slice(0, 10)
+    const d = new Date()
+    const local = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const today = todayKey || local
     const weekday = new Date(`${today}T12:00:00`).toLocaleDateString('en-US', { weekday: 'long' })
     const sections = (data?.tabs || []).map((tab) => {
         const topics = tab.topics || []
