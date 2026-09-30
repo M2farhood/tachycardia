@@ -75,34 +75,3 @@ export const importData = (file) => {
         reader.readAsText(file)
     })
 }
-
-// Calculate storage usage
-export const getStorageUsage = () => {
-    let totalSize = 0
-
-    for (const key in localStorage) {
-        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
-            totalSize += localStorage[key].length * 2 // UTF-16 uses 2 bytes per char
-        }
-    }
-
-    const maxSize = 5 * 1024 * 1024 // 5MB typical limit
-    const usedPercent = Math.round((totalSize / maxSize) * 100)
-
-    return {
-        used: totalSize,
-        max: maxSize,
-        percent: usedPercent,
-        usedFormatted: formatBytes(totalSize),
-        maxFormatted: formatBytes(maxSize)
-    }
-}
-
-// Format bytes to human readable
-const formatBytes = (bytes) => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}

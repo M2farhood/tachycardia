@@ -227,7 +227,7 @@ function App() {
   }, [updateTimerSession, recordStudyDay, recordStudyTime, readOnly, legacyTodayMinutes, legacyTotalMinutes, data?.settings?.timerDuration, data?.timerSession, data?.tabs])
 
   // Timer hook
-  const { timeLeft, formattedTime, isRunning } = useTimer(
+  const { timeLeft, formattedTime } = useTimer(
     data?.timerSession,
     handleTimerComplete,
     data?.settings?.isMuted,

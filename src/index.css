@@ -30,8 +30,7 @@
   --color-success: oklch(64% 0.13 150);
   --color-danger:  oklch(62% 0.17 25);
 
-  /* Text/icons that sit ON an accent (or success/danger) fill. Always use
-     this — never text-white — so the light theme can't turn it dark. */
+  /* Text/icons that sit ON an accent (or success/danger) fill. */
   --on-accent: oklch(99% 0 0);
 
   /* Legacy aliases — keeps old variable references working */
@@ -86,50 +85,7 @@
   font-family: var(--font-serif);
 }
 
-.light-theme .text-white {
-  color: var(--color-text-primary) !important;
-}
-
 .text-on-accent { color: var(--on-accent) !important; }
-
-/* The light theme maps text-white → dark text so white-on-dark leftovers
-   stay readable. That must NOT happen on a coloured fill: an accent button
-   with dark text is exactly the "Add first block" bug. These selectors are
-   more specific than the rule above, so a fill always keeps its light text. */
-.light-theme .bg-accent.text-white,
-.light-theme .bg-accent .text-white,
-.light-theme [class*="bg-[var(--color-accent)]"].text-white,
-.light-theme [class*="bg-[var(--color-accent)]"] .text-white,
-.light-theme [class*="bg-[var(--color-danger)]"].text-white,
-.light-theme [class*="bg-[var(--color-success)]"].text-white {
-  color: var(--on-accent) !important;
-}
-
-.light-theme .text-white\/40,
-.light-theme .text-white\/50,
-.light-theme .text-white\/60 {
-  color: var(--color-text-secondary) !important;
-}
-
-.light-theme .text-white\/20,
-.light-theme .text-white\/30 {
-  color: var(--color-text-tertiary) !important;
-}
-
-.light-theme .text-white\/80,
-.light-theme .text-white\/90 {
-  color: var(--color-text-primary) !important;
-}
-
-.light-theme .glass-panel {
-  background: transparent;
-  border: none;
-}
-
-.light-theme .glass-panel-subtle {
-  background: transparent;
-  border: none;
-}
 
 .light-theme .surface {
   background: var(--surface-1);
@@ -148,21 +104,6 @@
   background: white;
   color: var(--color-text-primary);
   box-shadow: 0 1px 3px oklch(0% 0 0 / 0.12);
-}
-
-.light-theme .bg-white\/5,
-.light-theme .bg-white\/10 {
-  background: rgba(0, 0, 0, 0.05) !important;
-}
-
-.light-theme .hover\:bg-white\/10:hover {
-  background: rgba(0, 0, 0, 0.08) !important;
-}
-
-.light-theme .border-white\/5,
-.light-theme .border-white\/10,
-.light-theme .border-white\/20 {
-  border-color: var(--color-glass-border) !important;
 }
 
 .light-theme .custom-checkbox {
@@ -239,17 +180,6 @@ h1, h2, h3 { text-wrap: balance; }
   }
 }
 
-/* Surface panels — flattened; rely on space + hairlines */
-.glass-panel {
-  background: transparent;
-  border: none;
-}
-
-.glass-panel-subtle {
-  background: transparent;
-  border: none;
-}
-
 /* Real surface — use only where containment is needed (modals, floating bar, dropdowns) */
 .surface {
   background: var(--surface-1);
@@ -295,11 +225,6 @@ h1, h2, h3 { text-wrap: balance; }
   transform: scale(0.95);
 }
 
-/* Glow effects */
-.glow-avatar {
-  box-shadow: 0 0 0 3px var(--color-accent-glow), 0 0 20px var(--color-accent-glow);
-}
-
 /* Custom checkbox - glowing blue */
 .custom-checkbox {
   width: 28px;
@@ -327,21 +252,6 @@ h1, h2, h3 { text-wrap: balance; }
 
 .custom-checkbox.checked svg {
   opacity: 1;
-}
-
-/* Progress ring */
-.progress-ring {
-  transform: rotate(-90deg);
-}
-
-.progress-ring-bg {
-  stroke: var(--surface-3);
-}
-
-.progress-ring-fill {
-  stroke: var(--color-accent);
-  stroke-linecap: round;
-  transition: stroke-dashoffset 0.5s ease;
 }
 
 /* Pill segmented control — lighter fill, reduced weight */
@@ -406,12 +316,6 @@ h1, h2, h3 { text-wrap: balance; }
   color: var(--text-tertiary);
   text-decoration: line-through;
   text-decoration-color: var(--border);
-}
-
-/* Stats card */
-.stats-card {
-  position: relative;
-  overflow: hidden;
 }
 
 /* Floating action bar — only element that keeps backdrop-filter */
@@ -509,14 +413,6 @@ h1, h2, h3 { text-wrap: balance; }
   animation: countRoll 0.18s ease-out;
 }
 
-/* Touch-friendly button sizing */
-@media (pointer: coarse) {
-  .touch-target {
-    min-width: 44px;
-    min-height: 44px;
-  }
-}
-
 /* Safe area padding for notched phones */
 .pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
@@ -528,17 +424,6 @@ h1, h2, h3 { text-wrap: balance; }
     padding-left: 16px !important;
     padding-right: 16px !important;
   }
-}
-
-/* Calendar task rows (used by CalendarTaskItem) */
-.calendar-task {
-  border-radius: 8px;
-  padding: 4px 6px;
-  transition: background-color 0.15s ease;
-}
-
-.calendar-task:hover {
-  background: var(--surface-2);
 }
 
 /* Print styles */
@@ -559,7 +444,6 @@ h1, h2, h3 { text-wrap: balance; }
     display: none !important;
   }
 
-  .glass-panel,
   .surface {
     background: white !important;
     border: 1px solid #e5e7eb !important;
@@ -571,62 +455,11 @@ h1, h2, h3 { text-wrap: balance; }
   }
 }
 
-/* Hide print-only elements on screen */
-@media screen {
-  .print-only {
-    display: none !important;
-  }
-}
-
 /* Modal backdrop */
 .modal-backdrop {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   background: oklch(0% 0 0 / 0.6);
-}
-
-/* Inline editable - dark theme */
-.inline-editable {
-  cursor: text;
-  border-radius: 8px;
-  padding: 4px 8px;
-  margin: -4px -8px;
-  transition: background-color 0.15s ease;
-}
-
-.inline-editable:hover {
-  background: var(--surface-2);
-}
-
-.inline-editable:focus {
-  background: var(--surface-3);
-  outline: none;
-}
-
-/* Dividers */
-.divider {
-  height: 1px;
-  background: var(--border-subtle);
-}
-
-/* Focus Mode Specifics */
-.bg-gradient-radial {
-  background: radial-gradient(circle, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 70%);
-}
-
-
-@keyframes slide-up-panel {
-  from {
-    transform: translateY(100%);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up-panel {
-  animation: slide-up-panel 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {

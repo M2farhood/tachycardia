@@ -474,7 +474,7 @@ const TopicList = ({
                                         : 'border-[var(--border)] hover:border-[var(--border-subtle)]'
                                         }`}
                                 >
-                                    {subtask.completed && <Check size={12} className="text-white" />}
+                                    {subtask.completed && <Check size={12} className="text-on-accent" />}
                                 </button>
                                 <span className={`flex-1 text-[13px] ${subtask.completed
                                     ? 'text-[var(--text-tertiary)] line-through'

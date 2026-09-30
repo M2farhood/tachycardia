@@ -187,14 +187,3 @@ export const onAuthStateChange = (callback) => {
     })
 }
 
-/**
- * Get the current user synchronously
- * @returns {object|null}
- */
-export const getCurrentUser = () => {
-    if (!isFirebaseConfigured() || !auth || !auth.currentUser) {
-        return null
-    }
-
-    return toUser(auth.currentUser)
-}
