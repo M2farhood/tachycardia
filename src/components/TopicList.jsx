@@ -38,6 +38,8 @@ const TopicList = ({
     const [showDone, setShowDone] = useState(false)
     // The day chosen in the day circles for the NEXT task (null = no day).
     const [newDueDate, setNewDueDate] = useState(null)
+    // The existing task whose own day circles are open (null = none).
+    const [datePickerId, setDatePickerId] = useState(null)
     const [newTopicName, setNewTopicName] = useState('')
     const [editingId, setEditingId] = useState(null)
     const [expandedId, setExpandedId] = useState(null)
@@ -378,25 +380,45 @@ const TopicList = ({
                                     </>
                                 )
                             })()}
-                            {topic.dueDate && (() => {
-            const d = parseLocalDateKey(topic.dueDate)
-            const label = d.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
-            return (
-                <span className="group/due inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-secondary)]">
-                    <CalendarDays size={10} />
-                    {label}
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onTopicUpdate(tab.id, topic.id, { dueDate: null }) }}
-                        aria-label={`Remove the day from ${topic.name}`}
-                        title="Remove the day"
-                        className="ml-0.5 text-[var(--text-tertiary)] hover:text-[var(--color-danger)]"
-                    >
-                        <X size={10} />
-                    </button>
-                </span>
-            )
-        })()}
-        {topic.category && (
+                            {/* The task's day — tap to open its own day circles */}
+                            {(() => {
+                                const open = datePickerId === topic.id
+                                const toggle = (e) => { e.stopPropagation(); setDatePickerId(open ? null : topic.id) }
+                                if (!topic.dueDate) {
+                                    return (
+                                        <button
+                                            onClick={toggle}
+                                            aria-expanded={open}
+                                            aria-label={`Give ${topic.name} a day`}
+                                            title="Give it a day"
+                                            className={`inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded border transition-colors ${open
+                                                ? 'text-accent border-accent/40 bg-accent/10'
+                                                : 'text-[var(--text-tertiary)] border-[var(--border-subtle)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-2)]'}`}
+                                        >
+                                            <CalendarDays size={11} />
+                                            <span className={open ? '' : 'hidden sm:inline'}>Day</span>
+                                        </button>
+                                    )
+                                }
+                                const label = parseLocalDateKey(topic.dueDate).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' })
+                                return (
+                                    <span className={`inline-flex items-center gap-1 text-[11px] font-medium pl-1.5 pr-1 py-0.5 rounded border ${open ? 'border-accent/40 bg-accent/10 text-accent' : 'border-[var(--border)] text-[var(--text-secondary)]'}`}>
+                                        <button onClick={toggle} aria-expanded={open} aria-label={`Change the day of ${topic.name}`} title="Change the day" className="inline-flex items-center gap-1 hover:text-[var(--text-primary)]">
+                                            <CalendarDays size={11} />
+                                            {label}
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); onTopicUpdate(tab.id, topic.id, { dueDate: null }); setDatePickerId(null) }}
+                                            aria-label={`Remove the day from ${topic.name}`}
+                                            title="Remove the day"
+                                            className="ml-0.5 text-[var(--text-tertiary)] hover:text-[var(--color-danger)]"
+                                        >
+                                            <X size={10} />
+                                        </button>
+                                    </span>
+                                )
+                            })()}
+                                    {topic.category && (
                                 <span className="text-[13px] text-[var(--text-tertiary)] hidden sm:inline">{topic.category}</span>
                             )}
                         </div>
@@ -423,6 +445,18 @@ const TopicList = ({
                         </button>
                     </div>
                 </div>
+
+                {/* This task's own day circles */}
+                {datePickerId === topic.id && (
+                    <div className="ml-10 sm:ml-14 pb-2">
+                        <DayPicker
+                            size="sm"
+                            label={`Day for ${topic.name}`}
+                            value={topic.dueDate || null}
+                            onChange={(key) => { onTopicUpdate(tab.id, topic.id, { dueDate: key }); setDatePickerId(null) }}
+                        />
+                    </div>
+                )}
 
                 {/* Subtasks Section */}
                 {isSubtasksExpanded && (
@@ -510,7 +544,13 @@ const TopicList = ({
                     Add
                 </button>
             </div>
-            <DayPicker value={newDueDate} onChange={setNewDueDate} />
+            {/* Day circles for the new task: only while typing (leave them = no day) */}
+            {(newTopicName.trim() || newDueDate) && (
+                <div className="flex items-center gap-3 animate-fade-in">
+                    <span className="hidden sm:inline text-[12px] text-[var(--text-tertiary)] whitespace-nowrap">Day (optional)</span>
+                    <DayPicker value={newDueDate} onChange={(key) => { setNewDueDate(key); inputRef.current?.focus() }} />
+                </div>
+            )}
 
             <div className="mt-6 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-12">
                 <section aria-label="To do">

@@ -56,7 +56,6 @@ function App() {
     toggleCalendarTask,
     editCalendarTask,
     deleteCalendarTask,
-    clearCalendarDay,
     addCalendarSubtask,
     toggleCalendarSubtask,
     deleteCalendarSubtask,
@@ -546,7 +545,6 @@ function App() {
           onToggleTask={toggleCalendarTask}
           onEditTask={editCalendarTask}
           onDeleteTask={deleteCalendarTask}
-          onClearDay={clearCalendarDay}
           onAddSubtask={addCalendarSubtask}
           onToggleSubtask={toggleCalendarSubtask}
           onDeleteSubtask={deleteCalendarSubtask}

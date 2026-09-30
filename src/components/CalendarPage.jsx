@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import CalendarDayColumn from './CalendarDayColumn'
-import { localDateKey, addDays } from '../utils/dateKeys'
+import { localDateKey, addDays, parseLocalDateKey } from '../utils/dateKeys'
 import { WEEK_START_OFFSETS } from '../utils/settingsDefaults'
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] // by JS getDay()
@@ -23,6 +23,9 @@ const formatWeekRange = (start) => {
     }
     return `${MONTH_NAMES[start.getMonth()]} ${start.getDate()} – ${MONTH_NAMES[end.getMonth()]} ${end.getDate()}`
 }
+
+const formatDayTitle = (date) =>
+    `${FULL_DAY_LABELS[date.getDay()]}, ${date.getDate()} ${MONTH_NAMES[date.getMonth()]}`
 
 // True at >= 1024px (Tailwind `lg`).
 const useIsDesktop = () => {
@@ -50,27 +53,21 @@ const CalendarPage = ({
     onToggleTask,
     onEditTask,
     onDeleteTask,
-    onClearDay,
     onAddSubtask,
     onToggleSubtask,
     onDeleteSubtask
 }) => {
-    const [weekOffset, setWeekOffset] = useState(0)
-    const [selectedKey, setSelectedKey] = useState(null)
+    const todayKey = localDateKey()
+    // Opens on today, big. 'week' shows the 7 days; clicking a day opens it.
+    const [view, setView] = useState('day')
+    const [dayKey, setDayKey] = useState(todayKey)
     const isDesktop = useIsDesktop()
 
-    const todayKey = localDateKey()
     const firstDay = WEEK_START_OFFSETS[weekStart] ?? WEEK_START_OFFSETS.sat
+    const dayDate = parseLocalDateKey(dayKey)
+    const weekStartDate = getWeekStart(dayDate, firstDay)
 
-    const weekStartDate = useMemo(() => {
-        const base = getWeekStart(new Date(), firstDay)
-        return addDays(base, weekOffset * 7)
-        // todayKey re-evaluates the base after midnight
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [firstDay, weekOffset, todayKey])
-
-    const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => {
-        const d = addDays(weekStartDate, i)
+    const describe = (d) => {
         const key = localDateKey(d)
         return {
             dateKey: key,
@@ -80,11 +77,12 @@ const CalendarPage = ({
             month: MONTH_NAMES[d.getMonth()],
             isToday: key === todayKey
         }
-    }), [weekStartDate, todayKey])
+    }
+    const weekDays = Array.from({ length: 7 }, (_, i) => describe(addDays(weekStartDate, i)))
+    const onToday = view === 'day' ? dayKey === todayKey : weekDays.some(d => d.isToday)
 
-    const selected = weekDays.find(d => d.dateKey === selectedKey)
-        || weekDays.find(d => d.isToday)
-        || weekDays[0]
+    const step = (dir) => setDayKey(localDateKey(addDays(dayDate, dir * (view === 'day' ? 1 : 7))))
+    const openDay = (key) => { setDayKey(key); setView('day') }
 
     // Unfinished tasks from the previous 14 days — display only.
     const carryOver = useMemo(() => {
@@ -106,101 +104,86 @@ const CalendarPage = ({
         return out
     }, [carryOverTasks, tasks, todayKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    const dayProps = {
-        onAddTask, onToggleTask, onEditTask, onDeleteTask, onClearDay,
+    const dayProps = (day) => ({
+        ...day,
+        tasks: tasks[day.dateKey],
+        carryOver: day.isToday ? carryOver : [],
+        listItems: listTasks[day.dateKey] || [],
+        onToggleListItem: onToggleListTask,
+        onOpenDay: openDay,
+        onAddTask, onToggleTask, onEditTask, onDeleteTask,
         onAddSubtask, onToggleSubtask, onDeleteSubtask
-    }
+    })
+
+    const unit = view === 'day' ? 'day' : 'week'
 
     return (
         <div className="flex flex-col animate-fade-in px-4 sm:px-6 pb-8 max-w-[1600px] mx-auto w-full">
-            {/* Week header */}
-            <div className="flex items-center justify-between gap-2 py-4">
+            {/* Header: where you are, arrows, Day | Week */}
+            <div className="flex flex-wrap items-center justify-between gap-3 py-4">
                 <h2 dir="ltr" className="text-xl sm:text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {formatWeekRange(weekStartDate)}
+                    {view === 'day' ? formatDayTitle(dayDate) : formatWeekRange(weekStartDate)}
+                    {view === 'day' && dayKey === todayKey && <span className="ml-2 text-[15px] font-medium text-accent">Today</span>}
                 </h2>
                 <div className="flex items-center gap-1">
-                    {weekOffset !== 0 && (
+                    {!onToday && (
                         <button
-                            onClick={() => { setWeekOffset(0); setSelectedKey(null) }}
+                            onClick={() => setDayKey(todayKey)}
                             className="px-3 h-9 mr-1 rounded-full text-[13px] font-medium text-accent border border-[var(--border)] hover:bg-[var(--surface-2)] transition-colors"
                         >
                             Today
                         </button>
                     )}
                     <button
-                        onClick={() => setWeekOffset(prev => prev - 1)}
+                        onClick={() => step(-1)}
                         className="w-9 h-9 flex items-center justify-center hover:bg-[var(--surface-2)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        aria-label="Previous week"
-                        title="Previous week"
+                        aria-label={`Previous ${unit}`}
+                        title={`Previous ${unit}`}
                     >
                         <ChevronLeft size={20} />
                     </button>
                     <button
-                        onClick={() => setWeekOffset(prev => prev + 1)}
+                        onClick={() => step(1)}
                         className="w-9 h-9 flex items-center justify-center hover:bg-[var(--surface-2)] rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
-                        aria-label="Next week"
-                        title="Next week"
+                        aria-label={`Next ${unit}`}
+                        title={`Next ${unit}`}
                     >
                         <ChevronRight size={20} />
                     </button>
+                    <div className="ml-2 flex p-1 rounded-full bg-[var(--surface-2)]" role="tablist" aria-label="Calendar view">
+                        {[['day', 'Day'], ['week', 'Week']].map(([key, text]) => (
+                            <button
+                                key={key}
+                                role="tab"
+                                aria-selected={view === key}
+                                onClick={() => setView(key)}
+                                className={`px-4 h-8 rounded-full text-[13px] font-medium transition-colors ${view === key
+                                    ? 'bg-[var(--surface-1)] text-[var(--text-primary)] shadow-sm'
+                                    : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}
+                            >
+                                {text}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {isDesktop ? (
+            {view === 'day' ? (
+                <div className="border-t border-[var(--border-subtle)] pt-2">
+                    <CalendarDayColumn key={dayKey} variant="day" {...dayProps(describe(dayDate))} />
+                </div>
+            ) : isDesktop ? (
                 <div className="grid grid-cols-7 min-h-[calc(100vh-240px)] border-t border-[var(--border-subtle)] pt-4">
                     {weekDays.map(day => (
-                        <CalendarDayColumn
-                            key={day.dateKey}
-                            variant="column"
-                            {...day}
-                            tasks={tasks[day.dateKey]}
-                            carryOver={day.isToday ? carryOver : []}
-                            listItems={listTasks[day.dateKey] || []}
-                            onToggleListItem={onToggleListTask}
-                            {...dayProps}
-                        />
+                        <CalendarDayColumn key={day.dateKey} variant="column" {...dayProps(day)} />
                     ))}
                 </div>
             ) : (
-                <>
-                    <div className="grid grid-cols-7 gap-1 pb-4" role="tablist" aria-label="Days of the week">
-                        {weekDays.map(day => {
-                            const isSel = day.dateKey === selected.dateKey
-                            const hasTasks = (tasks[day.dateKey] || []).length > 0 || (listTasks[day.dateKey] || []).length > 0
-                            return (
-                                <button
-                                    key={day.dateKey}
-                                    role="tab"
-                                    aria-selected={isSel}
-                                    onClick={() => setSelectedKey(day.dateKey)}
-                                    className={`flex flex-col items-center gap-1 py-2 rounded-xl border transition-colors min-w-0 ${isSel
-                                        ? 'bg-[var(--surface-2)] border-[var(--border)]'
-                                        : 'border-transparent hover:bg-[var(--surface-1)]'}`}
-                                >
-                                    <span className={`text-[11px] font-medium ${day.isToday ? 'text-accent' : 'text-[var(--text-tertiary)]'}`}>
-                                        {day.dayLabel.charAt(0)}
-                                    </span>
-                                    <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-[15px] font-semibold tabular-nums ${day.isToday
-                                        ? 'bg-accent text-on-accent'
-                                        : 'text-[var(--text-primary)]'}`}>
-                                        {day.dateNum}
-                                    </span>
-                                    <span className={`w-1 h-1 rounded-full ${hasTasks ? 'bg-accent' : 'bg-transparent'}`} />
-                                </button>
-                            )
-                        })}
-                    </div>
-                    <CalendarDayColumn
-                        key={selected.dateKey}
-                        variant="panel"
-                        {...selected}
-                        tasks={tasks[selected.dateKey]}
-                        carryOver={selected.isToday ? carryOver : []}
-                        listItems={listTasks[selected.dateKey] || []}
-                        onToggleListItem={onToggleListTask}
-                        {...dayProps}
-                    />
-                </>
+                <div className="border-t border-[var(--border-subtle)] pt-2">
+                    {weekDays.map(day => (
+                        <CalendarDayColumn key={day.dateKey} variant="stack" {...dayProps(day)} />
+                    ))}
+                </div>
             )}
         </div>
     )

@@ -1,4 +1,4 @@
-import { Plus, MoreVertical, Trash2, Edit2, Search, X as XIcon } from 'lucide-react'
+import { Plus, Trash2, Edit2, Search, X as XIcon } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { createEmptyTab } from '../utils/templates'
@@ -201,9 +201,11 @@ const SegmentControl = ({ tabs, activeTabId, onTabChange, onTabAdd, onTabDelete,
                                     {isActive && (
                                         <button
                                             onClick={(e) => toggleMenu(e, tab.id)}
+                                            aria-label={`Rename or delete ${tab.title}`}
+                                            title="Rename or delete this list"
                                             className={`p-1.5 -ml-1 rounded-full hover:bg-[var(--surface-2)] transition-colors ${menuTabId === tab.id ? 'text-[var(--text-primary)] bg-[var(--surface-2)]' : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'}`}
                                         >
-                                            <MoreVertical size={14} />
+                                            <Edit2 size={13} />
                                         </button>
                                     )}
                                 </div>

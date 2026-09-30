@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { MoreVertical, Check, Trash2, Plus, ChevronRight, ChevronDown } from 'lucide-react'
+import { Check, Trash2, Plus, Pencil, ChevronRight, ChevronDown } from 'lucide-react'
 
 const CalendarTaskCard = ({
     task,
@@ -8,26 +8,15 @@ const CalendarTaskCard = ({
     onDelete,
     onAddSubtask,
     onToggleSubtask,
-    onDeleteSubtask
+    onDeleteSubtask,
+    large = false
 }) => {
     const [isEditing, setIsEditing] = useState(false)
     const [editValue, setEditValue] = useState(task.text)
     const [isExpanded, setIsExpanded] = useState(false)
     const [newSubtask, setNewSubtask] = useState('')
-    const [showMenu, setShowMenu] = useState(false)
 
     const inputRef = useRef(null)
-    const menuRef = useRef(null)
-
-    // Close menu on outside click
-    useEffect(() => {
-        if (!showMenu) return
-        const close = (e) => {
-            if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false)
-        }
-        document.addEventListener('mousedown', close)
-        return () => document.removeEventListener('mousedown', close)
-    }, [showMenu])
 
     useEffect(() => {
         if (isEditing && inputRef.current) {
@@ -58,7 +47,7 @@ const CalendarTaskCard = ({
     const progress = subtasks.length > 0 ? Math.round((completedSubtasks / subtasks.length) * 100) : 0
 
     return (
-        <div className="group relative py-2.5 border-b border-[var(--border-subtle)] last:border-b-0 transition-colors">
+        <div className={`group relative ${large ? 'py-3.5' : 'py-2.5'} border-b border-[var(--border-subtle)] last:border-b-0 transition-colors`}>
             {/* Header / Main Task */}
             <div className="flex items-start gap-3">
                 {/* Checkbox */}
@@ -66,7 +55,7 @@ const CalendarTaskCard = ({
                     onClick={onToggle}
                     aria-label={task.completed ? 'Mark not done' : 'Mark done'}
                     className={`
-                        mt-0.5 w-5 h-5 rounded-md border-[1.5px] flex items-center justify-center transition-all flex-shrink-0
+                        ${large ? 'mt-0.5 w-6 h-6' : 'mt-0.5 w-5 h-5'} rounded-md border-[1.5px] flex items-center justify-center transition-all flex-shrink-0
                         ${task.completed
                             ? 'bg-[var(--color-success)] border-[var(--color-success)] text-on-accent'
                             : 'border-[var(--text-tertiary)] hover:border-[var(--text-secondary)] text-transparent'
@@ -99,7 +88,7 @@ const CalendarTaskCard = ({
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 onDoubleClick={() => setIsEditing(true)}
                                 className={`
-                                    text-sm leading-snug cursor-pointer select-none transition-colors
+                                    ${large ? 'text-[16px] sm:text-[17px]' : 'text-sm'} leading-snug cursor-pointer select-none transition-colors
                                     ${task.completed
                                         ? 'text-[var(--text-tertiary)] line-through'
                                         : 'text-[var(--text-primary)] font-medium'
@@ -127,30 +116,25 @@ const CalendarTaskCard = ({
                     )}
                 </div>
 
-                {/* Actions Menu */}
-                <div className="relative flex-shrink-0 opacity-60 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" ref={menuRef}>
+                {/* Actions: edit + delete, no hidden menu */}
+                {/* In the narrow week columns they take no room until hovered */}
+                <div className={`items-center flex-shrink-0 opacity-60 md:opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ${large ? 'flex' : 'flex md:hidden md:group-hover:flex md:group-focus-within:flex'}`}>
                     <button
-                        onClick={() => setShowMenu(!showMenu)}
+                        onClick={() => setIsEditing(true)}
+                        aria-label={`Edit ${task.text}`}
+                        title="Edit"
                         className="p-1.5 hover:bg-[var(--surface-2)] rounded-lg text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
                     >
-                        <MoreVertical size={14} />
+                        <Pencil size={13} />
                     </button>
-                    {showMenu && (
-                        <div className="absolute right-0 top-full mt-1 z-50 surface rounded-lg py-1 min-w-[120px] shadow-xl animate-fade-in">
-                            <button
-                                onClick={() => { setShowMenu(false); setIsEditing(true) }}
-                                className="w-full text-left px-3 py-2 text-[12px] text-[var(--text-secondary)] hover:bg-[var(--surface-2)] transition-colors"
-                            >
-                                Edit
-                            </button>
-                            <button
-                                onClick={() => { setShowMenu(false); onDelete() }}
-                                className="w-full text-left px-3 py-2 text-[12px] text-[var(--color-danger)] hover:bg-[var(--surface-2)] transition-colors"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    )}
+                    <button
+                        onClick={onDelete}
+                        aria-label={`Delete ${task.text}`}
+                        title="Delete"
+                        className="p-1.5 hover:bg-[var(--surface-2)] rounded-lg text-[var(--text-tertiary)] hover:text-[var(--color-danger)]"
+                    >
+                        <Trash2 size={13} />
+                    </button>
                 </div>
             </div>
 
