@@ -10,7 +10,7 @@
 # server — never in this repo and never in the browser bundle.
 set -euo pipefail
 
-HOST="${HOST:-sinan-vps}"
+HOST="${HOST:-mohammed-2}"
 DOMAIN="${DOMAIN:-study.t-plusplus.tech}"
 APP_DIR=/srv/study-tracker
 PORT=4700
